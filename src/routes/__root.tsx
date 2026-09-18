@@ -13,6 +13,8 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { StoreProvider } from "@/lib/autoescuela/store";
 import { Toaster } from "@/components/ui/sonner";
+import { AuthProvider, useAuth } from "@/lib/auth/auth";
+import { Login } from "@/components/auth/login";
 
 function NotFoundComponent() {
   return (
@@ -128,16 +130,31 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+function AuthGate() {
+  const { isAuthenticated } = useAuth();
+
+  // Sistema cerrado: sin sesión sólo se muestra el Login.
+  if (!isAuthenticated) {
+    return <Login />;
+  }
+
+  return (
+    <StoreProvider>
+      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+      <Outlet />
+    </StoreProvider>
+  );
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   return (
     <QueryClientProvider client={queryClient}>
-      <StoreProvider>
-        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-        <Outlet />
+      <AuthProvider>
+        <AuthGate />
         <Toaster position="top-center" />
-      </StoreProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

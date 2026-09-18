@@ -1,9 +1,10 @@
 import * as React from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Car, ChevronRight, Plus, Search, UserPlus } from "lucide-react";
+import { Car, ChevronRight, LogOut, Plus, Search, UserPlus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/lib/autoescuela/store";
+import { useAuth } from "@/lib/auth/auth";
 import { SKILLS } from "@/lib/autoescuela/types";
 import { LessonDialog } from "@/components/autoescuela/lesson-dialog";
 import { StudentDialog } from "@/components/autoescuela/student-dialog";
@@ -41,6 +42,7 @@ function initials(name: string) {
 
 function Dashboard() {
   const { data } = useStore();
+  const { logout } = useAuth();
   const [query, setQuery] = React.useState("");
   const [lessonOpen, setLessonOpen] = React.useState(false);
   const [studentOpen, setStudentOpen] = React.useState(false);
@@ -62,7 +64,19 @@ function Dashboard() {
               <p className="text-sm text-muted-foreground">Panel del profesor</p>
             </div>
           </div>
-          <ThemeToggle />
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={logout}
+              aria-label="Cerrar sesión"
+              title="Cerrar sesión"
+              className="size-11 rounded-2xl"
+            >
+              <LogOut className="size-5" />
+            </Button>
+          </div>
         </div>
       </header>
 
