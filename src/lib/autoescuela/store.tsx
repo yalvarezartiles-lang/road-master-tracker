@@ -61,7 +61,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           name,
           phone,
           startDate: new Date().toISOString(),
-          avatarColor: AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)],
+          avatarColor:
+            AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)] ??
+            "oklch(0.62 0.17 250)",
           skills: {
             volante: "rojo",
             pedales: "rojo",
