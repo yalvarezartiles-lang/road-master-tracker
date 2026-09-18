@@ -58,7 +58,7 @@ function Dashboard() {
               <Car className="size-7" />
             </span>
             <div>
-              <h1 className="text-xl leading-tight font-extrabold">Autoescuela</h1>
+              <h1 className="text-xl leading-tight font-extrabold">Autoescuela Adassa</h1>
               <p className="text-sm text-muted-foreground">Panel del profesor</p>
             </div>
           </div>
