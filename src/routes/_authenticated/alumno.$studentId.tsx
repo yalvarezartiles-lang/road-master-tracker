@@ -9,7 +9,7 @@ import { LessonDialog } from "@/components/autoescuela/lesson-dialog";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/alumno/$studentId")({
+export const Route = createFileRoute("/_authenticated/alumno/$studentId")({
   head: () => ({
     meta: [
       { title: "Ficha del alumno — Autoescuela Tracker" },
