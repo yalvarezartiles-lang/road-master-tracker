@@ -1,19 +1,21 @@
 import * as React from "react";
-import type { AppData, Lesson, SkillKey, SkillLevel, Student } from "./types";
-import { initialData } from "./mock";
-
-const STORAGE_KEY = "autoescuela-tracker-v1";
+import { supabase } from "@/integrations/supabase/client";
+import type { AppData, SkillKey, SkillLevel, Student } from "./types";
+import { DEFAULT_ZONES } from "./types";
 
 interface StoreValue {
   data: AppData;
   hydrated: boolean;
-  addStudent: (input: { name: string; phone: string }) => Student;
+  loading: boolean;
+  refresh: () => Promise<void>;
+  addStudent: (input: { name: string; phone: string }) => Promise<Student | null>;
   addLesson: (
     studentId: string,
     input: { date: string; zone: string; topics: string[]; notes: string },
-  ) => void;
-  setSkill: (studentId: string, skill: SkillKey, level: SkillLevel) => void;
-  addZone: (zone: string) => void;
+  ) => Promise<void>;
+  setSkill: (studentId: string, skill: SkillKey, level: SkillLevel) => Promise<void>;
+  addZone: (zone: string) => Promise<void>;
+  deleteStudent: (studentId: string) => Promise<void>;
 }
 
 const StoreContext = React.createContext<StoreValue | null>(null);
@@ -26,86 +28,134 @@ const AVATAR_COLORS = [
   "oklch(0.6 0.16 320)",
 ];
 
-const uid = () => Math.random().toString(36).slice(2, 10);
+const EMPTY_SKILLS: Record<SkillKey, SkillLevel> = {
+  volante: "rojo",
+  pedales: "rojo",
+  marchas: "rojo",
+  observacion: "rojo",
+  glorietas: "rojo",
+  estacionamiento: "rojo",
+};
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
-  const [data, setData] = React.useState<AppData>(initialData);
+  const [data, setData] = React.useState<AppData>({ students: [], zones: DEFAULT_ZONES });
   const [hydrated, setHydrated] = React.useState(false);
+  const [loading, setLoading] = React.useState(true);
 
-  React.useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setData(JSON.parse(raw) as AppData);
-    } catch {
-      /* ignore */
+  const refresh = React.useCallback(async () => {
+    const { data: session } = await supabase.auth.getSession();
+    if (!session.session) {
+      setLoading(false);
+      setHydrated(true);
+      return;
     }
+    setLoading(true);
+    const [studentsRes, lessonsRes, zonesRes] = await Promise.all([
+      supabase.from("students").select("*").order("created_at", { ascending: true }),
+      supabase.from("lessons").select("*").order("number", { ascending: true }),
+      supabase.from("zones").select("*").order("created_at", { ascending: true }),
+    ]);
+
+    const lessons = lessonsRes.data ?? [];
+    const students: Student[] = (studentsRes.data ?? []).map((s: any) => ({
+      id: s.id,
+      name: s.name,
+      phone: s.phone ?? "",
+      startDate: s.start_date,
+      avatarColor: s.avatar_color,
+      skills: { ...EMPTY_SKILLS, ...(s.skills ?? {}) },
+      lessons: lessons
+        .filter((l: any) => l.student_id === s.id)
+        .map((l: any) => ({
+          id: l.id,
+          number: l.number,
+          date: l.date,
+          zone: l.zone ?? "",
+          topics: l.topics ?? [],
+          notes: l.notes ?? "",
+        })),
+    }));
+
+    setData({
+      students,
+      zones: (zonesRes.data ?? []).map((z: any) => z.name),
+    });
+    setLoading(false);
     setHydrated(true);
   }, []);
 
   React.useEffect(() => {
-    if (!hydrated) return;
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    } catch {
-      /* ignore */
-    }
-  }, [data, hydrated]);
+    void refresh();
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT") void refresh();
+    });
+    return () => sub.subscription.unsubscribe();
+  }, [refresh]);
 
   const value = React.useMemo<StoreValue>(
     () => ({
       data,
       hydrated,
-      addStudent: ({ name, phone }) => {
-        const student: Student = {
-          id: uid(),
-          name,
-          phone,
-          startDate: new Date().toISOString(),
-          avatarColor:
-            AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)] ??
-            "oklch(0.62 0.17 250)",
-          skills: {
-            volante: "rojo",
-            pedales: "rojo",
-            marchas: "rojo",
-            observacion: "rojo",
-            glorietas: "rojo",
-            estacionamiento: "rojo",
-          },
+      loading,
+      refresh,
+      addStudent: async ({ name, phone }) => {
+        const { data: inserted, error } = await supabase
+          .from("students")
+          .insert({
+            name,
+            phone,
+            avatar_color:
+              AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)] ??
+              "oklch(0.62 0.17 250)",
+          })
+          .select()
+          .single();
+        if (error || !inserted) return null;
+        await refresh();
+        return {
+          id: inserted.id,
+          name: inserted.name,
+          phone: inserted.phone ?? "",
+          startDate: inserted.start_date,
+          avatarColor: inserted.avatar_color,
+          skills: { ...EMPTY_SKILLS, ...((inserted.skills as any) ?? {}) },
           lessons: [],
         };
-        setData((d) => ({ ...d, students: [...d.students, student] }));
-        return student;
       },
-      addLesson: (studentId, input) => {
+      addLesson: async (studentId, input) => {
+        const student = data.students.find((s) => s.id === studentId);
+        await supabase.from("lessons").insert({
+          student_id: studentId,
+          number: (student?.lessons.length ?? 0) + 1,
+          date: input.date,
+          zone: input.zone,
+          topics: input.topics,
+          notes: input.notes,
+        });
+        await refresh();
+      },
+      setSkill: async (studentId, skill, level) => {
+        const student = data.students.find((s) => s.id === studentId);
+        if (!student) return;
+        const skills = { ...student.skills, [skill]: level };
         setData((d) => ({
           ...d,
-          students: d.students.map((s) => {
-            if (s.id !== studentId) return s;
-            const lesson: Lesson = {
-              id: uid(),
-              number: s.lessons.length + 1,
-              ...input,
-            };
-            return { ...s, lessons: [...s.lessons, lesson] };
-          }),
+          students: d.students.map((s) => (s.id === studentId ? { ...s, skills } : s)),
         }));
+        await supabase.from("students").update({ skills }).eq("id", studentId);
       },
-      setSkill: (studentId, skill, level) => {
-        setData((d) => ({
-          ...d,
-          students: d.students.map((s) =>
-            s.id === studentId ? { ...s, skills: { ...s.skills, [skill]: level } } : s,
-          ),
-        }));
+      addZone: async (zone) => {
+        if (data.zones.includes(zone)) return;
+        await supabase.from("zones").insert({ name: zone });
+        await refresh();
       },
-      addZone: (zone) => {
-        setData((d) =>
-          d.zones.includes(zone) ? d : { ...d, zones: [...d.zones, zone] },
-        );
+      deleteStudent: async (studentId) => {
+        const { error } = await supabase.from("students").delete().eq("id", studentId);
+        if (error) throw new Error(error.message);
+        setData((d) => ({ ...d, students: d.students.filter((s) => s.id !== studentId) }));
       },
     }),
-    [data, hydrated],
+    [data, hydrated, loading, refresh],
   );
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
