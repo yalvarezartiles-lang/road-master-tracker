@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedPanelRouteImport } from './routes/_authenticated/panel'
 import { Route as AuthenticatedAlumnoStudentIdRouteImport } from './routes/_authenticated/alumno.$studentId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -28,6 +30,16 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPanelRoute = AuthenticatedPanelRouteImport.update({
+  id: '/panel',
+  path: '/panel',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAlumnoStudentIdRoute =
   AuthenticatedAlumnoStudentIdRouteImport.update({
     id: '/alumno/$studentId',
@@ -38,11 +50,15 @@ const AuthenticatedAlumnoStudentIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/admin': typeof AuthenticatedAdminRoute
+  '/panel': typeof AuthenticatedPanelRoute
   '/alumno/$studentId': typeof AuthenticatedAlumnoStudentIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/admin': typeof AuthenticatedAdminRoute
+  '/panel': typeof AuthenticatedPanelRoute
   '/alumno/$studentId': typeof AuthenticatedAlumnoStudentIdRoute
 }
 export interface FileRoutesById {
@@ -50,18 +66,22 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/_authenticated/panel': typeof AuthenticatedPanelRoute
   '/_authenticated/alumno/$studentId': typeof AuthenticatedAlumnoStudentIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/alumno/$studentId'
+  fullPaths: '/' | '/auth' | '/admin' | '/panel' | '/alumno/$studentId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/alumno/$studentId'
+  to: '/' | '/auth' | '/admin' | '/panel' | '/alumno/$studentId'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/admin'
+    | '/_authenticated/panel'
     | '/_authenticated/alumno/$studentId'
   fileRoutesById: FileRoutesById
 }
@@ -94,6 +114,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/panel': {
+      id: '/_authenticated/panel'
+      path: '/panel'
+      fullPath: '/panel'
+      preLoaderRoute: typeof AuthenticatedPanelRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/alumno/$studentId': {
       id: '/_authenticated/alumno/$studentId'
       path: '/alumno/$studentId'
@@ -105,10 +139,14 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedPanelRoute: typeof AuthenticatedPanelRoute
   AuthenticatedAlumnoStudentIdRoute: typeof AuthenticatedAlumnoStudentIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedPanelRoute: AuthenticatedPanelRoute,
   AuthenticatedAlumnoStudentIdRoute: AuthenticatedAlumnoStudentIdRoute,
 }
 
