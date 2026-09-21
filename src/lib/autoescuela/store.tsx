@@ -146,7 +146,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       },
       addZone: async (zone) => {
         if (data.zones.includes(zone)) return;
-        await supabase.from("zones").insert({ name: zone });
+        const { error } = await supabase.from("zones").insert({ name: zone });
+        if (error) throw new Error("Solo el administrador puede añadir zonas nuevas");
         await refresh();
       },
       deleteStudent: async (studentId) => {
