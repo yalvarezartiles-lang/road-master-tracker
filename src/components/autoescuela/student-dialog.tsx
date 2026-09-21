@@ -31,12 +31,16 @@ export function StudentDialog({
     }
   }, [open]);
 
-  const submit = () => {
+  const submit = async () => {
     if (!name.trim()) {
       toast.error("Escribe el nombre del alumno");
       return;
     }
-    addStudent({ name: name.trim(), phone: phone.trim() });
+    const created = await addStudent({ name: name.trim(), phone: phone.trim() });
+    if (!created) {
+      toast.error("No se pudo guardar el alumno");
+      return;
+    }
     toast.success("Alumno añadido");
     onOpenChange(false);
   };
@@ -72,7 +76,7 @@ export function StudentDialog({
               className="h-14 rounded-2xl text-base"
             />
           </div>
-          <Button onClick={submit} className="h-16 w-full rounded-2xl text-lg font-bold">
+          <Button onClick={() => void submit()} className="h-16 w-full rounded-2xl text-lg font-bold">
             Guardar alumno
           </Button>
         </div>
