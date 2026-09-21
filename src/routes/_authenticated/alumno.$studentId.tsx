@@ -47,7 +47,7 @@ function StudentPage() {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 p-6 text-center">
         <p className="text-lg font-semibold">Alumno no encontrado</p>
-        <Link to="/" className="text-primary underline">
+        <Link to="/panel" className="text-primary underline">
           Volver al panel
         </Link>
       </div>
@@ -62,7 +62,7 @@ function StudentPage() {
       <header className="sticky top-0 z-10 border-b bg-background/95 px-4 py-3 backdrop-blur">
         <div className="mx-auto flex max-w-2xl items-center justify-between">
           <Link
-            to="/"
+            to="/panel"
             className="flex size-12 items-center justify-center rounded-2xl border"
             aria-label="Volver"
           >

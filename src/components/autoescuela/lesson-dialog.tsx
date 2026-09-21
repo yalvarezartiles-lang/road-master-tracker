@@ -81,15 +81,15 @@ export function LessonDialog({
   const toggleTopic = (t: string) =>
     setTopics((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
 
-  const submit = () => {
+  const submit = async () => {
     if (!selected) {
       toast.error("Selecciona un alumno");
       return;
     }
-    addLesson(selected, { date: new Date().toISOString(), zone, topics, notes });
-    Object.entries(skillEdits).forEach(([k, v]) =>
-      setSkill(selected, k as SkillKey, v as SkillLevel),
-    );
+    for (const [k, v] of Object.entries(skillEdits)) {
+      await setSkill(selected, k as SkillKey, v as SkillLevel);
+    }
+    await addLesson(selected, { date: new Date().toISOString(), zone, topics, notes });
     toast.success(`Clase ${nextNumber} registrada`);
     onOpenChange(false);
   };
@@ -151,7 +151,7 @@ export function LessonDialog({
                 onClick={() => {
                   const z = newZone.trim();
                   if (!z) return;
-                  addZone(z);
+                  void addZone(z);
                   setZone(z);
                   setNewZone("");
                 }}
@@ -211,7 +211,7 @@ export function LessonDialog({
             </div>
           </section>
 
-          <Button onClick={submit} className="h-16 w-full rounded-2xl text-lg font-bold">
+          <Button onClick={() => void submit()} className="h-16 w-full rounded-2xl text-lg font-bold">
             <Save className="size-6" /> Guardar clase {nextNumber}
           </Button>
         </div>
