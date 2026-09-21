@@ -151,9 +151,16 @@ export function LessonDialog({
                 onClick={() => {
                   const z = newZone.trim();
                   if (!z) return;
-                  void addZone(z);
-                  setZone(z);
-                  setNewZone("");
+                  void addZone(z)
+                    .then(() => {
+                      setZone(z);
+                      setNewZone("");
+                    })
+                    .catch((err: unknown) =>
+                      toast.error(
+                        err instanceof Error ? err.message : "No se pudo añadir la zona",
+                      ),
+                    );
                 }}
               >
                 <Plus className="size-5" />
