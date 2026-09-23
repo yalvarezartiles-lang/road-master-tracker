@@ -153,6 +153,16 @@ function StudentPage() {
                   ))}
                 </div>
                 {l.notes && <p className="mt-3 text-base">{l.notes}</p>}
+                {l.whiteboard && (
+                  <a href={l.whiteboard} target="_blank" rel="noreferrer" className="mt-3 block">
+                    <img
+                      src={l.whiteboard}
+                      alt={`Pizarra de la clase ${l.number}`}
+                      loading="lazy"
+                      className="w-full rounded-2xl border bg-white"
+                    />
+                  </a>
+                )}
               </li>
             ))}
             {lessons.length === 0 && (

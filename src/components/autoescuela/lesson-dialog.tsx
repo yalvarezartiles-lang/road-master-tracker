@@ -17,6 +17,7 @@ import { useStore } from "@/lib/autoescuela/store";
 import { DEFAULT_TOPICS, NOTE_PRESETS, SKILLS } from "@/lib/autoescuela/types";
 import type { SkillKey, SkillLevel } from "@/lib/autoescuela/types";
 import { SkillPicker } from "./skill-traffic-light";
+import { Whiteboard } from "./whiteboard";
 
 function Chip({
   active,
@@ -59,6 +60,8 @@ export function LessonDialog({
   const [newZone, setNewZone] = React.useState("");
   const [topics, setTopics] = React.useState<string[]>([]);
   const [notes, setNotes] = React.useState("");
+  const [board, setBoard] = React.useState<string | null>(null);
+  const [boardKey, setBoardKey] = React.useState(0);
   const [skillEdits, setSkillEdits] = React.useState<Partial<Record<SkillKey, SkillLevel>>>(
     {},
   );
@@ -71,6 +74,8 @@ export function LessonDialog({
       setNotes("");
       setNewZone("");
       setSkillEdits({});
+      setBoard(null);
+      setBoardKey((k) => k + 1);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, studentId]);
@@ -89,7 +94,12 @@ export function LessonDialog({
     for (const [k, v] of Object.entries(skillEdits)) {
       await setSkill(selected, k as SkillKey, v as SkillLevel);
     }
-    await addLesson(selected, { date: new Date().toISOString(), zone, topics, notes });
+    try {
+      await addLesson(selected, { date: new Date().toISOString(), zone, topics, notes, whiteboard: board });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Error al guardar");
+      return;
+    }
     toast.success(`Clase ${nextNumber} registrada`);
     onOpenChange(false);
   };
@@ -216,6 +226,11 @@ export function LessonDialog({
                 </button>
               ))}
             </div>
+          </section>
+
+          <section>
+            <Label className="mb-2 block text-base">Pizarra de explicación</Label>
+            <Whiteboard key={boardKey} saved={!!board} onSave={setBoard} />
           </section>
 
           <Button onClick={() => void submit()} className="h-16 w-full rounded-2xl text-lg font-bold">
