@@ -22,6 +22,13 @@
       "when": 1790182604763,
       "tag": "0002_zones_for_teachers_and_whiteboards",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790199868655,
+      "tag": "0003_private_zones_skills",
+      "breakpoints": true
     }
   ]
 }

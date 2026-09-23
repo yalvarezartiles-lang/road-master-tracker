@@ -111,6 +111,27 @@ export type Database = {
         }
         Relationships: []
       }
+      skills: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          profesor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          profesor_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          profesor_id?: string
+        }
+        Relationships: []
+      }
       students: {
         Row: {
           avatar_color: string
@@ -167,16 +188,19 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          profesor_id: string
         }
         Insert: {
           created_at?: string
           id?: string
           name: string
+          profesor_id?: string
         }
         Update: {
           created_at?: string
           id?: string
           name?: string
+          profesor_id?: string
         }
         Relationships: []
       }
