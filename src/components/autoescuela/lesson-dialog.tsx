@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/autoescuela/store";
-import { DEFAULT_TOPICS, NOTE_PRESETS, SKILLS } from "@/lib/autoescuela/types";
+import { DEFAULT_TOPICS, NOTE_PRESETS } from "@/lib/autoescuela/types";
 import type { SkillKey, SkillLevel } from "@/lib/autoescuela/types";
 import { SkillPicker } from "./skill-traffic-light";
 import { Whiteboard } from "./whiteboard";
@@ -56,7 +56,7 @@ export function LessonDialog({
 }) {
   const { data, addLesson, addZone, setSkill } = useStore();
   const [selected, setSelected] = React.useState<string | undefined>(studentId);
-  const [zone, setZone] = React.useState<string>(data.zones[0] ?? "Vecindario");
+  const [zone, setZone] = React.useState<string>(data.zones[0]?.name ?? "");
   const [newZone, setNewZone] = React.useState("");
   const [topics, setTopics] = React.useState<string[]>([]);
   const [notes, setNotes] = React.useState("");
@@ -69,7 +69,7 @@ export function LessonDialog({
   React.useEffect(() => {
     if (open) {
       setSelected(studentId);
-      setZone(data.zones[0] ?? "Vecindario");
+      setZone(data.zones[0]?.name ?? "");
       setTopics([]);
       setNotes("");
       setNewZone("");
@@ -142,10 +142,13 @@ export function LessonDialog({
             </Label>
             <div className="grid grid-cols-2 gap-2">
               {data.zones.map((z) => (
-                <Chip key={z} active={zone === z} onClick={() => setZone(z)}>
-                  {z}
+                <Chip key={z.id} active={zone === z.name} onClick={() => setZone(z.name)}>
+                  {z.name}
                 </Chip>
               ))}
+              {data.zones.length === 0 && (
+                <p className="col-span-2 text-sm text-muted-foreground">Aún no tienes zonas. Añade una abajo.</p>
+              )}
             </div>
             <div className="mt-2 flex gap-2">
               <Input
@@ -192,13 +195,16 @@ export function LessonDialog({
           <section>
             <Label className="mb-2 block text-base">Habilidades (opcional)</Label>
             <div className="grid gap-2 sm:grid-cols-2">
-              {SKILLS.map((s) => (
+              {data.skills.length === 0 && (
+                <p className="text-sm text-muted-foreground">Crea habilidades en "Mis zonas y habilidades".</p>
+              )}
+              {data.skills.map((s) => (
                 <SkillPicker
-                  key={s.key}
-                  label={s.label}
-                  value={skillEdits[s.key] ?? student?.skills[s.key] ?? "rojo"}
+                  key={s.id}
+                  label={s.name}
+                  value={skillEdits[s.id] ?? student?.skills[s.id] ?? "rojo"}
                   onChange={(level) =>
-                    setSkillEdits((prev) => ({ ...prev, [s.key]: level }))
+                    setSkillEdits((prev) => ({ ...prev, [s.id]: level }))
                   }
                 />
               ))}

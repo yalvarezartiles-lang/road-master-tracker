@@ -6,6 +6,7 @@ import {
   LogOut,
   Plus,
   Search,
+  Settings,
   Shield,
   Trash2,
   UserPlus,
@@ -24,7 +25,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useStore } from "@/lib/autoescuela/store";
-import { SKILLS } from "@/lib/autoescuela/types";
 import { LessonDialog } from "@/components/autoescuela/lesson-dialog";
 import { StudentDialog } from "@/components/autoescuela/student-dialog";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -108,6 +108,11 @@ function Dashboard() {
                 </Link>
               </Button>
             )}
+            <Button asChild variant="ghost" size="icon" className="size-12 rounded-2xl">
+              <Link to="/gestion" aria-label="Mis zonas y habilidades">
+                <Settings className="size-6" />
+              </Link>
+            </Button>
             <ThemeToggle />
             <Button
               variant="ghost"
@@ -166,11 +171,11 @@ function Dashboard() {
                     {s.lessons[s.lessons.length - 1]?.zone ?? "Sin clases"}
                   </p>
                   <div className="mt-2 flex gap-1">
-                    {SKILLS.map((sk) => (
+                    {data.skills.map((sk) => (
                       <span
                         key={sk.key}
                         title={sk.label}
-                        className={`h-2.5 flex-1 rounded-full ${levelClasses[s.skills[sk.key]]}`}
+                        className={`h-2.5 flex-1 rounded-full ${levelClasses[s.skills[sk.id] ?? "rojo"]}`}
                       />
                     ))}
                   </div>

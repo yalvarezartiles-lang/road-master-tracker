@@ -1,7 +1,7 @@
 import * as React from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { AppData, SkillKey, SkillLevel, Student } from "./types";
-import { DEFAULT_ZONES } from "./types";
+import type { NamedItem } from "./types";
 
 interface StoreValue {
   data: AppData;
@@ -15,6 +15,9 @@ interface StoreValue {
   ) => Promise<void>;
   setSkill: (studentId: string, skill: SkillKey, level: SkillLevel) => Promise<void>;
   addZone: (zone: string) => Promise<void>;
+  deleteZone: (id: string) => Promise<void>;
+  addSkill: (name: string) => Promise<void>;
+  deleteSkill: (id: string) => Promise<void>;
   deleteStudent: (studentId: string) => Promise<void>;
 }
 
@@ -28,17 +31,10 @@ const AVATAR_COLORS = [
   "oklch(0.6 0.16 320)",
 ];
 
-const EMPTY_SKILLS: Record<SkillKey, SkillLevel> = {
-  volante: "rojo",
-  pedales: "rojo",
-  marchas: "rojo",
-  observacion: "rojo",
-  glorietas: "rojo",
-  estacionamiento: "rojo",
-};
+const EMPTY_SKILLS: Record<SkillKey, SkillLevel> = {};
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
-  const [data, setData] = React.useState<AppData>({ students: [], zones: DEFAULT_ZONES });
+  const [data, setData] = React.useState<AppData>({ students: [], zones: [], skills: [] });
   const [hydrated, setHydrated] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
 
@@ -50,11 +46,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     setLoading(true);
-    const [studentsRes, lessonsRes, zonesRes, boardsRes] = await Promise.all([
+    const [studentsRes, lessonsRes, zonesRes, boardsRes, skillsRes] = await Promise.all([
       supabase.from("students").select("*").order("created_at", { ascending: true }),
       supabase.from("lessons").select("*").order("number", { ascending: true }),
       supabase.from("zones").select("*").order("created_at", { ascending: true }),
       supabase.from("lesson_whiteboards").select("lesson_id, image"),
+      supabase.from("skills").select("id, name").order("created_at", { ascending: true }),
     ]);
     const boards = new Map((boardsRes.data ?? []).map((b: any) => [b.lesson_id, b.image]));
 
@@ -81,7 +78,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     setData({
       students,
-      zones: (zonesRes.data ?? []).map((z: any) => z.name),
+      zones: (zonesRes.data ?? []).map((z: any) => ({ id: z.id, name: z.name })),
+      skills: (skillsRes.data ?? []).map((k: any) => ({ id: k.id, name: k.name })) as NamedItem[],
     });
     setLoading(false);
     setHydrated(true);
@@ -155,10 +153,28 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         await supabase.from("students").update({ skills }).eq("id", studentId);
       },
       addZone: async (zone) => {
-        if (data.zones.includes(zone)) return;
-        const { error } = await supabase.from("zones").insert({ name: zone });
+        if (data.zones.some((z) => z.name.toLowerCase() === zone.toLowerCase())) return;
+        const { data: u } = await supabase.auth.getUser();
+        const { error } = await supabase.from("zones").insert({ name: zone, profesor_id: u.user!.id });
         if (error) throw new Error("No se pudo añadir la zona");
         await refresh();
+      },
+      deleteZone: async (id) => {
+        const { error } = await supabase.from("zones").delete().eq("id", id);
+        if (error) throw new Error("No se pudo eliminar la zona");
+        setData((d) => ({ ...d, zones: d.zones.filter((z) => z.id !== id) }));
+      },
+      addSkill: async (name) => {
+        if (data.skills.some((k) => k.name.toLowerCase() === name.toLowerCase())) return;
+        const { data: u } = await supabase.auth.getUser();
+        const { error } = await supabase.from("skills").insert({ name, profesor_id: u.user!.id });
+        if (error) throw new Error("No se pudo añadir la habilidad");
+        await refresh();
+      },
+      deleteSkill: async (id) => {
+        const { error } = await supabase.from("skills").delete().eq("id", id);
+        if (error) throw new Error("No se pudo eliminar la habilidad");
+        setData((d) => ({ ...d, skills: d.skills.filter((k) => k.id !== id) }));
       },
       deleteStudent: async (studentId) => {
         const { error } = await supabase.from("students").delete().eq("id", studentId);
