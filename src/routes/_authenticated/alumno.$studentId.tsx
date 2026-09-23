@@ -3,7 +3,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, CalendarDays, MapPin, Phone, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/lib/autoescuela/store";
-import { SKILLS } from "@/lib/autoescuela/types";
 import { SkillPicker } from "@/components/autoescuela/skill-traffic-light";
 import { LessonDialog } from "@/components/autoescuela/lesson-dialog";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -92,12 +91,15 @@ function StudentPage() {
         <section>
           <h2 className="mb-3 text-lg font-bold">Habilidades</h2>
           <div className="grid gap-2 sm:grid-cols-2">
-            {SKILLS.map((s) => (
+            {data.skills.length === 0 && (
+              <p className="text-sm text-muted-foreground">Aún no has creado habilidades.</p>
+            )}
+            {data.skills.map((s) => (
               <SkillPicker
-                key={s.key}
-                label={s.label}
-                value={student.skills[s.key]}
-                onChange={(level) => setSkill(student.id, s.key, level)}
+                key={s.id}
+                label={s.name}
+                value={student.skills[s.id] ?? "rojo"}
+                onChange={(level) => setSkill(student.id, s.id, level)}
               />
             ))}
           </div>
@@ -106,7 +108,7 @@ function StudentPage() {
         <section>
           <h2 className="mb-3 text-lg font-bold">Zonas</h2>
           <div className="grid grid-cols-2 gap-2">
-            {data.zones.map((z) => {
+            {data.zones.map(({ name: z }) => {
               const count = student.lessons.filter((l) => l.zone === z).length;
               return (
                 <div

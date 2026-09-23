@@ -1,28 +1,11 @@
-export type SkillKey =
-  | "volante"
-  | "pedales"
-  | "marchas"
-  | "observacion"
-  | "glorietas"
-  | "estacionamiento";
+export type SkillKey = string;
 
 export type SkillLevel = "rojo" | "amarillo" | "verde";
 
-export const SKILLS: { key: SkillKey; label: string }[] = [
-  { key: "volante", label: "Volante" },
-  { key: "pedales", label: "Pedales" },
-  { key: "marchas", label: "Marchas" },
-  { key: "observacion", label: "Observación" },
-  { key: "glorietas", label: "Glorietas" },
-  { key: "estacionamiento", label: "Estacionamiento" },
-];
-
-export const DEFAULT_ZONES = [
-  "Vecindario",
-  "Cruce de Arinaga",
-  "Las Palmas",
-  "Zona de Examen",
-];
+export interface NamedItem {
+  id: string;
+  name: string;
+}
 
 export const DEFAULT_TOPICS = [
   "Volante",
@@ -67,5 +50,6 @@ export interface Student {
 
 export interface AppData {
   students: Student[];
-  zones: string[];
+  zones: NamedItem[];
+  skills: NamedItem[];
 }
