@@ -14,6 +14,38 @@ export type Database = {
   }
   public: {
     Tables: {
+      lesson_whiteboards: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          image: string
+          lesson_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          image: string
+          lesson_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          image?: string
+          lesson_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_whiteboards_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: true
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lessons: {
         Row: {
           created_at: string
@@ -153,6 +185,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_access_lesson: { Args: { _lesson_id: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
