@@ -50,5 +50,6 @@ export interface Student {
 
 export interface AppData {
   students: Student[];
-  zones: string[];
+  zones: NamedItem[];
+  skills: NamedItem[];
 }
