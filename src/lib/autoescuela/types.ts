@@ -52,6 +52,7 @@ export interface Lesson {
   zone: string;
   topics: string[];
   notes: string;
+  whiteboard?: string | null;
 }
 
 export interface Student {

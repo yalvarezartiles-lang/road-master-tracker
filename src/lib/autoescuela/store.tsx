@@ -11,7 +11,7 @@ interface StoreValue {
   addStudent: (input: { name: string; phone: string }) => Promise<Student | null>;
   addLesson: (
     studentId: string,
-    input: { date: string; zone: string; topics: string[]; notes: string },
+    input: { date: string; zone: string; topics: string[]; notes: string; whiteboard?: string | null },
   ) => Promise<void>;
   setSkill: (studentId: string, skill: SkillKey, level: SkillLevel) => Promise<void>;
   addZone: (zone: string) => Promise<void>;
@@ -50,11 +50,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     setLoading(true);
-    const [studentsRes, lessonsRes, zonesRes] = await Promise.all([
+    const [studentsRes, lessonsRes, zonesRes, boardsRes] = await Promise.all([
       supabase.from("students").select("*").order("created_at", { ascending: true }),
       supabase.from("lessons").select("*").order("number", { ascending: true }),
       supabase.from("zones").select("*").order("created_at", { ascending: true }),
+      supabase.from("lesson_whiteboards").select("lesson_id, image"),
     ]);
+    const boards = new Map((boardsRes.data ?? []).map((b: any) => [b.lesson_id, b.image]));
 
     const lessons = lessonsRes.data ?? [];
     const students: Student[] = (studentsRes.data ?? []).map((s: any) => ({
@@ -73,6 +75,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           zone: l.zone ?? "",
           topics: l.topics ?? [],
           notes: l.notes ?? "",
+          whiteboard: boards.get(l.id) ?? null,
         })),
     }));
 
@@ -124,14 +127,21 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       },
       addLesson: async (studentId, input) => {
         const student = data.students.find((s) => s.id === studentId);
-        await supabase.from("lessons").insert({
+        const { data: lesson, error } = await supabase.from("lessons").insert({
           student_id: studentId,
           number: (student?.lessons.length ?? 0) + 1,
           date: input.date,
           zone: input.zone,
           topics: input.topics,
           notes: input.notes,
-        });
+        }).select("id").single();
+        if (error || !lesson) throw new Error("No se pudo guardar la clase");
+        if (input.whiteboard) {
+          const { error: wErr } = await supabase
+            .from("lesson_whiteboards")
+            .insert({ lesson_id: lesson.id, image: input.whiteboard });
+          if (wErr) throw new Error("Clase guardada, pero no la pizarra");
+        }
         await refresh();
       },
       setSkill: async (studentId, skill, level) => {
@@ -147,7 +157,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       addZone: async (zone) => {
         if (data.zones.includes(zone)) return;
         const { error } = await supabase.from("zones").insert({ name: zone });
-        if (error) throw new Error("Solo el administrador puede añadir zonas nuevas");
+        if (error) throw new Error("No se pudo añadir la zona");
         await refresh();
       },
       deleteStudent: async (studentId) => {
