@@ -15,8 +15,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/autoescuela/store";
 import { DEFAULT_TOPICS, NOTE_PRESETS } from "@/lib/autoescuela/types";
-import type { SkillKey, SkillLevel } from "@/lib/autoescuela/types";
-import { SkillPicker } from "./skill-traffic-light";
+import { SkillSemaphore } from "./skill-semaphore";
 import { Whiteboard } from "./whiteboard";
 
 function Chip({
@@ -54,7 +53,7 @@ export function LessonDialog({
   onOpenChange: (open: boolean) => void;
   studentId?: string;
 }) {
-  const { data, addLesson, addZone, setSkill } = useStore();
+  const { data, addLesson, addZone } = useStore();
   const [selected, setSelected] = React.useState<string | undefined>(studentId);
   const [zone, setZone] = React.useState<string>(data.zones[0]?.name ?? "");
   const [newZone, setNewZone] = React.useState("");
@@ -62,9 +61,6 @@ export function LessonDialog({
   const [notes, setNotes] = React.useState("");
   const [board, setBoard] = React.useState<string | null>(null);
   const [boardKey, setBoardKey] = React.useState(0);
-  const [skillEdits, setSkillEdits] = React.useState<Partial<Record<SkillKey, SkillLevel>>>(
-    {},
-  );
 
   React.useEffect(() => {
     if (open) {
@@ -73,7 +69,6 @@ export function LessonDialog({
       setTopics([]);
       setNotes("");
       setNewZone("");
-      setSkillEdits({});
       setBoard(null);
       setBoardKey((k) => k + 1);
     }
@@ -90,9 +85,6 @@ export function LessonDialog({
     if (!selected) {
       toast.error("Selecciona un alumno");
       return;
-    }
-    for (const [k, v] of Object.entries(skillEdits)) {
-      await setSkill(selected, k as SkillKey, v as SkillLevel);
     }
     try {
       await addLesson(selected, { date: new Date().toISOString(), zone, topics, notes, whiteboard: board });
@@ -192,24 +184,12 @@ export function LessonDialog({
             </div>
           </section>
 
-          <section>
-            <Label className="mb-2 block text-base">Habilidades (opcional)</Label>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {data.skills.length === 0 && (
-                <p className="text-sm text-muted-foreground">Crea habilidades en "Mis zonas y habilidades".</p>
-              )}
-              {data.skills.map((s) => (
-                <SkillPicker
-                  key={s.id}
-                  label={s.name}
-                  value={skillEdits[s.id] ?? student?.skills[s.id] ?? "rojo"}
-                  onChange={(level) =>
-                    setSkillEdits((prev) => ({ ...prev, [s.id]: level }))
-                  }
-                />
-              ))}
-            </div>
-          </section>
+          {student && (
+            <section>
+              <Label className="mb-2 block text-base">Semáforo de habilidades</Label>
+              <SkillSemaphore student={student} modoLectura={false} />
+            </section>
+          )}
 
           <section>
             <Label className="mb-2 block text-base">Observaciones</Label>

@@ -91,7 +91,7 @@ function StudentPage() {
 
         <section>
           <h2 className="mb-3 text-lg font-bold">Semáforo de habilidades</h2>
-          <SkillSemaphore student={student} />
+          <SkillSemaphore student={student} modoLectura />
         </section>
 
         <section>
