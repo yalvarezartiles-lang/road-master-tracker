@@ -105,7 +105,13 @@ export async function exportFichasPdf(student: Pick<Student, "id">): Promise<voi
       },
     });
 
-    doc.save("fichas_practicas.pdf");
+    const safeName = (v: string | null | undefined) =>
+      (v ?? "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-zA-Z0-9]+/g, "_")
+        .replace(/^_+|_+$/g, "") || "Alumno";
+    doc.save(`Ficha_Oficial_Clases_${safeName(st.name)}_${safeName(st.apellidos)}.pdf`);
     toast.success("PDF descargado");
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
