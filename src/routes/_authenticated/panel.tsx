@@ -1,7 +1,6 @@
 import * as React from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
-  Car,
   ChevronRight,
   LogOut,
   Plus,
@@ -35,16 +34,16 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/_authenticated/panel")({
   head: () => ({
     meta: [
-      { title: "Panel de alumnos — Autoescuela Adassa" },
+      { title: "Panel de alumnos" },
       {
         name: "description",
         content:
           "Registra y evalúa en tiempo real las clases prácticas de tus alumnos desde el móvil.",
       },
-      { property: "og:title", content: "Panel de alumnos — Autoescuela Adassa" },
+      { property: "og:title", content: "Panel de alumnos" },
       {
         property: "og:description",
-        content: "Alumnos, zonas, habilidades y clases de la Autoescuela Adassa.",
+        content: "Alumnos, zonas, habilidades y clases prácticas.",
       },
     ],
   }),
@@ -104,18 +103,10 @@ function Dashboard() {
     <div className="min-h-screen bg-background pb-32">
       <header className="sticky top-0 z-10 border-b bg-background/95 px-4 py-4 backdrop-blur">
         <div className="mx-auto flex max-w-2xl items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <span className="flex size-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
-              <Car className="size-7" />
-            </span>
-            <div>
-              <h1 className="text-xl leading-tight font-extrabold">Autoescuela Adassa</h1>
-              <p className="text-sm text-muted-foreground">
-                {teacherName ? `Hola, ${teacherName}` : "Panel del profesor"}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-1">
+          <h1 className="min-w-0 truncate text-2xl leading-tight font-bold">
+            {teacherName ? `Hola, ${teacherName}` : "Panel"}
+          </h1>
+          <div className="flex shrink-0 items-center gap-1">
             {isAdmin && (
               <Button asChild variant="ghost" size="icon" className="size-12 rounded-2xl">
                 <Link to="/admin" aria-label="Administración">

@@ -23,12 +23,12 @@ import { createTeamMember, deleteTeamMember, listTeam } from "@/lib/admin.functi
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
     meta: [
-      { title: "Administración — Autoescuela Adassa" },
+      { title: "Administración" },
       {
         name: "description",
-        content: "Gestión de cuentas de profesores de la Autoescuela Adassa.",
+        content: "Gestión de cuentas de profesores prácticas.",
       },
-      { property: "og:title", content: "Administración — Autoescuela Adassa" },
+      { property: "og:title", content: "Administración" },
       {
         property: "og:description",
         content: "Crea y gestiona las cuentas del equipo docente.",

@@ -22,9 +22,9 @@ import { ThemeToggle } from "@/components/theme-toggle";
 export const Route = createFileRoute("/_authenticated/gestion")({
   head: () => ({
     meta: [
-      { title: "Mis zonas — Autoescuela Adassa" },
+      { title: "Mis zonas" },
       { name: "description", content: "Crea y elimina tus zonas y habilidades privadas." },
-      { property: "og:title", content: "Mis zonas — Autoescuela Adassa" },
+      { property: "og:title", content: "Mis zonas" },
       { property: "og:description", content: "Gestión privada de zonas y habilidades del profesor." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
