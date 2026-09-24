@@ -66,6 +66,8 @@ export interface Lesson {
 export interface Student {
   id: string;
   name: string;
+  apellidos: string;
+  dni: string;
   phone: string;
   startDate: string; // ISO
   avatarColor: string;

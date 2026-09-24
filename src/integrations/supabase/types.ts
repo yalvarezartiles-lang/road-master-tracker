@@ -137,9 +137,11 @@ export type Database = {
       }
       students: {
         Row: {
+          apellidos: string
           avatar_color: string
           created_at: string
           created_by: string | null
+          dni: string
           id: string
           name: string
           phone: string
@@ -147,9 +149,11 @@ export type Database = {
           start_date: string
         }
         Insert: {
+          apellidos?: string
           avatar_color?: string
           created_at?: string
           created_by?: string | null
+          dni?: string
           id?: string
           name: string
           phone?: string
@@ -157,9 +161,11 @@ export type Database = {
           start_date?: string
         }
         Update: {
+          apellidos?: string
           avatar_color?: string
           created_at?: string
           created_by?: string | null
+          dni?: string
           id?: string
           name?: string
           phone?: string
