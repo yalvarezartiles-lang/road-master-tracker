@@ -217,7 +217,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           students: d.students.map((s) => (s.id === studentId ? { ...s, skills } : s)),
         }));
         const { error } = await supabase.from("students").update({ skills: serialize(skills) }).eq("id", studentId);
-        if (error) throw new Error("No se pudo guardar la habilidad");
+        if (error) {
+          setData((d) => ({
+            ...d,
+            students: d.students.map((s) => (s.id === studentId ? { ...s, skills: student.skills } : s)),
+          }));
+          throw new Error("No se pudo guardar la habilidad");
+        }
       },
       setBlockGreen: async (studentId, block) => {
         const student = data.students.find((s) => s.id === studentId);
