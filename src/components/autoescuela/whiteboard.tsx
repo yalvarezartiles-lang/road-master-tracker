@@ -275,11 +275,12 @@ export function Whiteboard({
               draggable
               onDragStart={(event) => event.dataTransfer.setData("application/x-board-element", kind)}
               onClick={() => addElement(kind)}
-              className="h-20 min-w-20 shrink-0 flex-col gap-1 rounded-2xl px-2 text-xs lg:w-full"
+              className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl p-1 lg:h-24 lg:w-full lg:p-2"
               aria-label={`Añadir ${label}`}
             >
-              <span className="h-10 w-10"><ElementGraphic kind={kind} /></span>
-              {label}
+              <span className="flex h-16 w-16 items-center justify-center lg:h-20 lg:w-20">
+                <ElementGraphic kind={kind} />
+              </span>
             </Button>
           ))}
         </div>
