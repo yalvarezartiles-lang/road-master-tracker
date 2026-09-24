@@ -173,7 +173,7 @@ function Dashboard() {
                   <div className="mt-2 flex gap-1">
                     {data.skills.map((sk) => (
                       <span
-                        key={sk.key}
+                        key={sk.id}
                         title={sk.label}
                         className={`h-2.5 flex-1 rounded-full ${levelClasses[s.skills[sk.id] ?? "rojo"]}`}
                       />
