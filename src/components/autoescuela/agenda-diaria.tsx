@@ -304,7 +304,7 @@ function SwipeCards({ slots, fecha, students }: { slots: Slot[]; fecha: string; 
       <div
         ref={scroller}
         onScroll={onScroll}
-        className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-[10%] pb-2 [scrollbar-width:none]"
+        className="no-scrollbar flex w-full snap-x snap-mandatory scroll-smooth gap-4 overflow-x-auto px-4 pb-2"
       >
         {slots.map((s, i) => {
           const st = students.find((x) => x.id === s.student_id);
@@ -323,7 +323,7 @@ function SwipeCards({ slots, fecha, students }: { slots: Slot[]; fecha: string; 
           return (
             <div
               key={s.id}
-              className={`relative w-[80%] shrink-0 snap-center rounded-3xl border bg-background p-5 transition-all duration-300 ${isActive ? "scale-100 border-primary shadow-lg" : "scale-90 opacity-60"} ${cancelled ? "opacity-50" : ""}`}
+              className={`relative min-w-[85%] shrink-0 snap-center rounded-3xl border bg-background p-5 transition-all duration-300 sm:min-w-[300px] ${isActive ? "scale-100 border-primary shadow-lg" : "scale-90 opacity-60"} ${cancelled ? "opacity-50" : ""}`}
             >
               {s.student_id && !cancelled ? (
                 <Link to="/alumno/$studentId" params={{ studentId: s.student_id }} search={{ evaluar: true }} className="block pr-14">
@@ -336,7 +336,8 @@ function SwipeCards({ slots, fecha, students }: { slots: Slot[]; fecha: string; 
                 <a
                   href={wa}
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
                   aria-label={`WhatsApp a ${name}`}
                   className="absolute top-4 right-4 flex size-12 items-center justify-center rounded-full bg-[#25D366] text-white shadow active:scale-95"
                 >
