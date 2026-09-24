@@ -29,6 +29,13 @@
       "when": 1790199868655,
       "tag": "0003_private_zones_skills",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790249833489,
+      "tag": "0004_skill_blocks_admin_managed",
+      "breakpoints": true
     }
   ]
 }

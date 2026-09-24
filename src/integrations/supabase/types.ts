@@ -113,22 +113,25 @@ export type Database = {
       }
       skills: {
         Row: {
+          block: number
           created_at: string
           id: string
           name: string
-          profesor_id: string
+          profesor_id: string | null
         }
         Insert: {
+          block?: number
           created_at?: string
           id?: string
           name: string
-          profesor_id?: string
+          profesor_id?: string | null
         }
         Update: {
+          block?: number
           created_at?: string
           id?: string
           name?: string
-          profesor_id?: string
+          profesor_id?: string | null
         }
         Relationships: []
       }
