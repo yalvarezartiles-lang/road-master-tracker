@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS matricula_vehiculo text NOT NULL DEFAULT '';

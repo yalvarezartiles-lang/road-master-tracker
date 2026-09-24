@@ -128,10 +128,6 @@ export function LessonDialog({
       toast.error("Selecciona un alumno");
       return;
     }
-    if (!matricula.trim()) {
-      toast.error("Indica la matrícula del vehículo");
-      return;
-    }
     try {
       const id = await addLesson(selected, { date: new Date().toISOString(), zone, topics, notes, whiteboard: board, matricula: matricula.trim().toUpperCase() });
       toast.success(`Clase ${nextNumber} registrada`);
@@ -175,17 +171,6 @@ export function LessonDialog({
             </section>
           )}
 
-          <section>
-            <Label className="mb-2 flex items-center gap-2 text-base">
-              <Car className="size-5" /> Matrícula
-            </Label>
-            <Input
-              value={matricula}
-              onChange={(e) => setMatricula(e.target.value.toUpperCase())}
-              placeholder="0000 ABC"
-              className="h-14 rounded-2xl text-lg font-bold tracking-wider"
-            />
-          </section>
 
           <section>
             <Label className="mb-2 flex items-center gap-2 text-base">
