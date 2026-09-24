@@ -74,8 +74,8 @@ export async function exportFichasPdf(student: Pick<Student, "id">): Promise<voi
         l.hora_inicio && l.hora_fin ? `${l.hora_inicio} - ${l.hora_fin}` : "-",
         l.matricula || "-",
         p ? `${p.full_name ?? ""} ${p.apellidos ?? ""}\nDNI: ${p.dni || "-"}` : "-",
-        sigs[i].alumno ? "" : "Pendiente",
-        sigs[i].profesor ? "" : "Pendiente",
+        sigs[i]?.alumno ? "" : "Pendiente",
+        sigs[i]?.profesor ? "" : "Pendiente",
       ];
     });
 
