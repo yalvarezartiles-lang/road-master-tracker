@@ -1,6 +1,6 @@
 import * as React from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, MapPin, Plus, Gauge, Trash2 } from "lucide-react";
+import { ArrowLeft, MapPin, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,9 +21,9 @@ import { ThemeToggle } from "@/components/theme-toggle";
 export const Route = createFileRoute("/_authenticated/gestion")({
   head: () => ({
     meta: [
-      { title: "Mis zonas y habilidades — Autoescuela Adassa" },
+      { title: "Mis zonas — Autoescuela Adassa" },
       { name: "description", content: "Crea y elimina tus zonas y habilidades privadas." },
-      { property: "og:title", content: "Mis zonas y habilidades — Autoescuela Adassa" },
+      { property: "og:title", content: "Mis zonas — Autoescuela Adassa" },
       { property: "og:description", content: "Gestión privada de zonas y habilidades del profesor." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -135,7 +135,7 @@ function Section({
 }
 
 function GestionPage() {
-  const { data, addZone, deleteZone, addSkill, deleteSkill } = useStore();
+  const { data, addZone, deleteZone } = useStore();
   return (
     <div className="min-h-screen bg-background pb-16">
       <header className="sticky top-0 z-10 border-b bg-background/95 px-4 py-3 backdrop-blur">
@@ -147,7 +147,7 @@ function GestionPage() {
           >
             <ArrowLeft className="size-6" />
           </Link>
-          <h1 className="text-lg font-extrabold">Mis zonas y habilidades</h1>
+          <h1 className="text-lg font-extrabold">Mis zonas</h1>
           <ThemeToggle />
         </div>
       </header>
@@ -160,15 +160,6 @@ function GestionPage() {
           kind="Zona"
           onAdd={addZone}
           onDelete={deleteZone}
-        />
-        <Section
-          title="Habilidades"
-          icon={<Gauge className="size-5" />}
-          items={data.skills}
-          placeholder="Nombre de la habilidad"
-          kind="Habilidad"
-          onAdd={addSkill}
-          onDelete={deleteSkill}
         />
       </main>
     </div>

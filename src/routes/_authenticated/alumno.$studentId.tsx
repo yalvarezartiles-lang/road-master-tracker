@@ -89,20 +89,8 @@ function StudentPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-lg font-bold">Habilidades</h2>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {data.skills.length === 0 && (
-              <p className="text-sm text-muted-foreground">Aún no has creado habilidades.</p>
-            )}
-            {data.skills.map((s) => (
-              <SkillPicker
-                key={s.id}
-                label={s.name}
-                value={student.skills[s.id] ?? "rojo"}
-                onChange={(level) => setSkill(student.id, s.id, level)}
-              />
-            ))}
-          </div>
+          <h2 className="mb-3 text-lg font-bold">Semáforo de habilidades</h2>
+          <SkillSemaphore student={student} />
         </section>
 
         <section>
