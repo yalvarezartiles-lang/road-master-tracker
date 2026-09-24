@@ -131,7 +131,7 @@ export function LessonDialog({
       return;
     }
     try {
-      const id = await addLesson(selected, { date: new Date().toISOString(), zone, topics, notes, notasProfesor: notasProfesor.trim(), whiteboard: board, matricula: matricula.trim().toUpperCase() });
+      const id = await addLesson(selected, { date: new Date().toISOString(), zone, topics, notes, notasProfesor: notasProfesor.trim(), matricula: matricula.trim().toUpperCase() });
       toast.success(`Clase ${nextNumber} registrada`);
       onOpenChange(false);
       setSignLessonId(id);
@@ -293,7 +293,7 @@ export function LessonDialog({
 
           <section>
             <Label className="mb-2 block text-base">Pizarra de explicación</Label>
-            <Whiteboard key={boardKey} saved={!!board} onSave={setBoard} />
+            <Whiteboard key={boardKey} />
           </section>
 
           <Button onClick={() => void submit()} className="h-16 w-full rounded-2xl text-lg font-bold">

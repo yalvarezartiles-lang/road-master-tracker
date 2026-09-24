@@ -74,7 +74,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       supabase.from("students").select("*").eq("archivado", false).order("created_at", { ascending: true }),
       supabase.from("lessons").select("*").order("number", { ascending: true }),
       supabase.from("zonas_profesor").select("*").order("nombre_zona", { ascending: true }),
-      supabase.from("lesson_whiteboards").select("lesson_id, image"),
+      Promise.resolve({ data: [] as { lesson_id: string; image: string }[] }),
       supabase.from("skills").select("id, name, block").order("created_at", { ascending: true }),
     ]);
     const boards = new Map((boardsRes.data ?? []).map((b: any) => [b.lesson_id, b.image]));
@@ -181,12 +181,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           matricula: input.matricula,
         }).select("id").single();
         if (error || !lesson) throw new Error("No se pudo guardar la clase");
-        if (input.whiteboard) {
-          const { error: wErr } = await supabase
-            .from("lesson_whiteboards")
-            .insert({ lesson_id: lesson.id, image: input.whiteboard });
-          if (wErr) throw new Error("Clase guardada, pero no la pizarra");
-        }
         await refresh();
         return lesson.id;
       },
