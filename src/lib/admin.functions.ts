@@ -105,7 +105,7 @@ export const listTeam = createServerFn({ method: "GET" })
     await getCaller(context);
     const { data: profiles, error } = await context.supabase
       .from("profiles")
-      .select("id, full_name, apellidos, dni, email, created_at, autoescuela_id")
+      .select("id, full_name, apellidos, dni, email, created_at, autoescuela_id, es_autonomo")
       .order("created_at", { ascending: true });
     if (error) throw new Error(error.message);
     const { data: roles, error: rolesError } = await context.supabase
@@ -135,6 +135,24 @@ export const createTeamMember = createServerFn({ method: "POST" })
       throw new Error("Elige la autoescuela");
     }
     await createAccount(data);
+    return { ok: true };
+  });
+
+/** Super admin: marca a un profesor como autónomo (gestiona su propia agenda) o empleado. */
+export const setTeacherAutonomo = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { userId: string; esAutonomo: boolean }) => ({
+    userId: String(input.userId),
+    esAutonomo: Boolean(input.esAutonomo),
+  }))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("profiles")
+      .update({ es_autonomo: data.esAutonomo })
+      .eq("id", data.userId);
+    if (error) throw new Error(error.message);
     return { ok: true };
   });
 

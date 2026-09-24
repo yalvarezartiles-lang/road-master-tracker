@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useCurrentUser } from "@/lib/auth";
-import { createAutoescuela, createTeamMember, deleteTeamMember, listArchivedStudents, listAutoescuelas, listTeam, purgeStudent } from "@/lib/admin.functions";
+import { createAutoescuela, createTeamMember, deleteTeamMember, listArchivedStudents, listAutoescuelas, listTeam, purgeStudent, setTeacherAutonomo } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -46,6 +46,7 @@ interface Member {
   email: string;
   role: "admin" | "admin_oficina" | "profesor";
   autoescuela_id?: string | null;
+  es_autonomo?: boolean;
 }
 
 const ROLE_LABEL = { admin: "Administrador", admin_oficina: "Oficina", profesor: "Profesor" } as const;
@@ -61,6 +62,8 @@ function AdminPage() {
   const fetchTeam = useServerFn(listTeam);
   const createMember = useServerFn(createTeamMember);
   const removeMember = useServerFn(deleteTeamMember);
+  const toggleAutonomo = useServerFn(setTeacherAutonomo);
+  const [autonomoBusy, setAutonomoBusy] = React.useState<string | null>(null);
 
   const [team, setTeam] = React.useState<Member[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -130,6 +133,20 @@ function AdminPage() {
       toast.error(err instanceof Error ? err.message : "No se pudo crear la cuenta");
     } finally {
       setBusy(false);
+    }
+  };
+
+  const onToggleAutonomo = async (m: Member, value: boolean) => {
+    if (!!m.es_autonomo === value) return;
+    setAutonomoBusy(m.id);
+    try {
+      await toggleAutonomo({ data: { userId: m.id, esAutonomo: value } });
+      setTeam((prev) => prev.map((t) => (t.id === m.id ? { ...t, es_autonomo: value } : t)));
+      toast.success(value ? "Ahora gestiona su propio horario" : "Ahora su horario lo lleva la oficina");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "No se pudo cambiar");
+    } finally {
+      setAutonomoBusy(null);
     }
   };
 
@@ -294,24 +311,45 @@ function AdminPage() {
             {team.map((m) => (
               <li
                 key={m.id}
-                className="flex items-center gap-3 rounded-3xl border bg-card p-4"
+                className="rounded-3xl border bg-card p-4"
               >
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-base font-bold">{[m.full_name, m.apellidos].filter(Boolean).join(" ") || m.email}{m.dni ? ` · ${m.dni}` : ""}</p>
-                  <p className="truncate text-sm text-muted-foreground">{m.email}</p>
-                  <span className="mt-1 inline-flex rounded-full bg-muted px-3 py-1 text-xs font-semibold uppercase">
-                    {ROLE_LABEL[m.role]}{isAdmin && m.autoescuela_id ? ` · ${schools.find((a) => a.id === m.autoescuela_id)?.nombre_comercial ?? ""}` : ""}
-                  </span>
+                <div className="flex items-center gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-base font-bold">{[m.full_name, m.apellidos].filter(Boolean).join(" ") || m.email}{m.dni ? ` · ${m.dni}` : ""}</p>
+                    <p className="truncate text-sm text-muted-foreground">{m.email}</p>
+                    <span className="mt-1 inline-flex rounded-full bg-muted px-3 py-1 text-xs font-semibold uppercase">
+                      {ROLE_LABEL[m.role]}{isAdmin && m.autoescuela_id ? ` · ${schools.find((a) => a.id === m.autoescuela_id)?.nombre_comercial ?? ""}` : ""}
+                    </span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={`Eliminar ${m.email}`}
+                    onClick={() => setToDelete(m)}
+                    className="size-14 shrink-0 rounded-2xl text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 className="size-6" />
+                  </Button>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label={`Eliminar ${m.email}`}
-                  onClick={() => setToDelete(m)}
-                  className="size-14 shrink-0 rounded-2xl text-destructive hover:bg-destructive/10"
-                >
-                  <Trash2 className="size-6" />
-                </Button>
+                {m.role === "profesor" && (
+                  <div className="mt-3 flex gap-2">
+                    {([false, true] as const).map((v) => (
+                      <button
+                        key={String(v)}
+                        type="button"
+                        disabled={autonomoBusy === m.id}
+                        onClick={() => void onToggleAutonomo(m, v)}
+                        className={`h-12 flex-1 rounded-2xl border-2 text-sm font-semibold disabled:opacity-50 ${
+                          !!m.es_autonomo === v
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-border bg-muted/40"
+                        }`}
+                      >
+                        {v ? "Autónomo" : "Empleado"}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </li>
             ))}
             {team.length === 0 && (
