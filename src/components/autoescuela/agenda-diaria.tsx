@@ -257,8 +257,3 @@ export function AgendaDiaria({
     </section>
   );
 }
-
-function SwipeCards({ slots, fecha, students }: { slots: Slot[]; fecha: string; students: StudentOpt[] }) {
-  const scroller = React.useRef<HTMLDivElement>(null);
-  const [active, setActive] = React.useState(0);
-  const initial = React.useMemo(() => {
