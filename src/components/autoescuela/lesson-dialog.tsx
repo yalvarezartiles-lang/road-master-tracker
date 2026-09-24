@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Car, MapPin, Plus, Save, User } from "lucide-react";
+import { Car, Check, ChevronsUpDown, MapPin, Plus, Save, User } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -8,10 +8,17 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/autoescuela/store";
@@ -57,8 +64,9 @@ export function LessonDialog({
   const { data, addLesson, addZone } = useStore();
   const [selected, setSelected] = React.useState<string | undefined>(studentId);
   const [zone, setZone] = React.useState<string>(data.zones[0]?.name ?? "");
-  const [newZone, setNewZone] = React.useState("");
-  const [showNewZone, setShowNewZone] = React.useState(false);
+  const [zoneOpen, setZoneOpen] = React.useState(false);
+  const [zoneSearch, setZoneSearch] = React.useState("");
+  const [creatingZone, setCreatingZone] = React.useState(false);
   const [topics, setTopics] = React.useState<string[]>([]);
   const [notes, setNotes] = React.useState("");
   const [board, setBoard] = React.useState<string | null>(null);
@@ -68,9 +76,10 @@ export function LessonDialog({
     if (open) {
       setSelected(studentId);
       setZone(data.zones[0]?.name ?? "");
+      setZoneSearch("");
+      setZoneOpen(false);
       setTopics([]);
       setNotes("");
-      setNewZone("");
       setBoard(null);
       setBoardKey((k) => k + 1);
     }
@@ -82,6 +91,30 @@ export function LessonDialog({
 
   const toggleTopic = (t: string) =>
     setTopics((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
+
+  const zoneQuery = zoneSearch.trim().toLowerCase();
+  const filteredZones = zoneQuery
+    ? data.zones.filter((z) => z.name.toLowerCase().includes(zoneQuery))
+    : data.zones;
+  const canCreateZone =
+    zoneQuery.length > 0 && !data.zones.some((z) => z.name.toLowerCase() === zoneQuery);
+
+  const handleCreateZone = async () => {
+    const name = zoneSearch.trim();
+    if (!name) return;
+    setCreatingZone(true);
+    try {
+      await addZone(name);
+      setZone(name);
+      setZoneSearch("");
+      setZoneOpen(false);
+      toast.success("Zona creada");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "No se pudo crear la zona");
+    } finally {
+      setCreatingZone(false);
+    }
+  };
 
   const submit = async () => {
     if (!selected) {
@@ -134,62 +167,74 @@ export function LessonDialog({
             <Label className="mb-2 flex items-center gap-2 text-base">
               <MapPin className="size-5" /> Zona
             </Label>
-            <div className="flex gap-2">
-              <Select value={zone} onValueChange={setZone}>
-                <SelectTrigger className="h-14 flex-1 rounded-2xl text-base">
-                  <SelectValue
-                    placeholder={data.zones.length ? "Elige una zona" : "Aún no tienes zonas"}
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {data.zones.map((z) => (
-                    <SelectItem key={z.id} value={z.name} className="py-3 text-base">
-                      {z.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button
-                type="button"
-                variant="secondary"
-                className="h-14 rounded-2xl px-4 text-base"
-                onClick={() => setShowNewZone((v) => !v)}
-              >
-                <Plus className="size-5" /> Nueva zona
-              </Button>
-            </div>
-            {showNewZone && (
-              <div className="mt-2 flex gap-2">
-                <Input
-                  autoFocus
-                  value={newZone}
-                  onChange={(e) => setNewZone(e.target.value)}
-                  placeholder="Nombre de la zona"
-                  className="h-14 rounded-2xl text-base"
-                />
+            <Popover open={zoneOpen} onOpenChange={setZoneOpen}>
+              <PopoverTrigger asChild>
                 <Button
                   type="button"
-                  className="h-14 rounded-2xl px-5 text-base"
-                  onClick={() => {
-                    const z = newZone.trim();
-                    if (!z) return;
-                    const existing = data.zones.find((x) => x.name.toLowerCase() === z.toLowerCase());
-                    void addZone(z)
-                      .then(() => {
-                        setZone(existing?.name ?? z);
-                        setNewZone("");
-                        setShowNewZone(false);
-                        toast.success("Zona guardada");
-                      })
-                      .catch((err: unknown) =>
-                        toast.error(err instanceof Error ? err.message : "No se pudo añadir la zona"),
-                      );
-                  }}
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={zoneOpen}
+                  className="h-14 w-full justify-between rounded-2xl px-4 text-base font-normal"
                 >
-                  Guardar
+                  <span className="flex min-w-0 items-center gap-2 truncate">
+                    <MapPin className="size-5 shrink-0 text-primary" />
+                    <span className="truncate">
+                      {zone || (data.zones.length ? "Elige una zona" : "Busca o crea una zona")}
+                    </span>
+                  </span>
+                  <ChevronsUpDown className="size-5 shrink-0 opacity-50" />
                 </Button>
-              </div>
-            )}
+              </PopoverTrigger>
+              <PopoverContent
+                align="start"
+                className="pointer-events-auto w-(--radix-popover-trigger-width) rounded-2xl p-0"
+              >
+                <Command shouldFilter={false}>
+                  <CommandInput
+                    value={zoneSearch}
+                    onValueChange={setZoneSearch}
+                    placeholder="Buscar zona…"
+                    className="h-12 text-base"
+                  />
+                  <CommandList className="max-h-72 px-1.5 py-1.5">
+                    {filteredZones.map((z) => (
+                      <CommandItem
+                        key={z.id}
+                        value={z.name}
+                        onSelect={() => {
+                          setZone(z.name);
+                          setZoneSearch("");
+                          setZoneOpen(false);
+                        }}
+                        className="min-h-13 rounded-xl px-3 py-3.5 text-base"
+                      >
+                        <MapPin className="mr-2 size-5 shrink-0 text-primary" />
+                        <span className="truncate">{z.name}</span>
+                        {zone === z.name && <Check className="ml-auto size-5 shrink-0" />}
+                      </CommandItem>
+                    ))}
+                    {canCreateZone && (
+                      <CommandItem
+                        value="__crear__"
+                        disabled={creatingZone}
+                        onSelect={() => void handleCreateZone()}
+                        className="min-h-13 rounded-xl border-t px-3 py-3.5 text-base font-semibold text-primary"
+                      >
+                        <Plus className="mr-2 size-5 shrink-0" />
+                        Crear nueva zona: “{zoneSearch.trim()}”
+                      </CommandItem>
+                    )}
+                    {!filteredZones.length && !canCreateZone && (
+                      <div className="px-3 py-4 text-sm text-muted-foreground">
+                        {data.zones.length
+                          ? "Ninguna zona coincide con la búsqueda."
+                          : "Aún no tienes zonas. Escribe un nombre para crear la primera."}
+                      </div>
+                    )}
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </section>
 
           <section>
