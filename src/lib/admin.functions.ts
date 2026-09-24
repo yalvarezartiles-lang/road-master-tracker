@@ -5,6 +5,8 @@ interface NewAccount {
   email: string;
   password: string;
   fullName: string;
+  apellidos?: string;
+  dni?: string;
   role: "admin" | "profesor";
 }
 
@@ -16,7 +18,9 @@ function validateAccount(input: NewAccount): NewAccount {
   if (!email.includes("@")) throw new Error("Email no válido");
   if (password.length < 6) throw new Error("La contraseña debe tener al menos 6 caracteres");
   if (!fullName) throw new Error("El nombre es obligatorio");
-  return { email, password, fullName, role };
+  const apellidos = String(input.apellidos ?? "").trim();
+  const dni = String(input.dni ?? "").trim().toUpperCase();
+  return { email, password, fullName, apellidos, dni, role };
 }
 
 async function countUsers() {
@@ -39,7 +43,7 @@ async function createAccount(input: NewAccount) {
 
   const { error: profileError } = await supabaseAdmin
     .from("profiles")
-    .upsert({ id: userId, full_name: input.fullName, email: input.email });
+    .upsert({ id: userId, full_name: input.fullName, apellidos: input.apellidos ?? "", dni: input.dni ?? "", email: input.email });
   if (profileError) throw new Error(profileError.message);
 
   const { error: roleError } = await supabaseAdmin
@@ -81,7 +85,7 @@ export const listTeam = createServerFn({ method: "GET" })
     await assertAdmin(context);
     const { data: profiles, error } = await context.supabase
       .from("profiles")
-      .select("id, full_name, email, created_at")
+      .select("id, full_name, apellidos, dni, email, created_at")
       .order("created_at", { ascending: true });
     if (error) throw new Error(error.message);
     const { data: roles, error: rolesError } = await context.supabase
@@ -97,7 +101,11 @@ export const listTeam = createServerFn({ method: "GET" })
 
 export const createTeamMember = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: NewAccount) => validateAccount(input))
+  .inputValidator((input: NewAccount) => {
+    const v = validateAccount(input);
+    if (!v.apellidos || !v.dni) throw new Error("Apellidos y DNI son obligatorios");
+    return v;
+  })
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     await createAccount(data);

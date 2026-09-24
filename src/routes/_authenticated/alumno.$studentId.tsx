@@ -1,6 +1,9 @@
 import * as React from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, CalendarDays, MapPin, Pencil, Phone, Plus } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CalendarDays, Car, CheckCircle, FileDown, MapPin, Pencil, Phone, Plus } from "lucide-react";
+import { SignatureDialog } from "@/components/autoescuela/signature-dialog";
+import { exportFichasPdf } from "@/lib/autoescuela/pdf";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/lib/autoescuela/store";
 import { SkillSemaphore, SkillProgressBanner } from "@/components/autoescuela/skill-semaphore";
@@ -42,6 +45,8 @@ function StudentPage() {
   const { data } = useStore();
   const [lessonOpen, setLessonOpen] = React.useState(false);
   const [editOpen, setEditOpen] = React.useState(false);
+  const [signId, setSignId] = React.useState<string | null>(null);
+  const [exporting, setExporting] = React.useState(false);
   const student = data.students.find((s) => s.id === studentId);
 
   if (!student) {
@@ -142,7 +147,26 @@ function StudentPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-lg font-bold">Historial de clases</h2>
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <h2 className="text-lg font-bold">Historial de clases</h2>
+            <Button
+              variant="outline"
+              disabled={exporting || lessons.length === 0}
+              className="h-12 rounded-2xl"
+              onClick={async () => {
+                setExporting(true);
+                try {
+                  await exportFichasPdf(student);
+                } catch {
+                  toast.error("No se pudo generar el PDF");
+                } finally {
+                  setExporting(false);
+                }
+              }}
+            >
+              <FileDown className="size-5" /> Exportar Fichas (PDF)
+            </Button>
+          </div>
           <ol className="space-y-3">
             {lessons.map((l) => (
               <li key={l.id} className="rounded-3xl border bg-card p-4">
@@ -163,6 +187,26 @@ function StudentPage() {
                     </span>
                   ))}
                 </div>
+                {(l.matricula || l.horaInicio) && (
+                  <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
+                    <Car className="size-4" /> {l.matricula || "—"}
+                    {l.horaInicio && l.horaFin ? ` · ${l.horaInicio} - ${l.horaFin}` : ""}
+                  </p>
+                )}
+                {l.firmaAlumno && l.firmaProfesor ? (
+                  <p className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-success">
+                    <CheckCircle className="size-4" /> Firmada
+                  </p>
+                ) : (
+                  <div className="mt-3 flex flex-wrap items-center gap-2 rounded-2xl border-2 border-warning bg-warning/10 p-3">
+                    <span className="flex items-center gap-1.5 font-bold">
+                      <AlertTriangle className="size-5 text-warning" /> Falta Firma
+                    </span>
+                    <Button className="ml-auto h-11 rounded-xl" onClick={() => setSignId(l.id)}>
+                      Firmar ahora
+                    </Button>
+                  </div>
+                )}
                 {l.notes && <p className="mt-3 text-base">{l.notes}</p>}
                 {l.whiteboard && (
                   <a href={l.whiteboard} target="_blank" rel="noreferrer" className="mt-3 block">
@@ -202,6 +246,7 @@ function StudentPage() {
         studentId={student.id}
       />
 
+      <SignatureDialog lessonId={signId} studentId={student.id} onClose={() => setSignId(null)} />
       <StudentDialog open={editOpen} onOpenChange={setEditOpen} student={student} />
     </div>
   );

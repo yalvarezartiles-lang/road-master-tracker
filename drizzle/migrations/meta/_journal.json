@@ -50,6 +50,13 @@
       "when": 1790252287589,
       "tag": "0006_student_dgt_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790253764588,
+      "tag": "0007_dgt_signatures",
+      "breakpoints": true
     }
   ]
 }

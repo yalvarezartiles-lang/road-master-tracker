@@ -61,6 +61,12 @@ export interface Lesson {
   topics: string[];
   notes: string;
   whiteboard?: string | null;
+  matricula: string;
+  horaInicio: string | null;
+  horaFin: string | null;
+  firmaAlumno: string | null;
+  firmaProfesor: string | null;
+  profesorId: string | null;
 }
 
 export interface Student {
