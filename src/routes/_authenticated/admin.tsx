@@ -62,6 +62,8 @@ function AdminPage() {
   const fetchTeam = useServerFn(listTeam);
   const createMember = useServerFn(createTeamMember);
   const removeMember = useServerFn(deleteTeamMember);
+  const toggleAutonomo = useServerFn(setTeacherAutonomo);
+  const [autonomoBusy, setAutonomoBusy] = React.useState<string | null>(null);
 
   const [team, setTeam] = React.useState<Member[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -131,6 +133,20 @@ function AdminPage() {
       toast.error(err instanceof Error ? err.message : "No se pudo crear la cuenta");
     } finally {
       setBusy(false);
+    }
+  };
+
+  const onToggleAutonomo = async (m: Member, value: boolean) => {
+    if (!!m.es_autonomo === value) return;
+    setAutonomoBusy(m.id);
+    try {
+      await toggleAutonomo({ data: { userId: m.id, esAutonomo: value } });
+      setTeam((prev) => prev.map((t) => (t.id === m.id ? { ...t, es_autonomo: value } : t)));
+      toast.success(value ? "Ahora gestiona su propio horario" : "Ahora su horario lo lleva la oficina");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "No se pudo cambiar");
+    } finally {
+      setAutonomoBusy(null);
     }
   };
 
