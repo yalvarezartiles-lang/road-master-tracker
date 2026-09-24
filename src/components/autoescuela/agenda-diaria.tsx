@@ -65,7 +65,10 @@ export function AgendaDiaria({ profesorId, title }: { profesorId: string; title?
 
   const add = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (end <= start) return toast.error("La hora de fin debe ser posterior");
+    if (end <= start) {
+      toast.error("La hora de fin debe ser posterior");
+      return;
+    }
     const { error } = await supabase.from("agenda_diaria").insert({
       profesor_id: profesorId,
       fecha,
@@ -73,7 +76,10 @@ export function AgendaDiaria({ profesorId, title }: { profesorId: string; title?
       hora_fin: end,
       student_id: newStudent || null,
     });
-    if (error) return toast.error("No se pudo añadir el hueco");
+    if (error) {
+      toast.error("No se pudo añadir el hueco");
+      return;
+    }
     toast.success("Hueco añadido");
     setNewStudent("");
     void load();
@@ -81,7 +87,10 @@ export function AgendaDiaria({ profesorId, title }: { profesorId: string; title?
 
   const remove = async (id: string) => {
     const { error } = await supabase.from("agenda_diaria").delete().eq("id", id);
-    if (error) return toast.error("No se pudo borrar");
+    if (error) {
+      toast.error("No se pudo borrar");
+      return;
+    }
     void load();
   };
 

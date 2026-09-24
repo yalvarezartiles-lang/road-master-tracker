@@ -30,6 +30,8 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { levelClasses } from "@/components/autoescuela/skill-traffic-light";
 import { useCurrentUser, useSignOut } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
+import { OfficePanel } from "@/components/autoescuela/office-panel";
+import { AgendaDiaria } from "@/components/autoescuela/agenda-diaria";
 
 export const Route = createFileRoute("/_authenticated/panel")({
   head: () => ({
@@ -60,6 +62,13 @@ function initials(name: string) {
 }
 
 function Dashboard() {
+  const { isOffice, user, loading } = useCurrentUser();
+  if (loading) return <div className="min-h-screen bg-background" />;
+  if (isOffice && user) return <OfficePanel userId={user.id} />;
+  return <TeacherDashboard />;
+}
+
+function TeacherDashboard() {
   const { data, loading, deleteStudent } = useStore();
   const { isAdmin, user } = useCurrentUser();
   const [teacherName, setTeacherName] = React.useState("");
@@ -151,6 +160,12 @@ function Dashboard() {
         >
           <UserPlus className="size-5" /> Añadir alumno
         </Button>
+
+        {user && (
+          <div className="mt-4">
+            <AgendaDiaria profesorId={user.id} title="Mi agenda" />
+          </div>
+        )}
 
         <h2 className="mt-6 mb-3 text-base font-bold tracking-wide text-muted-foreground uppercase">
           Alumnos activos ({students.length})
