@@ -2,6 +2,8 @@ import * as React from "react";
 import {
   CheckCircle,
   Eraser,
+  Maximize,
+  Minimize,
   Pencil,
   RotateCw,
   Save,
@@ -149,6 +151,7 @@ export function Whiteboard({
   saved: boolean;
   onSave: (dataUrl: string | null) => void;
 }) {
+  const fullscreenRef = React.useRef<HTMLDivElement>(null);
   const ref = React.useRef<HTMLCanvasElement>(null);
   const boardRef = React.useRef<HTMLDivElement>(null);
   const drawing = React.useRef(false);
@@ -159,6 +162,7 @@ export function Whiteboard({
   const [dirty, setDirty] = React.useState(false);
   const [elements, setElements] = React.useState<BoardElement[]>([]);
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
+  const [isFullscreen, setIsFullscreen] = React.useState(false);
 
   const markDirty = () => {
     setDirty(true);
@@ -174,6 +178,30 @@ export function Whiteboard({
   };
 
   React.useEffect(fill, []);
+
+  React.useEffect(() => {
+    const syncFullscreenState = () => {
+      setIsFullscreen(document.fullscreenElement === fullscreenRef.current);
+    };
+
+    document.addEventListener("fullscreenchange", syncFullscreenState);
+    return () => document.removeEventListener("fullscreenchange", syncFullscreenState);
+  }, []);
+
+  const toggleFullscreen = async () => {
+    const container = fullscreenRef.current;
+    if (!container) return;
+
+    try {
+      if (document.fullscreenElement === container) {
+        await document.exitFullscreen();
+      } else {
+        await container.requestFullscreen();
+      }
+    } catch {
+      // Some browsers can reject fullscreen when it is disabled by device policy.
+    }
+  };
 
   const boardPosition = (clientX: number, clientY: number) => {
     const rect = boardRef.current?.getBoundingClientRect();
@@ -264,7 +292,13 @@ export function Whiteboard({
   };
 
   return (
-    <div className="space-y-3">
+    <div
+      ref={fullscreenRef}
+      className={cn(
+        "w-full space-y-3 bg-background",
+        isFullscreen && "h-dvh overflow-y-auto p-3 sm:p-4",
+      )}
+    >
       <div className="grid gap-3 lg:grid-cols-[auto_minmax(0,1fr)]">
         <div className="flex min-w-0 gap-2 overflow-x-auto pb-1 lg:w-28 lg:flex-col lg:overflow-visible" aria-label="Elementos de tráfico">
           {ELEMENTS.map(({ kind, label }) => (
@@ -309,11 +343,25 @@ export function Whiteboard({
             >
               <Trash2 className="size-5" />
             </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-11 w-11 shrink-0 rounded-2xl"
+              aria-label={isFullscreen ? "Salir de pantalla completa" : "Abrir pizarra en pantalla completa"}
+              title={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
+              onClick={toggleFullscreen}
+            >
+              {isFullscreen ? <Minimize className="size-5" /> : <Maximize className="size-5" />}
+            </Button>
           </div>
 
           <div
             ref={boardRef}
-            className="relative w-full overflow-hidden rounded-2xl border-2 bg-background"
+            className={cn(
+              "relative w-full overflow-hidden rounded-2xl border-2 bg-background",
+              isFullscreen && "min-h-[400px]",
+            )}
             style={{ aspectRatio: "8 / 5" }}
             onPointerDown={(event) => { if (event.target === event.currentTarget) setSelectedId(null); }}
             onDragOver={(event) => event.preventDefault()}
