@@ -59,7 +59,7 @@ export function AgendaDiaria({
     setSlots((a.data ?? []) as Slot[]);
     setStudents((s.data ?? []) as StudentOpt[]);
     setLoading(false);
-  }, [profesorId, fecha]);
+  }, [profesorId, fecha, studentsVersion]);
 
   React.useEffect(() => {
     void load();
