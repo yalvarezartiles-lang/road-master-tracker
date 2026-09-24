@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useStore } from "@/lib/autoescuela/store";
+import { deliverTicket } from "@/lib/autoescuela/progress-ticket";
 
 function SigPad({ label, padRef }: { label: string; padRef: React.RefObject<SignatureCanvas | null> }) {
   const boxRef = React.useRef<HTMLDivElement>(null);
@@ -78,6 +79,17 @@ export function SignatureDialog({
   const profRef = React.useRef<SignatureCanvas | null>(null);
 
   const [agendaId, setAgendaId] = React.useState<string | null>(null);
+  const [schoolName, setSchoolName] = React.useState("");
+  React.useEffect(() => {
+    void (async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return;
+      const { data: p } = await supabase.from("profiles").select("autoescuela_id").eq("id", u.user.id).maybeSingle();
+      if (!p?.autoescuela_id) return;
+      const { data: a } = await supabase.from("autoescuelas").select("nombre_comercial").eq("id", p.autoescuela_id).maybeSingle();
+      setSchoolName(a?.nombre_comercial ?? "");
+    })();
+  }, []);
   const navigate = useNavigate();
   const minus = (hhmm: string, mins: number) => {
     const [h, m] = hhmm.split(":").map(Number);
@@ -164,10 +176,32 @@ export function SignatureDialog({
       fp = profRef.current.getCanvas().toDataURL("image/png");
     }
     setSaving(true);
+    // Ticket de progreso efímero: se inicia ya para conservar el gesto del usuario.
+    const ticket =
+      !pending && student
+        ? deliverTicket({
+            school: schoolName,
+            student: `${student.name} ${student.apellidos}`.trim(),
+            greens: data.skills.filter((k) => student.skills[k.id] === "verde").map((k) => k.name),
+          }).catch(() => null)
+        : null;
     try {
       await signLesson(lessonId, { horaInicio: start, horaFin: end, firmaAlumno: fa, firmaProfesor: fp });
       if (agendaId) await supabase.rpc("complete_agenda_class", { _id: agendaId });
       toast.success(pending ? "Clase guardada con firma pendiente" : "Clase firmada y cerrada");
+      if (ticket && student) {
+        const res = await ticket;
+        if (res === "copied") toast.success("Imagen copiada. Pégala en el chat de WhatsApp");
+        else if (res === "downloaded") toast.info("Imagen descargada en tu dispositivo");
+        const clean = (student.phone ?? "").replace(/\D/g, "");
+        if (clean) {
+          const phone = clean.length > 9 && clean.startsWith("34") ? clean : `34${clean}`;
+          const text = encodeURIComponent(
+            `🚗 ¡Gran trabajo hoy, ${student.name}! Has sumado nuevos verdes en tu perfil. Pega la imagen aquí para ver tu progreso de hoy. 🚦`,
+          );
+          window.open(`https://wa.me/${phone}?text=${text}`, "_blank", "noopener,noreferrer");
+        }
+      }
       onClose();
       if (autoAdvance) void goNext();
     } catch (err) {
