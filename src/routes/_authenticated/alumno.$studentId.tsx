@@ -200,6 +200,8 @@ function StudentPage() {
         onOpenChange={setLessonOpen}
         studentId={student.id}
       />
+
+      <StudentDialog open={editOpen} onOpenChange={setEditOpen} student={student} />
     </div>
   );
 }
