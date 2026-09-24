@@ -71,7 +71,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
     setLoading(true);
     const [studentsRes, lessonsRes, zonesRes, boardsRes, skillsRes] = await Promise.all([
-      supabase.from("students").select("*").order("created_at", { ascending: true }),
+      supabase.from("students").select("*").eq("archivado", false).order("created_at", { ascending: true }),
       supabase.from("lessons").select("*").order("number", { ascending: true }),
       supabase.from("zonas_profesor").select("*").order("nombre_zona", { ascending: true }),
       supabase.from("lesson_whiteboards").select("lesson_id, image"),
@@ -263,7 +263,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         setData((d) => ({ ...d, skills: d.skills.filter((k) => k.id !== id) }));
       },
       deleteStudent: async (studentId) => {
-        const { error } = await supabase.from("students").delete().eq("id", studentId);
+        // Soft delete: se archiva, nunca se borra físicamente
+        const { error } = await supabase.from("students").update({ archivado: true }).eq("id", studentId);
         if (error) throw new Error(error.message);
         setData((d) => ({ ...d, students: d.students.filter((s) => s.id !== studentId) }));
       },
