@@ -14,12 +14,12 @@ export const Route = createFileRoute("/auth")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Iniciar sesión — Autoescuela Adassa" },
+      { title: "Iniciar sesión" },
       {
         name: "description",
-        content: "Acceso privado para el equipo de la Autoescuela Adassa.",
+        content: "Acceso privado para el equipo.",
       },
-      { property: "og:title", content: "Iniciar sesión — Autoescuela Adassa" },
+      { property: "og:title", content: "Iniciar sesión" },
       {
         property: "og:description",
         content: "Acceso privado para profesores y administración.",
@@ -86,7 +86,7 @@ function AuthPage() {
       </header>
 
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 pb-16">
-        <h1 className="text-3xl font-extrabold">Autoescuela Adassa</h1>
+        <h1 className="text-3xl font-extrabold">Bienvenido</h1>
         <p className="mt-2 text-base text-muted-foreground">
           {checking
             ? "Comprobando acceso…"
