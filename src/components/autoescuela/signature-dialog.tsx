@@ -15,6 +15,16 @@ import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useStore } from "@/lib/autoescuela/store";
 import { deliverTicket } from "@/lib/autoescuela/progress-ticket";
 
@@ -77,6 +87,7 @@ export function SignatureDialog({
   const [saving, setSaving] = React.useState(false);
   const alumnoRef = React.useRef<SignatureCanvas | null>(null);
   const profRef = React.useRef<SignatureCanvas | null>(null);
+  const [waPhone, setWaPhone] = React.useState<string | null>(null);
 
   const [agendaId, setAgendaId] = React.useState<string | null>(null);
   const [schoolName, setSchoolName] = React.useState("");
@@ -189,20 +200,18 @@ export function SignatureDialog({
       await signLesson(lessonId, { horaInicio: start, horaFin: end, firmaAlumno: fa, firmaProfesor: fp });
       if (agendaId) await supabase.rpc("complete_agenda_class", { _id: agendaId });
       toast.success(pending ? "Clase guardada con firma pendiente" : "Clase firmada y cerrada");
+      onClose();
       if (ticket && student) {
         const res = await ticket;
-        if (res === "copied") toast.success("Imagen copiada. Pégala en el chat de WhatsApp");
-        else if (res === "downloaded") toast.info("Imagen descargada en tu dispositivo");
+        if (res === "downloaded") toast.info("Imagen descargada en tu dispositivo");
         const clean = (student.phone ?? "").replace(/\D/g, "");
         if (clean) {
           const phone = clean.length > 9 && clean.startsWith("34") ? clean : `34${clean}`;
-          const text = encodeURIComponent(
-            `🚗 ¡Gran trabajo hoy, ${student.name}! Has sumado nuevos verdes en tu perfil. Pega la imagen aquí para ver tu progreso de hoy. 🚦`,
-          );
-          window.open(`https://wa.me/${phone}?text=${text}`, "_blank", "noopener,noreferrer");
+          setWaPhone(phone);
+          return; // el avance se hace al cerrar el aviso
         }
+        if (res === "copied") toast.success("Imagen copiada al portapapeles");
       }
-      onClose();
       if (autoAdvance) void goNext();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Error al guardar");
@@ -211,7 +220,35 @@ export function SignatureDialog({
     }
   };
 
+  const closeWa = () => {
+    setWaPhone(null);
+    if (autoAdvance) void goNext();
+  };
+
   return (
+    <>
+    <AlertDialog open={!!waPhone} onOpenChange={(o) => !o && closeWa()}>
+      <AlertDialogContent className="rounded-3xl">
+        <AlertDialogHeader>
+          <AlertDialogTitle>¡Ticket copiado al portapapeles!</AlertDialogTitle>
+          <AlertDialogDescription>
+            La imagen con los progresos ya está copiada. ¿Quieres abrir el chat del alumno para pegarla y enviársela?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel className="h-12 rounded-2xl">Cerrar</AlertDialogCancel>
+          <AlertDialogAction
+            className="h-12 rounded-2xl"
+            onClick={() => {
+              const textoWa = "🚗 ¡Gran trabajo hoy! Has sumado nuevos verdes en tu perfil. Pega la imagen aquí para ver tu progreso. ✅";
+              window.open(`https://wa.me/${waPhone}?text=${encodeURIComponent(textoWa)}`, "_blank", "noopener,noreferrer");
+            }}
+          >
+            Abrir WhatsApp
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
     <Dialog open={!!lessonId} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-h-[94vh] max-w-2xl overflow-y-auto rounded-3xl p-5">
         <DialogHeader className="text-left">
@@ -249,5 +286,6 @@ export function SignatureDialog({
         </div>
       </DialogContent>
     </Dialog>
+    </>
   );
 }
