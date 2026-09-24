@@ -129,12 +129,9 @@ export const createTeamMember = createServerFn({ method: "POST" })
     return v;
   })
   .handler(async ({ data, context }) => {
-    const caller = await getCaller(context);
-    if (!caller.isAdmin) {
-      // La oficina solo crea profesores en su propia autoescuela
-      data.role = "profesor";
-      data.autoescuelaId = caller.autoescuelaId;
-    } else if (data.role !== "admin" && !data.autoescuelaId) {
+    // Solo el Super Administrador puede crear cuentas
+    await assertAdmin(context);
+    if (data.role !== "admin" && !data.autoescuelaId) {
       throw new Error("Elige la autoescuela");
     }
     await createAccount(data);
@@ -145,6 +142,7 @@ export const deleteTeamMember = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { userId: string }) => ({ userId: String(input.userId) }))
   .handler(async ({ data, context }) => {
+    await assertAdmin(context);
     const caller = await getCaller(context);
     if (data.userId === context.userId) throw new Error("No puedes eliminar tu propia cuenta");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

@@ -1,11 +1,13 @@
 import * as React from "react";
-import { Link } from "@tanstack/react-router";
-import { LogOut, Users } from "lucide-react";
+import { LogOut, Pencil, UserPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useSignOut } from "@/lib/auth";
+import { useStore } from "@/lib/autoescuela/store";
+import type { Student } from "@/lib/autoescuela/types";
 import { AgendaDiaria } from "./agenda-diaria";
+import { StudentDialog } from "./student-dialog";
 
 interface Teacher {
   id: string;
@@ -15,9 +17,12 @@ interface Teacher {
 
 export function OfficePanel({ userId }: { userId: string }) {
   const signOut = useSignOut();
+  const { data } = useStore();
   const [school, setSchool] = React.useState("");
   const [teachers, setTeachers] = React.useState<Teacher[]>([]);
   const [selected, setSelected] = React.useState("");
+  const [studentOpen, setStudentOpen] = React.useState(false);
+  const [editing, setEditing] = React.useState<Student | null>(null);
 
   React.useEffect(() => {
     void (async () => {
@@ -37,6 +42,8 @@ export function OfficePanel({ userId }: { userId: string }) {
   }, [userId]);
 
   const current = teachers.find((t) => t.id === selected);
+  const students = data.students;
+  const studentsVersion = students.map((s) => `${s.id}${s.name}${s.apellidos}`).join("|").length + students.length;
 
   return (
     <div className="min-h-screen bg-background pb-16">
@@ -47,11 +54,6 @@ export function OfficePanel({ userId }: { userId: string }) {
             {school && <p className="truncate text-sm text-muted-foreground">{school}</p>}
           </div>
           <div className="flex shrink-0 items-center gap-1">
-            <Button asChild variant="ghost" size="icon" className="size-12 rounded-2xl">
-              <Link to="/admin" aria-label="Profesores">
-                <Users className="size-6" />
-              </Link>
-            </Button>
             <ThemeToggle />
             <Button variant="ghost" size="icon" className="size-12 rounded-2xl" aria-label="Cerrar sesión" onClick={() => void signOut()}>
               <LogOut className="size-6" />
@@ -59,29 +61,72 @@ export function OfficePanel({ userId }: { userId: string }) {
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-2xl space-y-4 px-4 py-5">
-        <label className="block text-sm font-bold tracking-wide text-muted-foreground uppercase" htmlFor="prof">
-          Profesor
-        </label>
-        <select
-          id="prof"
-          value={selected}
-          onChange={(e) => setSelected(e.target.value)}
-          className="h-14 w-full rounded-2xl border bg-background px-4 text-lg font-semibold"
-        >
-          {teachers.length === 0 && <option value="">No hay profesores todavía</option>}
-          {teachers.map((t) => (
-            <option key={t.id} value={t.id}>{[t.full_name, t.apellidos].filter(Boolean).join(" ")}</option>
-          ))}
-        </select>
-        {current && (
-          <AgendaDiaria
-            key={current.id}
-            profesorId={current.id}
-            title={`Agenda de ${current.full_name}`}
-          />
-        )}
+      <main className="mx-auto max-w-2xl space-y-6 px-4 py-5">
+        <section className="space-y-3">
+          <label className="block text-sm font-bold tracking-wide text-muted-foreground uppercase" htmlFor="prof">
+            Profesor
+          </label>
+          <select
+            id="prof"
+            value={selected}
+            onChange={(e) => setSelected(e.target.value)}
+            className="h-14 w-full rounded-2xl border bg-background px-4 text-lg font-semibold"
+          >
+            {teachers.length === 0 && <option value="">No hay profesores todavía</option>}
+            {teachers.map((t) => (
+              <option key={t.id} value={t.id}>{[t.full_name, t.apellidos].filter(Boolean).join(" ")}</option>
+            ))}
+          </select>
+          {current && (
+            <AgendaDiaria
+              key={current.id}
+              profesorId={current.id}
+              title={`Agenda de ${current.full_name}`}
+              officeMode
+              studentsVersion={studentsVersion}
+            />
+          )}
+        </section>
+
+        <section className="rounded-3xl border bg-card p-4">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-lg font-bold">Alumnos ({students.length})</h2>
+          </div>
+          <Button
+            onClick={() => {
+              setEditing(null);
+              setStudentOpen(true);
+            }}
+            className="mt-3 h-14 w-full rounded-2xl text-base font-bold"
+          >
+            <UserPlus className="size-6" /> Matricular Nuevo Alumno
+          </Button>
+          <ul className="mt-3 divide-y">
+            {students.length === 0 && <li className="py-4 text-center text-muted-foreground">Aún no hay alumnos.</li>}
+            {students.map((s) => (
+              <li key={s.id} className="flex items-center gap-2 py-2">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-semibold">{[s.name, s.apellidos].filter(Boolean).join(" ")}</p>
+                  <p className="truncate text-sm text-muted-foreground">DNI: {s.dni || "—"}{s.phone ? ` · ${s.phone}` : ""}</p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="size-12 rounded-xl"
+                  aria-label={`Editar ${s.name}`}
+                  onClick={() => {
+                    setEditing(s);
+                    setStudentOpen(true);
+                  }}
+                >
+                  <Pencil className="size-5" />
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </section>
       </main>
+      <StudentDialog open={studentOpen} onOpenChange={setStudentOpen} student={editing} />
     </div>
   );
 }
