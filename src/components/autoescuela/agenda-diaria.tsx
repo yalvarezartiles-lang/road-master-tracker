@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link } from "@tanstack/react-router";
-import { CalendarDays, ChevronLeft, ChevronRight as ArrowRight, ChevronRight, Loader2, Plus, RotateCcw, X } from "lucide-react";
+import { CalendarDays, CheckCircle2, ChevronLeft, ChevronRight as ArrowRight, ChevronRight, Loader2, Plus, RotateCcw, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -45,6 +45,7 @@ export function AgendaDiaria({
   const [end, setEnd] = React.useState("09:45");
   const [newStudent, setNewStudent] = React.useState("");
   const [formOpen, setFormOpen] = React.useState(false);
+  const [completedStudentIds, setCompletedStudentIds] = React.useState<Set<string>>(new Set());
   const fecha = toISO(day);
   const [canEdit, setCanEdit] = React.useState(officeMode);
 
@@ -60,7 +61,10 @@ export function AgendaDiaria({
 
   const load = React.useCallback(async () => {
     setLoading(true);
-    const [a, s] = await Promise.all([
+    const startOfDay = new Date(`${fecha}T00:00:00`);
+    const endOfDay = new Date(`${fecha}T00:00:00`);
+    endOfDay.setDate(endOfDay.getDate() + 1);
+    const [a, s, l] = await Promise.all([
       supabase
         .from("agenda_diaria")
         .select("id, fecha, hora_inicio, hora_fin, estado, student_id")
@@ -68,10 +72,17 @@ export function AgendaDiaria({
         .eq("fecha", fecha)
         .order("hora_inicio"),
       supabase.from("students").select("id, name, apellidos, phone").eq("archivado", false).order("name"),
+      supabase
+        .from("lessons")
+        .select("student_id")
+        .eq("created_by", profesorId)
+        .gte("date", startOfDay.toISOString())
+        .lt("date", endOfDay.toISOString()),
     ]);
     if (a.error) toast.error("No se pudo cargar la agenda");
     setSlots((a.data ?? []) as Slot[]);
     setStudents((s.data ?? []) as StudentOpt[]);
+    setCompletedStudentIds(new Set((l.data ?? []).map((lesson) => lesson.student_id)));
     setLoading(false);
   }, [profesorId, fecha, studentsVersion]);
 
@@ -158,11 +169,17 @@ export function AgendaDiaria({
         {!loading &&
           slots.map((s) => {
             const cancelled = s.estado === "cancelada";
+            const completed = s.estado === "completada" || (!!s.student_id && completedStudentIds.has(s.student_id));
             if (!canEdit) {
               const inner = (
                 <>
                   <span className="text-base font-bold tabular-nums">{hm(s.hora_inicio)}–{hm(s.hora_fin)}</span>
                   <span className="min-w-0 flex-1 truncate text-base">{nameOf(s.student_id) || "Hueco libre"}</span>
+                  {completed && (
+                    <span className="flex items-center gap-1 rounded-full bg-success/15 px-2 py-1 text-xs font-bold text-success">
+                      <CheckCircle2 className="size-4" /> Realizada
+                    </span>
+                  )}
                   {cancelled && <span className="rounded-full bg-destructive/15 px-3 py-1 text-xs font-bold text-destructive uppercase">Cancelada</span>}
                 </>
               );
@@ -173,24 +190,29 @@ export function AgendaDiaria({
                       to="/alumno/$studentId"
                       params={{ studentId: s.student_id }}
                       search={{ evaluar: true }}
-                      className="flex min-h-16 items-center gap-3 rounded-2xl border p-3 transition hover:bg-muted active:scale-[0.99]"
+                      className={`flex min-h-16 items-center gap-3 rounded-2xl border p-3 transition hover:bg-muted active:scale-[0.99] ${completed ? "bg-success/10 opacity-60" : ""}`}
                     >
                       {inner}
                       <ArrowRight className="size-6 shrink-0 text-muted-foreground" />
                     </Link>
                   ) : (
-                    <div className={`flex min-h-16 items-center gap-3 rounded-2xl border p-3 ${cancelled ? "opacity-60" : ""}`}>{inner}</div>
+                    <div className={`flex min-h-16 items-center gap-3 rounded-2xl border p-3 ${completed ? "bg-success/10 opacity-60" : ""} ${cancelled ? "opacity-60" : ""}`}>{inner}</div>
                   )}
                 </li>
               );
             }
             return (
-              <li key={s.id} className={`rounded-2xl border p-3 ${cancelled ? "opacity-60" : ""}`}>
+              <li key={s.id} className={`rounded-2xl border p-3 ${completed ? "bg-success/10 opacity-60" : ""} ${cancelled ? "opacity-60" : ""}`}>
                 <div className="flex flex-wrap items-center gap-2">
                   <Input type="time" value={hm(s.hora_inicio)} onChange={(e) => update(s.id, { hora_inicio: e.target.value })} className="h-12 w-28 rounded-xl text-base" aria-label="Hora inicio" />
                   <span>–</span>
                   <Input type="time" value={hm(s.hora_fin)} onChange={(e) => update(s.id, { hora_fin: e.target.value })} className="h-12 w-28 rounded-xl text-base" aria-label="Hora fin" />
                   {cancelled && <span className="rounded-full bg-destructive/15 px-3 py-1 text-xs font-bold text-destructive uppercase">Cancelada</span>}
+                  {completed && (
+                    <span className="flex items-center gap-1 rounded-full bg-success/15 px-2 py-1 text-xs font-bold text-success">
+                      <CheckCircle2 className="size-4" /> Realizada
+                    </span>
+                  )}
                   {!officeMode && s.student_id && !cancelled && (
                     <Link to="/alumno/$studentId" params={{ studentId: s.student_id }} search={{ evaluar: true }} className="ml-auto flex h-12 items-center gap-1 rounded-xl px-3 font-semibold text-primary hover:bg-muted">
                       Evaluar <ArrowRight className="size-5" />

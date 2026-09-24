@@ -1,6 +1,5 @@
 import * as React from "react";
-import { Link } from "@tanstack/react-router";
-import { List, Loader2, MessageCircle } from "lucide-react";
+import { CalendarDays, CheckCircle2, Loader2, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,7 @@ interface Row {
   estado: string;
   student_id: string | null;
   alumno: { nombre: string; telefono: string } | null;
+  realizada: boolean;
 }
 
 const toISO = (d: Date) =>
@@ -39,9 +39,25 @@ export function TodayClassesSheet({ currentStudentId }: { currentStudentId: stri
         .order("hora_inicio");
       if (error) toast.error("No se pudo cargar la agenda");
       const ids = [...new Set((a ?? []).map((x) => x.student_id).filter(Boolean))] as string[];
-      const { data: s } = ids.length
-        ? await supabase.from("students").select("id, name, apellidos, phone").in("id", ids)
-        : { data: [] as { id: string; name: string; apellidos: string; phone: string }[] };
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+      const endOfToday = new Date(startOfToday);
+      endOfToday.setDate(endOfToday.getDate() + 1);
+      const [{ data: s }, { data: lessons }] = await Promise.all([
+        ids.length
+          ? supabase.from("students").select("id, name, apellidos, phone").in("id", ids)
+          : Promise.resolve({ data: [] as { id: string; name: string; apellidos: string; phone: string }[] }),
+        ids.length
+          ? supabase
+              .from("lessons")
+              .select("student_id")
+              .eq("created_by", u.user.id)
+              .in("student_id", ids)
+              .gte("date", startOfToday.toISOString())
+              .lt("date", endOfToday.toISOString())
+          : Promise.resolve({ data: [] as { student_id: string }[] }),
+      ]);
+      const completedStudentIds = new Set((lessons ?? []).map((lesson) => lesson.student_id));
       if (!alive) return;
       setRows(
         (a ?? []).map((x) => {
@@ -49,6 +65,7 @@ export function TodayClassesSheet({ currentStudentId }: { currentStudentId: stri
           return {
             ...x,
             alumno: st ? { nombre: [st.name, st.apellidos].filter(Boolean).join(" "), telefono: st.phone ?? "" } : null,
+            realizada: x.estado === "completada" || (!!x.student_id && completedStudentIds.has(x.student_id)),
           };
         }),
       );
@@ -63,7 +80,7 @@ export function TodayClassesSheet({ currentStudentId }: { currentStudentId: stri
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <Button variant="outline" size="icon" className="size-12 rounded-2xl" aria-label="Resto de clases de hoy">
-          <List className="size-6" />
+          <CalendarDays className="size-6" />
         </Button>
       </SheetTrigger>
       <SheetContent side="right" className="w-[90vw] max-w-sm overflow-y-auto">
@@ -86,37 +103,33 @@ export function TodayClassesSheet({ currentStudentId }: { currentStudentId: stri
               const alumno = r.alumno;
               const current = r.student_id === currentStudentId;
               const cancelled = r.estado === "cancelada";
+              const completed = r.realizada;
               return (
                 <li
                   key={r.id}
                   className={cn(
-                    "flex min-h-16 items-center gap-3 rounded-2xl border p-3",
-                    current && "border-2 border-primary bg-primary/10",
+                    "flex min-h-16 items-center gap-3 rounded-2xl border p-3 transition-colors",
+                    completed && "bg-success/10 opacity-60",
+                    current && !completed && "border-2 border-primary bg-primary/10",
                     cancelled && "opacity-60",
                   )}
                 >
                   <span className="text-base font-bold tabular-nums">{r.hora_inicio.slice(0, 5)}</span>
-                  {alumno && r.student_id && !current ? (
-                    <Link
-                      to="/alumno/$studentId"
-                      params={{ studentId: r.student_id }}
-                      search={{ evaluar: true }}
-                      onClick={() => setOpen(false)}
-                      className="min-w-0 flex-1 truncate text-base font-semibold hover:underline"
-                    >
-                      {alumno.nombre}
-                    </Link>
-                  ) : (
-                    <span className="min-w-0 flex-1 truncate text-base font-semibold">
-                      {alumno?.nombre ?? "Hueco libre"}
-                      {current && <span className="block text-xs font-bold text-primary">Evaluando ahora</span>}
-                    </span>
-                  )}
+                  <span className="min-w-0 flex-1 truncate text-base font-semibold">
+                    {alumno?.nombre ?? "Hueco libre"}
+                    {current && !completed && <span className="block text-xs font-bold text-primary">Evaluando ahora</span>}
+                    {completed && (
+                      <span className="mt-0.5 flex items-center gap-1 text-xs font-bold text-success">
+                        <CheckCircle2 className="size-4" /> Realizada
+                      </span>
+                    )}
+                  </span>
                   {alumno && (
-                    <button
+                    <Button
                       type="button"
+                      size="icon"
                       aria-label={`WhatsApp a ${alumno.nombre}`}
-                      className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-success text-success-foreground active:scale-95"
+                      className="size-12 shrink-0 rounded-2xl bg-success text-success-foreground hover:bg-success/90 active:scale-95"
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -129,7 +142,7 @@ export function TodayClassesSheet({ currentStudentId }: { currentStudentId: stri
                       }}
                     >
                       <MessageCircle className="size-6" />
-                    </button>
+                    </Button>
                   )}
                 </li>
               );

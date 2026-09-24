@@ -28,6 +28,7 @@ import { SkillSemaphore } from "./skill-semaphore";
 import { Whiteboard } from "./whiteboard";
 import { Input } from "@/components/ui/input";
 import { SignatureDialog } from "./signature-dialog";
+import { TodayClassesSheet } from "./today-classes-sheet";
 
 function Chip({
   active,
@@ -145,9 +146,12 @@ export function LessonDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[92vh] max-w-xl overflow-y-auto rounded-3xl p-5">
         <DialogHeader className="text-left">
-          <DialogTitle className="flex items-center gap-2 text-2xl">
-            <Car className="size-6 text-primary" /> Registrar clase
-          </DialogTitle>
+          <div className="flex items-center justify-between gap-3 pr-8">
+            <DialogTitle className="flex min-w-0 items-center gap-2 text-2xl">
+              <Car className="size-6 shrink-0 text-primary" /> Registrar clase
+            </DialogTitle>
+            {student && <TodayClassesSheet currentStudentId={student.id} />}
+          </div>
           <DialogDescription className="text-base">
             {student ? `${student.name} · Clase ${nextNumber}` : "Selecciona el alumno"}
           </DialogDescription>
