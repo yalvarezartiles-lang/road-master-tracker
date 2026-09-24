@@ -58,9 +58,16 @@ export function SkillProgressBanner({ student }: { student: Student }) {
   );
 }
 
-export function SkillSemaphore({ student }: { student: Student }) {
+export function SkillSemaphore({
+  student,
+  modoLectura = false,
+}: {
+  student: Student;
+  modoLectura?: boolean;
+}) {
   const { data, setSkill, setBlockGreen, addSkill, deleteSkill } = useStore();
-  const { isAdmin } = useCurrentUser();
+  const { isAdmin: esAdmin } = useCurrentUser();
+  const isAdmin = esAdmin && !modoLectura;
   const [toDelete, setToDelete] = React.useState<SkillItem | null>(null);
 
   return (
@@ -88,6 +95,7 @@ export function SkillSemaphore({ student }: { student: Student }) {
                   </span>
                   <ChevronDown className="size-6 shrink-0 transition-transform group-data-[state=open]:rotate-180" />
                 </AccordionPrimitive.Trigger>
+                {!modoLectura && (
                 <Button
                   variant="outline"
                   className="h-14 shrink-0 rounded-2xl border-success px-3 text-success"
@@ -102,6 +110,7 @@ export function SkillSemaphore({ student }: { student: Student }) {
                   <CheckCheck className="size-6" />
                   <span className="hidden sm:inline">Todo verde</span>
                 </Button>
+                )}
               </AccordionPrimitive.Header>
               <AccordionPrimitive.Content className="overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
                 <ul className="space-y-2 px-3 pb-3">
@@ -113,10 +122,12 @@ export function SkillSemaphore({ student }: { student: Student }) {
                         <span className="flex-1 text-base font-semibold">{k.name}</span>
                         <button
                           type="button"
-                          onClick={() => setSkill(student.id, k.id, nextLevel(level)).catch(err)}
-                          aria-label={`${k.name}: ${label}. Pulsa para cambiar`}
+                          disabled={modoLectura}
+                          onClick={() => !modoLectura && setSkill(student.id, k.id, nextLevel(level)).catch(err)}
+                          aria-label={modoLectura ? `${k.name}: ${label}` : `${k.name}: ${label}. Pulsa para cambiar`}
                           className={cn(
-                            "flex h-14 min-w-32 items-center justify-center gap-2 rounded-2xl px-3 text-sm font-bold transition active:scale-95",
+                            "flex h-14 min-w-32 items-center justify-center gap-2 rounded-2xl px-3 text-sm font-bold transition",
+                            modoLectura ? "cursor-default" : "active:scale-95",
                             levelClasses[level],
                           )}
                         >
