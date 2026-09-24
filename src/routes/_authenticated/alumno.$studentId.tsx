@@ -29,7 +29,7 @@ export const Route = createFileRoute("/_authenticated/alumno/$studentId")({
     ],
   }),
   validateSearch: (s: Record<string, unknown>): { evaluar?: boolean } =>
-    s.evaluar === true || s.evaluar === "true" || s.evaluar === 1 || s.evaluar === "1" ? { evaluar: true } : {},
+    s["evaluar"] === true || s["evaluar"] === "true" || s["evaluar"] === 1 || s["evaluar"] === "1" ? { evaluar: true } : {},
   component: StudentPage,
 });
 
