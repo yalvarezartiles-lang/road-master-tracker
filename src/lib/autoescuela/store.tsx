@@ -16,7 +16,7 @@ interface StoreValue {
   ) => Promise<void>;
   addLesson: (
     studentId: string,
-    input: { date: string; zone: string; topics: string[]; notes: string; whiteboard?: string | null; matricula: string },
+    input: { date: string; zone: string; topics: string[]; notes: string; notasProfesor?: string; whiteboard?: string | null; matricula: string },
   ) => Promise<string>;
   signLesson: (
     lessonId: string,
@@ -98,6 +98,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           zone: l.zone ?? "",
           topics: l.topics ?? [],
           notes: l.notes ?? "",
+          notasProfesor: l.notas_profesor ?? "",
           whiteboard: boards.get(l.id) ?? null,
           matricula: l.matricula ?? "",
           horaInicio: l.hora_inicio ?? null,
@@ -176,6 +177,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           zone: input.zone,
           topics: input.topics,
           notes: input.notes,
+          notas_profesor: input.notasProfesor ?? "",
           matricula: input.matricula,
         }).select("id").single();
         if (error || !lesson) throw new Error("No se pudo guardar la clase");
