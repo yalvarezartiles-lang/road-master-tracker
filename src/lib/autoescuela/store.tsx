@@ -183,9 +183,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         return lesson.id;
       },
       signLesson: async (lessonId, i) => {
+        const { data: u } = await supabase.auth.getUser();
+        let matricula: string | undefined;
+        if (u.user) {
+          const { data: p } = await supabase.from("profiles").select("matricula_vehiculo").eq("id", u.user.id).maybeSingle();
+          if (p?.matricula_vehiculo) matricula = p.matricula_vehiculo;
+        }
         const { error } = await supabase
           .from("lessons")
-          .update({ hora_inicio: i.horaInicio, hora_fin: i.horaFin, firma_alumno: i.firmaAlumno, firma_profesor: i.firmaProfesor })
+          .update({ hora_inicio: i.horaInicio, hora_fin: i.horaFin, firma_alumno: i.firmaAlumno, firma_profesor: i.firmaProfesor, ...(matricula ? { matricula } : {}) })
           .eq("id", lessonId);
         if (error) throw new Error("No se pudieron guardar las firmas");
         await refresh();
@@ -193,15 +199,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       lastMatricula: async () => {
         const { data: u } = await supabase.auth.getUser();
         if (!u.user) return "";
-        const { data: row } = await supabase
-          .from("lessons")
-          .select("matricula")
-          .eq("created_by", u.user.id)
-          .neq("matricula", "")
-          .order("created_at", { ascending: false })
-          .limit(1)
+        const { data: p } = await supabase
+          .from("profiles")
+          .select("matricula_vehiculo")
+          .eq("id", u.user.id)
           .maybeSingle();
-        return row?.matricula ?? "";
+        return p?.matricula_vehiculo ?? "";
       },
       setSkill: async (studentId, skill, level) => {
         const student = data.students.find((s) => s.id === studentId);
