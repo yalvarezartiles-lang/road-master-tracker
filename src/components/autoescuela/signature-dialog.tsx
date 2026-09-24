@@ -163,7 +163,7 @@ export function SignatureDialog({
           </div>
           <div>
             <Label className="mb-2 flex items-center gap-2 text-base"><Clock className="size-5" /> Hora fin</Label>
-            <Input type="time" value={end} onChange={(e) => setEnd(e.target.value)} className="h-14 rounded-2xl text-lg" />
+            <Input type="time" value={end} onChange={(e) => { setEnd(e.target.value); applyDuration(duration, e.target.value); }} className="h-14 rounded-2xl text-lg" />
           </div>
         </div>
         {lessonId && (
