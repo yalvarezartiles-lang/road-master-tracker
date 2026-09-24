@@ -1,5 +1,7 @@
 import * as React from "react";
-import SignatureCanvas from "react-signature-canvas";
+import SignatureCanvasImpl from "react-signature-canvas";
+type SignatureCanvas = SignatureCanvasImpl;
+const SignatureCanvasC = SignatureCanvasImpl as unknown as React.ComponentType<any>;
 import { Eraser, PenLine, Clock } from "lucide-react";
 import {
   Dialog,
@@ -41,7 +43,7 @@ function SigPad({ label, padRef }: { label: string; padRef: React.RefObject<Sign
       </div>
       <div ref={boxRef} className="h-48 overflow-hidden rounded-2xl border-2 border-dashed bg-white">
         {width > 0 && (
-          <SignatureCanvas
+          <SignatureCanvasC
             ref={padRef}
             penColor="#0b1b3a"
             canvasProps={{ width, height: 192, className: "touch-none", "aria-label": label }}
@@ -59,8 +61,8 @@ export function SignatureDialog({
   onClose,
 }: {
   lessonId: string | null;
-  studentId?: string;
-  defaultStart?: string;
+  studentId?: string | undefined;
+  defaultStart?: string | undefined;
   onClose: () => void;
 }) {
   const { data, signLesson } = useStore();
