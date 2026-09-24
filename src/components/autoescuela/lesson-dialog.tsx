@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/autoescuela/store";
@@ -57,6 +58,7 @@ export function LessonDialog({
   const [selected, setSelected] = React.useState<string | undefined>(studentId);
   const [zone, setZone] = React.useState<string>(data.zones[0]?.name ?? "");
   const [newZone, setNewZone] = React.useState("");
+  const [showNewZone, setShowNewZone] = React.useState(false);
   const [topics, setTopics] = React.useState<string[]>([]);
   const [notes, setNotes] = React.useState("");
   const [board, setBoard] = React.useState<string | null>(null);
@@ -132,45 +134,62 @@ export function LessonDialog({
             <Label className="mb-2 flex items-center gap-2 text-base">
               <MapPin className="size-5" /> Zona
             </Label>
-            <div className="grid grid-cols-2 gap-2">
-              {data.zones.map((z) => (
-                <Chip key={z.id} active={zone === z.name} onClick={() => setZone(z.name)}>
-                  {z.name}
-                </Chip>
-              ))}
-              {data.zones.length === 0 && (
-                <p className="col-span-2 text-sm text-muted-foreground">Aún no tienes zonas. Añade una abajo.</p>
-              )}
-            </div>
-            <div className="mt-2 flex gap-2">
-              <Input
-                value={newZone}
-                onChange={(e) => setNewZone(e.target.value)}
-                placeholder="Nueva zona"
-                className="h-13 rounded-2xl text-base"
-              />
+            <div className="flex gap-2">
+              <Select value={zone || undefined} onValueChange={setZone}>
+                <SelectTrigger className="h-14 flex-1 rounded-2xl text-base">
+                  <SelectValue
+                    placeholder={data.zones.length ? "Elige una zona" : "Aún no tienes zonas"}
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {data.zones.map((z) => (
+                    <SelectItem key={z.id} value={z.name} className="py-3 text-base">
+                      {z.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Button
                 type="button"
                 variant="secondary"
-                className="h-13 rounded-2xl"
-                onClick={() => {
-                  const z = newZone.trim();
-                  if (!z) return;
-                  void addZone(z)
-                    .then(() => {
-                      setZone(z);
-                      setNewZone("");
-                    })
-                    .catch((err: unknown) =>
-                      toast.error(
-                        err instanceof Error ? err.message : "No se pudo añadir la zona",
-                      ),
-                    );
-                }}
+                className="h-14 rounded-2xl px-4 text-base"
+                onClick={() => setShowNewZone((v) => !v)}
               >
-                <Plus className="size-5" />
+                <Plus className="size-5" /> Nueva zona
               </Button>
             </div>
+            {showNewZone && (
+              <div className="mt-2 flex gap-2">
+                <Input
+                  autoFocus
+                  value={newZone}
+                  onChange={(e) => setNewZone(e.target.value)}
+                  placeholder="Nombre de la zona"
+                  className="h-14 rounded-2xl text-base"
+                />
+                <Button
+                  type="button"
+                  className="h-14 rounded-2xl px-5 text-base"
+                  onClick={() => {
+                    const z = newZone.trim();
+                    if (!z) return;
+                    const existing = data.zones.find((x) => x.name.toLowerCase() === z.toLowerCase());
+                    void addZone(z)
+                      .then(() => {
+                        setZone(existing?.name ?? z);
+                        setNewZone("");
+                        setShowNewZone(false);
+                        toast.success("Zona guardada");
+                      })
+                      .catch((err: unknown) =>
+                        toast.error(err instanceof Error ? err.message : "No se pudo añadir la zona"),
+                      );
+                  }}
+                >
+                  Guardar
+                </Button>
+              </div>
+            )}
           </section>
 
           <section>
