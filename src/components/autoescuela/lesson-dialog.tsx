@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { VoiceNotes } from "./voice-notes";
 import {
   Command,
   CommandEmpty,
@@ -74,6 +75,7 @@ export function LessonDialog({
   const [creatingZone, setCreatingZone] = React.useState(false);
   const [topics, setTopics] = React.useState<string[]>([]);
   const [notes, setNotes] = React.useState("");
+  const [notasProfesor, setNotasProfesor] = React.useState("");
   const [board, setBoard] = React.useState<string | null>(null);
   const [boardKey, setBoardKey] = React.useState(0);
 
@@ -129,7 +131,7 @@ export function LessonDialog({
       return;
     }
     try {
-      const id = await addLesson(selected, { date: new Date().toISOString(), zone, topics, notes, whiteboard: board, matricula: matricula.trim().toUpperCase() });
+      const id = await addLesson(selected, { date: new Date().toISOString(), zone, topics, notes, notasProfesor: notasProfesor.trim(), whiteboard: board, matricula: matricula.trim().toUpperCase() });
       toast.success(`Clase ${nextNumber} registrada`);
       onOpenChange(false);
       setSignLessonId(id);
@@ -286,6 +288,8 @@ export function LessonDialog({
               ))}
             </div>
           </section>
+
+          <VoiceNotes value={notasProfesor} onChange={setNotasProfesor} />
 
           <section>
             <Label className="mb-2 block text-base">Pizarra de explicación</Label>

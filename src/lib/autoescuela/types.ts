@@ -60,6 +60,7 @@ export interface Lesson {
   zone: string;
   topics: string[];
   notes: string;
+  notasProfesor?: string;
   whiteboard?: string | null;
   matricula: string;
   horaInicio: string | null;
