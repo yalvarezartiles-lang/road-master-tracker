@@ -51,7 +51,12 @@ export type Database = {
           created_at: string
           created_by: string | null
           date: string
+          firma_alumno: string | null
+          firma_profesor: string | null
+          hora_fin: string | null
+          hora_inicio: string | null
           id: string
+          matricula: string
           notes: string
           number: number
           student_id: string
@@ -62,7 +67,12 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           date?: string
+          firma_alumno?: string | null
+          firma_profesor?: string | null
+          hora_fin?: string | null
+          hora_inicio?: string | null
           id?: string
+          matricula?: string
           notes?: string
           number: number
           student_id: string
@@ -73,7 +83,12 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           date?: string
+          firma_alumno?: string | null
+          firma_profesor?: string | null
+          hora_fin?: string | null
+          hora_inicio?: string | null
           id?: string
+          matricula?: string
           notes?: string
           number?: number
           student_id?: string
@@ -92,19 +107,25 @@ export type Database = {
       }
       profiles: {
         Row: {
+          apellidos: string
           created_at: string
+          dni: string
           email: string
           full_name: string
           id: string
         }
         Insert: {
+          apellidos?: string
           created_at?: string
+          dni?: string
           email?: string
           full_name?: string
           id: string
         }
         Update: {
+          apellidos?: string
           created_at?: string
+          dni?: string
           email?: string
           full_name?: string
           id?: string
