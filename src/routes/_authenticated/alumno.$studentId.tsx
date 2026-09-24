@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useStore } from "@/lib/autoescuela/store";
 import { SkillSemaphore, SkillProgressBanner } from "@/components/autoescuela/skill-semaphore";
 import { LessonDialog } from "@/components/autoescuela/lesson-dialog";
+import { StudentDialog } from "@/components/autoescuela/student-dialog";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 
