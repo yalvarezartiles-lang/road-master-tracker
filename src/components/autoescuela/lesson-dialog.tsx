@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Car, MapPin, Plus, Save, User } from "lucide-react";
+import { Car, Check, ChevronsUpDown, MapPin, Plus, Save, User } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -8,10 +8,17 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/autoescuela/store";
@@ -57,8 +64,9 @@ export function LessonDialog({
   const { data, addLesson, addZone } = useStore();
   const [selected, setSelected] = React.useState<string | undefined>(studentId);
   const [zone, setZone] = React.useState<string>(data.zones[0]?.name ?? "");
-  const [newZone, setNewZone] = React.useState("");
-  const [showNewZone, setShowNewZone] = React.useState(false);
+  const [zoneOpen, setZoneOpen] = React.useState(false);
+  const [zoneSearch, setZoneSearch] = React.useState("");
+  const [creatingZone, setCreatingZone] = React.useState(false);
   const [topics, setTopics] = React.useState<string[]>([]);
   const [notes, setNotes] = React.useState("");
   const [board, setBoard] = React.useState<string | null>(null);
@@ -68,9 +76,10 @@ export function LessonDialog({
     if (open) {
       setSelected(studentId);
       setZone(data.zones[0]?.name ?? "");
+      setZoneSearch("");
+      setZoneOpen(false);
       setTopics([]);
       setNotes("");
-      setNewZone("");
       setBoard(null);
       setBoardKey((k) => k + 1);
     }
