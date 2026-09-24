@@ -28,6 +28,8 @@ export const Route = createFileRoute("/_authenticated/alumno/$studentId")({
       },
     ],
   }),
+  validateSearch: (s: Record<string, unknown>): { evaluar?: boolean } =>
+    s["evaluar"] === true || s["evaluar"] === "true" || s["evaluar"] === 1 || s["evaluar"] === "1" ? { evaluar: true } : {},
   component: StudentPage,
 });
 
@@ -43,7 +45,8 @@ const fmt = (iso: string) =>
 function StudentPage() {
   const { studentId } = Route.useParams();
   const { data } = useStore();
-  const [lessonOpen, setLessonOpen] = React.useState(false);
+  const { evaluar } = Route.useSearch();
+  const [lessonOpen, setLessonOpen] = React.useState(!!evaluar);
   const [editOpen, setEditOpen] = React.useState(false);
   const [signId, setSignId] = React.useState<string | null>(null);
   const [exporting, setExporting] = React.useState(false);

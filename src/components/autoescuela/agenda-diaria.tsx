@@ -1,5 +1,6 @@
 import * as React from "react";
-import { CalendarDays, ChevronLeft, ChevronRight, Loader2, Plus, RotateCcw, X } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { CalendarDays, ChevronLeft, ChevronRight as ArrowRight, ChevronRight, Loader2, Plus, RotateCcw, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -43,6 +44,17 @@ export function AgendaDiaria({
   const [newStudent, setNewStudent] = React.useState("");
   const [formOpen, setFormOpen] = React.useState(false);
   const fecha = toISO(day);
+  const [canEdit, setCanEdit] = React.useState(officeMode);
+
+  React.useEffect(() => {
+    if (officeMode) return setCanEdit(true);
+    void supabase
+      .from("profiles")
+      .select("autoescuela_id, es_autonomo")
+      .eq("id", profesorId)
+      .maybeSingle()
+      .then(({ data }) => setCanEdit(!!data && (!data.autoescuela_id || !!data.es_autonomo)));
+  }, [profesorId, officeMode]);
 
   const load = React.useCallback(async () => {
     setLoading(true);
@@ -143,6 +155,32 @@ export function AgendaDiaria({
         {!loading &&
           slots.map((s) => {
             const cancelled = s.estado === "cancelada";
+            if (!canEdit) {
+              const inner = (
+                <>
+                  <span className="text-base font-bold tabular-nums">{hm(s.hora_inicio)}–{hm(s.hora_fin)}</span>
+                  <span className="min-w-0 flex-1 truncate text-base">{nameOf(s.student_id) || "Hueco libre"}</span>
+                  {cancelled && <span className="rounded-full bg-destructive/15 px-3 py-1 text-xs font-bold text-destructive uppercase">Cancelada</span>}
+                </>
+              );
+              return (
+                <li key={s.id}>
+                  {s.student_id && !cancelled ? (
+                    <Link
+                      to="/alumno/$studentId"
+                      params={{ studentId: s.student_id }}
+                      search={{ evaluar: true }}
+                      className="flex min-h-16 items-center gap-3 rounded-2xl border p-3 transition hover:bg-muted active:scale-[0.99]"
+                    >
+                      {inner}
+                      <ArrowRight className="size-6 shrink-0 text-muted-foreground" />
+                    </Link>
+                  ) : (
+                    <div className={`flex min-h-16 items-center gap-3 rounded-2xl border p-3 ${cancelled ? "opacity-60" : ""}`}>{inner}</div>
+                  )}
+                </li>
+              );
+            }
             return (
               <li key={s.id} className={`rounded-2xl border p-3 ${cancelled ? "opacity-60" : ""}`}>
                 <div className="flex flex-wrap items-center gap-2">
@@ -150,6 +188,11 @@ export function AgendaDiaria({
                   <span>–</span>
                   <Input type="time" value={hm(s.hora_fin)} onChange={(e) => update(s.id, { hora_fin: e.target.value })} className="h-12 w-28 rounded-xl text-base" aria-label="Hora fin" />
                   {cancelled && <span className="rounded-full bg-destructive/15 px-3 py-1 text-xs font-bold text-destructive uppercase">Cancelada</span>}
+                  {!officeMode && s.student_id && !cancelled && (
+                    <Link to="/alumno/$studentId" params={{ studentId: s.student_id }} search={{ evaluar: true }} className="ml-auto flex h-12 items-center gap-1 rounded-xl px-3 font-semibold text-primary hover:bg-muted">
+                      Evaluar <ArrowRight className="size-5" />
+                    </Link>
+                  )}
                 </div>
                 <div className="mt-2 flex items-center gap-2">
                   <select
@@ -179,7 +222,7 @@ export function AgendaDiaria({
           })}
       </ul>
 
-      {officeMode && !formOpen ? (
+      {!canEdit ? null : officeMode && !formOpen ? (
         <Button onClick={() => setFormOpen(true)} className="mt-4 h-14 w-full rounded-2xl text-base font-bold">
           <Plus className="size-6" /> Añadir clase a este profesor
         </Button>

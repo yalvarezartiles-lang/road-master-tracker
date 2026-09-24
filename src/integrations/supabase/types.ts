@@ -190,6 +190,7 @@ export type Database = {
           created_at: string
           dni: string
           email: string
+          es_autonomo: boolean
           full_name: string
           id: string
           matricula_vehiculo: string
@@ -200,6 +201,7 @@ export type Database = {
           created_at?: string
           dni?: string
           email?: string
+          es_autonomo?: boolean
           full_name?: string
           id: string
           matricula_vehiculo?: string
@@ -210,6 +212,7 @@ export type Database = {
           created_at?: string
           dni?: string
           email?: string
+          es_autonomo?: boolean
           full_name?: string
           id?: string
           matricula_vehiculo?: string
@@ -368,6 +371,7 @@ export type Database = {
         Args: { _autoescuela: string; _profesor: string; _student: string }
         Returns: boolean
       }
+      can_self_schedule: { Args: never; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
