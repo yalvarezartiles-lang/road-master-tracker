@@ -7,20 +7,22 @@ interface NewAccount {
   fullName: string;
   apellidos?: string;
   dni?: string;
-  role: "admin" | "profesor";
+  role: "admin" | "admin_oficina" | "profesor";
+  autoescuelaId?: string | null;
 }
 
 function validateAccount(input: NewAccount): NewAccount {
   const email = String(input.email ?? "").trim().toLowerCase();
   const password = String(input.password ?? "");
   const fullName = String(input.fullName ?? "").trim();
-  const role = input.role === "admin" ? "admin" : "profesor";
+  const role = input.role === "admin" ? "admin" : input.role === "admin_oficina" ? "admin_oficina" : "profesor";
   if (!email.includes("@")) throw new Error("Email no válido");
   if (password.length < 6) throw new Error("La contraseña debe tener al menos 6 caracteres");
   if (!fullName) throw new Error("El nombre es obligatorio");
   const apellidos = String(input.apellidos ?? "").trim();
   const dni = String(input.dni ?? "").trim().toUpperCase();
-  return { email, password, fullName, apellidos, dni, role };
+  const autoescuelaId = input.autoescuelaId ? String(input.autoescuelaId) : null;
+  return { email, password, fullName, apellidos, dni, role, autoescuelaId };
 }
 
 async function countUsers() {
@@ -43,7 +45,7 @@ async function createAccount(input: NewAccount) {
 
   const { error: profileError } = await supabaseAdmin
     .from("profiles")
-    .upsert({ id: userId, full_name: input.fullName, apellidos: input.apellidos ?? "", dni: input.dni ?? "", email: input.email });
+    .upsert({ id: userId, full_name: input.fullName, apellidos: input.apellidos ?? "", dni: input.dni ?? "", email: input.email, autoescuela_id: input.autoescuelaId ?? null });
   if (profileError) throw new Error(profileError.message);
 
   const { error: roleError } = await supabaseAdmin
@@ -52,6 +54,16 @@ async function createAccount(input: NewAccount) {
   if (roleError) throw new Error(roleError.message);
 
   return { id: userId };
+}
+
+async function getCaller(context: { supabase: any; userId: string }) {
+  const { data: roles } = await context.supabase.from("user_roles").select("role").eq("user_id", context.userId);
+  const list = (roles ?? []).map((r: any) => r.role);
+  const { data: p } = await context.supabase.from("profiles").select("autoescuela_id").eq("id", context.userId).maybeSingle();
+  const isAdmin = list.includes("admin");
+  const isOffice = list.includes("admin_oficina");
+  if (!isAdmin && !isOffice) throw new Error("No tienes permiso para hacer esto");
+  return { isAdmin, isOffice, autoescuelaId: (p?.autoescuela_id ?? null) as string | null };
 }
 
 async function assertAdmin(context: { supabase: any; userId: string }) {
@@ -82,10 +94,10 @@ export const createFirstAdmin = createServerFn({ method: "POST" })
 export const listTeam = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertAdmin(context);
+    await getCaller(context);
     const { data: profiles, error } = await context.supabase
       .from("profiles")
-      .select("id, full_name, apellidos, dni, email, created_at")
+      .select("id, full_name, apellidos, dni, email, created_at, autoescuela_id")
       .order("created_at", { ascending: true });
     if (error) throw new Error(error.message);
     const { data: roles, error: rolesError } = await context.supabase
@@ -94,8 +106,10 @@ export const listTeam = createServerFn({ method: "GET" })
     if (rolesError) throw new Error(rolesError.message);
     return (profiles ?? []).map((p: any) => ({
       ...p,
-      role:
-        (roles ?? []).find((r: any) => r.user_id === p.id)?.role ?? "profesor",
+      role: (() => {
+        const rs = (roles ?? []).filter((r: any) => r.user_id === p.id).map((r: any) => r.role);
+        return rs.includes("admin") ? "admin" : rs.includes("admin_oficina") ? "admin_oficina" : "profesor";
+      })(),
     }));
   });
 
@@ -107,7 +121,14 @@ export const createTeamMember = createServerFn({ method: "POST" })
     return v;
   })
   .handler(async ({ data, context }) => {
-    await assertAdmin(context);
+    const caller = await getCaller(context);
+    if (!caller.isAdmin) {
+      // La oficina solo crea profesores en su propia autoescuela
+      data.role = "profesor";
+      data.autoescuelaId = caller.autoescuelaId;
+    } else if (data.role !== "admin" && !data.autoescuelaId) {
+      throw new Error("Elige la autoescuela");
+    }
     await createAccount(data);
     return { ok: true };
   });
@@ -116,12 +137,42 @@ export const deleteTeamMember = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { userId: string }) => ({ userId: String(input.userId) }))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context);
+    const caller = await getCaller(context);
     if (data.userId === context.userId) throw new Error("No puedes eliminar tu propia cuenta");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (!caller.isAdmin) {
+      const { data: target } = await supabaseAdmin.from("profiles").select("autoescuela_id").eq("id", data.userId).maybeSingle();
+      const { data: tr } = await supabaseAdmin.from("user_roles").select("role").eq("user_id", data.userId);
+      if (!target || target.autoescuela_id !== caller.autoescuelaId || (tr ?? []).some((r: any) => r.role !== "profesor"))
+        throw new Error("Solo puedes eliminar profesores de tu autoescuela");
+    }
     await supabaseAdmin.from("user_roles").delete().eq("user_id", data.userId);
     await supabaseAdmin.from("profiles").delete().eq("id", data.userId);
     const { error } = await supabaseAdmin.auth.admin.deleteUser(data.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const listAutoescuelas = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await getCaller(context);
+    const { data, error } = await context.supabase.from("autoescuelas").select("id, nombre_comercial").order("nombre_comercial");
+    if (error) throw new Error(error.message);
+    return (data ?? []) as { id: string; nombre_comercial: string }[];
+  });
+
+export const createAutoescuela = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { nombre: string }) => {
+    const nombre = String(input.nombre ?? "").trim();
+    if (!nombre) throw new Error("El nombre es obligatorio");
+    return { nombre };
+  })
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("autoescuelas").insert({ nombre_comercial: data.nombre });
     if (error) throw new Error(error.message);
     return { ok: true };
   });
