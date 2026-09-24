@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useCurrentUser } from "@/lib/auth";
-import { createAutoescuela, createTeamMember, deleteTeamMember, listArchivedStudents, listAutoescuelas, listTeam, purgeStudent } from "@/lib/admin.functions";
+import { createAutoescuela, createTeamMember, deleteTeamMember, listArchivedStudents, listAutoescuelas, listTeam, purgeStudent, setTeacherAutonomo } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -46,6 +46,7 @@ interface Member {
   email: string;
   role: "admin" | "admin_oficina" | "profesor";
   autoescuela_id?: string | null;
+  es_autonomo?: boolean;
 }
 
 const ROLE_LABEL = { admin: "Administrador", admin_oficina: "Oficina", profesor: "Profesor" } as const;
