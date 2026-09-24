@@ -30,6 +30,7 @@ import { StudentDialog } from "@/components/autoescuela/student-dialog";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { levelClasses } from "@/components/autoescuela/skill-traffic-light";
 import { useCurrentUser, useSignOut } from "@/lib/auth";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/panel")({
   head: () => ({
@@ -61,7 +62,17 @@ function initials(name: string) {
 
 function Dashboard() {
   const { data, loading, deleteStudent } = useStore();
-  const { isAdmin } = useCurrentUser();
+  const { isAdmin, user } = useCurrentUser();
+  const [teacherName, setTeacherName] = React.useState("");
+  React.useEffect(() => {
+    if (!user) return;
+    void supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("id", user.id)
+      .maybeSingle()
+      .then(({ data: p }) => setTeacherName((p?.full_name ?? "").split(" ")[0] ?? ""));
+  }, [user]);
   const signOut = useSignOut();
   const [query, setQuery] = React.useState("");
   const [lessonOpen, setLessonOpen] = React.useState(false);
@@ -99,7 +110,9 @@ function Dashboard() {
             </span>
             <div>
               <h1 className="text-xl leading-tight font-extrabold">Autoescuela Adassa</h1>
-              <p className="text-sm text-muted-foreground">Panel del profesor</p>
+              <p className="text-sm text-muted-foreground">
+                {teacherName ? `Hola, ${teacherName}` : "Panel del profesor"}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-1">

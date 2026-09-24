@@ -1,6 +1,7 @@
 import * as React from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, MapPin, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Car, MapPin, Plus, Trash2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -134,6 +135,49 @@ function Section({
   );
 }
 
+function VehicleSection() {
+  const [value, setValue] = React.useState("");
+  const [saving, setSaving] = React.useState(false);
+  React.useEffect(() => {
+    void (async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return;
+      const { data: p } = await supabase.from("profiles").select("matricula_vehiculo").eq("id", u.user.id).maybeSingle();
+      setValue(p?.matricula_vehiculo ?? "");
+    })();
+  }, []);
+  const save = async () => {
+    setSaving(true);
+    const { data: u } = await supabase.auth.getUser();
+    const { error } = await supabase
+      .from("profiles")
+      .update({ matricula_vehiculo: value.trim().toUpperCase() })
+      .eq("id", u.user?.id ?? "");
+    setSaving(false);
+    if (error) toast.error("No se pudo guardar la matrícula");
+    else toast.success("Matrícula guardada");
+  };
+  return (
+    <section className="rounded-3xl border bg-card p-5">
+      <h2 className="mb-3 flex items-center gap-2 text-lg font-bold">
+        <Car className="size-5" /> Matrícula de mi coche
+      </h2>
+      <div className="flex gap-2">
+        <Input
+          value={value}
+          onChange={(e) => setValue(e.target.value.toUpperCase())}
+          placeholder="0000 ABC"
+          className="h-14 rounded-2xl text-lg font-bold tracking-wider"
+        />
+        <Button disabled={saving} onClick={() => void save()} className="h-14 rounded-2xl px-5 text-base font-bold">
+          Guardar
+        </Button>
+      </div>
+      <p className="mt-2 text-sm text-muted-foreground">Se añade sola a cada clase y a las fichas PDF.</p>
+    </section>
+  );
+}
+
 function GestionPage() {
   const { data, addZone, deleteZone } = useStore();
   return (
@@ -147,11 +191,12 @@ function GestionPage() {
           >
             <ArrowLeft className="size-6" />
           </Link>
-          <h1 className="text-lg font-extrabold">Mis zonas</h1>
+          <h1 className="text-lg font-extrabold">Ajustes</h1>
           <ThemeToggle />
         </div>
       </header>
       <main className="mx-auto max-w-2xl space-y-6 px-4 py-5">
+        <VehicleSection />
         <Section
           title="Zonas"
           icon={<MapPin className="size-5" />}
