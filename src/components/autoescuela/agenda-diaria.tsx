@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link } from "@tanstack/react-router";
-import { CalendarDays, MessageCircle, ChevronLeft, ChevronRight as ArrowRight, ChevronRight, Loader2, Plus, RotateCcw, X } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight as ArrowRight, ChevronRight, Loader2, Plus, RotateCcw, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -21,12 +21,6 @@ interface StudentOpt {
   phone: string;
 }
 
-const waLink = (phone: string) => {
-  let d = (phone || "").replace(/\D/g, "");
-  if (d.startsWith("00")) d = d.slice(2);
-  if (d.length === 9) d = `34${d}`;
-  return d.length >= 9 ? `https://wa.me/${d}` : null;
-};
 
 const toISO = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -153,11 +147,7 @@ export function AgendaDiaria({
         </Button>
       </div>
 
-      {!officeMode && !loading && slots.length > 0 && (
-        <SwipeCards slots={slots} fecha={fecha} students={students} />
-      )}
-
-      {(officeMode || canEdit || loading || slots.length === 0) && (
+      {(
       <ul className="mt-4 space-y-2">
         {loading && (
           <li className="flex justify-center p-4"><Loader2 className="size-6 animate-spin" /></li>
@@ -168,7 +158,6 @@ export function AgendaDiaria({
         {!loading &&
           slots.map((s) => {
             const cancelled = s.estado === "cancelada";
-            if (!canEdit && !officeMode) return null;
             if (!canEdit) {
               const inner = (
                 <>
@@ -266,100 +255,5 @@ export function AgendaDiaria({
       </form>
       )}
     </section>
-  );
-}
-
-function SwipeCards({ slots, fecha, students }: { slots: Slot[]; fecha: string; students: StudentOpt[] }) {
-  const scroller = React.useRef<HTMLDivElement>(null);
-  const [active, setActive] = React.useState(0);
-  const initial = React.useMemo(() => {
-    const now = new Date();
-    if (fecha !== toISO(now)) return 0;
-    const t = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-    const i = slots.findIndex((s) => s.estado !== "cancelada" && hm(s.hora_fin) > t);
-    return i < 0 ? slots.length - 1 : i;
-  }, [slots, fecha]);
-
-  React.useEffect(() => {
-    const el = scroller.current?.children[initial] as HTMLElement | undefined;
-    if (el && scroller.current) scroller.current.scrollTo({ left: el.offsetLeft - (scroller.current.clientWidth - el.clientWidth) / 2 });
-    setActive(initial);
-  }, [initial]);
-
-  const onScroll = () => {
-    const box = scroller.current;
-    if (!box) return;
-    const center = box.scrollLeft + box.clientWidth / 2;
-    let best = 0, dist = Infinity;
-    Array.from(box.children).forEach((c, i) => {
-      const el = c as HTMLElement;
-      const d = Math.abs(el.offsetLeft + el.clientWidth / 2 - center);
-      if (d < dist) { dist = d; best = i; }
-    });
-    setActive(best);
-  };
-
-  return (
-    <div className="mt-4">
-      <div
-        ref={scroller}
-        onScroll={onScroll}
-        className="no-scrollbar flex w-full snap-x snap-mandatory scroll-smooth gap-4 overflow-x-auto px-4 pb-2"
-      >
-        {slots.map((s, i) => {
-          const st = students.find((x) => x.id === s.student_id);
-          const name = st ? [st.name, st.apellidos].filter(Boolean).join(" ") : "Hueco libre";
-          const cancelled = s.estado === "cancelada";
-          const wa = st ? waLink(st.phone) : null;
-          const isActive = i === active;
-          const body = (
-            <>
-              <p className="text-3xl font-extrabold tabular-nums">{hm(s.hora_inicio)}<span className="text-muted-foreground">–{hm(s.hora_fin)}</span></p>
-              <p className="mt-2 line-clamp-2 text-xl font-bold">{name}</p>
-              {cancelled && <span className="mt-2 inline-flex rounded-full bg-destructive/15 px-3 py-1 text-xs font-bold text-destructive uppercase">Cancelada</span>}
-              {s.student_id && !cancelled && <p className="mt-3 flex items-center gap-1 text-sm font-semibold text-primary">Evaluar <ArrowRight className="size-4" /></p>}
-            </>
-          );
-          return (
-            <div
-              key={s.id}
-              className={`relative min-w-[85%] shrink-0 snap-center rounded-3xl border bg-background p-5 transition-all duration-300 sm:min-w-[300px] ${isActive ? "scale-100 border-primary shadow-lg" : "scale-90 opacity-60"} ${cancelled ? "opacity-50" : ""}`}
-            >
-              {s.student_id && !cancelled ? (
-                <Link to="/alumno/$studentId" params={{ studentId: s.student_id }} search={{ evaluar: true }} className="block pr-14">
-                  {body}
-                </Link>
-              ) : (
-                <div className="pr-14">{body}</div>
-              )}
-              {st && (wa ? (
-                <a
-                  href={wa}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  aria-label={`WhatsApp a ${name}`}
-                  className="absolute top-4 right-4 flex size-12 items-center justify-center rounded-full bg-[#25D366] text-white shadow active:scale-95"
-                >
-                  <MessageCircle className="size-6" />
-                </a>
-              ) : (
-                <span aria-label="Sin teléfono" className="absolute top-4 right-4 flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground opacity-50">
-                  <MessageCircle className="size-6" />
-                </span>
-              ))}
-            </div>
-          );
-        })}
-      </div>
-      {slots.length > 1 && (
-        <div className="mt-2 flex items-center justify-center gap-1.5" aria-label="Desliza para ver más clases">
-          {slots.map((s, i) => (
-            <span key={s.id} className={`h-2 rounded-full transition-all ${i === active ? "w-6 bg-primary" : "w-2 bg-muted-foreground/30"}`} />
-          ))}
-          <span className="ml-2 text-xs text-muted-foreground">Desliza ↔</span>
-        </div>
-      )}
-    </div>
   );
 }
