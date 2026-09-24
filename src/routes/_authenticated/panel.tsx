@@ -69,8 +69,10 @@ function Dashboard() {
   const [toDelete, setToDelete] = React.useState<{ id: string; name: string } | null>(null);
   const [deleting, setDeleting] = React.useState(false);
 
+  const fullName = (s: { name: string; apellidos: string }) =>
+    [s.name, s.apellidos].filter(Boolean).join(" ");
   const students = data.students.filter((s) =>
-    s.name.toLowerCase().includes(query.trim().toLowerCase()),
+    fullName(s).toLowerCase().includes(query.trim().toLowerCase()),
   );
 
   const confirmDelete = async () => {
@@ -165,7 +167,7 @@ function Dashboard() {
                   {initials(s.name)}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-lg font-bold">{s.name}</p>
+                  <p className="truncate text-lg font-bold">{fullName(s)}</p>
                   <p className="text-sm text-muted-foreground">
                     {s.lessons.length} clases ·{" "}
                     {s.lessons[s.lessons.length - 1]?.zone ?? "Sin clases"}
