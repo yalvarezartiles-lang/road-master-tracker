@@ -151,14 +151,14 @@ function StudentPage() {
             <h2 className="text-lg font-bold">Historial de clases</h2>
             <Button
               variant="outline"
-              disabled={exporting || lessons.length === 0}
+              disabled={exporting}
               className="h-12 rounded-2xl"
               onClick={async () => {
                 setExporting(true);
                 try {
                   await exportFichasPdf(student);
-                } catch {
-                  toast.error("No se pudo generar el PDF");
+                } catch (e) {
+                  toast.error(`Error al generar el PDF: ${e instanceof Error ? e.message : String(e)}`);
                 } finally {
                   setExporting(false);
                 }
