@@ -1,7 +1,8 @@
 import * as React from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { AppData, SkillKey, SkillLevel, Student } from "./types";
-import type { NamedItem } from "./types";
+import type { NamedItem, SkillItem } from "./types";
+import { fromDbLevel, toDbLevel } from "./types";
 
 interface StoreValue {
   data: AppData;
@@ -16,7 +17,8 @@ interface StoreValue {
   setSkill: (studentId: string, skill: SkillKey, level: SkillLevel) => Promise<void>;
   addZone: (zone: string) => Promise<void>;
   deleteZone: (id: string) => Promise<void>;
-  addSkill: (name: string) => Promise<void>;
+  addSkill: (name: string, block: number) => Promise<void>;
+  setBlockGreen: (studentId: string, block: number) => Promise<void>;
   deleteSkill: (id: string) => Promise<void>;
   deleteStudent: (studentId: string) => Promise<void>;
 }
@@ -31,7 +33,14 @@ const AVATAR_COLORS = [
   "oklch(0.6 0.16 320)",
 ];
 
-const EMPTY_SKILLS: Record<SkillKey, SkillLevel> = {};
+function parseSkills(raw: any): Record<SkillKey, SkillLevel> {
+  const out: Record<SkillKey, SkillLevel> = {};
+  for (const [k, v] of Object.entries(raw ?? {})) out[k] = fromDbLevel(v);
+  return out;
+}
+function serialize(skills: Record<SkillKey, SkillLevel>) {
+  return Object.fromEntries(Object.entries(skills).map(([k, v]) => [k, toDbLevel(v)]));
+}
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [data, setData] = React.useState<AppData>({ students: [], zones: [], skills: [] });
@@ -51,7 +60,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       supabase.from("lessons").select("*").order("number", { ascending: true }),
       supabase.from("zones").select("*").order("created_at", { ascending: true }),
       supabase.from("lesson_whiteboards").select("lesson_id, image"),
-      supabase.from("skills").select("id, name").order("created_at", { ascending: true }),
+      supabase.from("skills").select("id, name, block").order("created_at", { ascending: true }),
     ]);
     const boards = new Map((boardsRes.data ?? []).map((b: any) => [b.lesson_id, b.image]));
 
@@ -62,7 +71,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       phone: s.phone ?? "",
       startDate: s.start_date,
       avatarColor: s.avatar_color,
-      skills: { ...EMPTY_SKILLS, ...(s.skills ?? {}) },
+      skills: parseSkills(s.skills),
       lessons: lessons
         .filter((l: any) => l.student_id === s.id)
         .map((l: any) => ({
@@ -79,7 +88,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setData({
       students,
       zones: (zonesRes.data ?? []).map((z: any) => ({ id: z.id, name: z.name })),
-      skills: (skillsRes.data ?? []).map((k: any) => ({ id: k.id, name: k.name })) as NamedItem[],
+      skills: (skillsRes.data ?? []).map((k: any) => ({ id: k.id, name: k.name, block: k.block })) as SkillItem[],
     });
     setLoading(false);
     setHydrated(true);
@@ -119,7 +128,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           phone: inserted.phone ?? "",
           startDate: inserted.start_date,
           avatarColor: inserted.avatar_color,
-          skills: { ...EMPTY_SKILLS, ...((inserted.skills as any) ?? {}) },
+          skills: parseSkills(inserted.skills),
           lessons: [],
         };
       },
@@ -150,7 +159,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           ...d,
           students: d.students.map((s) => (s.id === studentId ? { ...s, skills } : s)),
         }));
-        await supabase.from("students").update({ skills }).eq("id", studentId);
+        const { error } = await supabase.from("students").update({ skills: serialize(skills) }).eq("id", studentId);
+        if (error) throw new Error("No se pudo guardar la habilidad");
+      },
+      setBlockGreen: async (studentId, block) => {
+        const student = data.students.find((s) => s.id === studentId);
+        if (!student) return;
+        const skills = { ...student.skills };
+        data.skills.filter((k) => k.block === block).forEach((k) => (skills[k.id] = "verde"));
+        setData((d) => ({
+          ...d,
+          students: d.students.map((s) => (s.id === studentId ? { ...s, skills } : s)),
+        }));
+        const { error } = await supabase.from("students").update({ skills: serialize(skills) }).eq("id", studentId);
+        if (error) throw new Error("No se pudo guardar el bloque");
       },
       addZone: async (zone) => {
         if (data.zones.some((z) => z.name.toLowerCase() === zone.toLowerCase())) return;
@@ -164,16 +186,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         if (error) throw new Error("No se pudo eliminar la zona");
         setData((d) => ({ ...d, zones: d.zones.filter((z) => z.id !== id) }));
       },
-      addSkill: async (name) => {
-        if (data.skills.some((k) => k.name.toLowerCase() === name.toLowerCase())) return;
-        const { data: u } = await supabase.auth.getUser();
-        const { error } = await supabase.from("skills").insert({ name, profesor_id: u.user!.id });
-        if (error) throw new Error("No se pudo añadir la habilidad");
+      addSkill: async (name, block) => {
+        if (data.skills.some((k) => k.block === block && k.name.toLowerCase() === name.toLowerCase())) return;
+        const { error } = await supabase.from("skills").insert({ name, block, profesor_id: null });
+        if (error) throw new Error("Solo el administrador puede añadir habilidades");
         await refresh();
       },
       deleteSkill: async (id) => {
         const { error } = await supabase.from("skills").delete().eq("id", id);
-        if (error) throw new Error("No se pudo eliminar la habilidad");
+        if (error) throw new Error("Solo el administrador puede borrar habilidades");
         setData((d) => ({ ...d, skills: d.skills.filter((k) => k.id !== id) }));
       },
       deleteStudent: async (studentId) => {
