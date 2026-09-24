@@ -186,6 +186,27 @@ export type Database = {
         }
         Relationships: []
       }
+      zonas_profesor: {
+        Row: {
+          creado_el: string
+          id: string
+          nombre_zona: string
+          profesor_id: string
+        }
+        Insert: {
+          creado_el?: string
+          id?: string
+          nombre_zona: string
+          profesor_id?: string
+        }
+        Update: {
+          creado_el?: string
+          id?: string
+          nombre_zona?: string
+          profesor_id?: string
+        }
+        Relationships: []
+      }
       zones: {
         Row: {
           created_at: string

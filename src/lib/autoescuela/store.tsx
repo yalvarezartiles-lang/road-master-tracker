@@ -58,7 +58,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const [studentsRes, lessonsRes, zonesRes, boardsRes, skillsRes] = await Promise.all([
       supabase.from("students").select("*").order("created_at", { ascending: true }),
       supabase.from("lessons").select("*").order("number", { ascending: true }),
-      supabase.from("zones").select("*").order("created_at", { ascending: true }),
+      supabase.from("zonas_profesor").select("*").order("nombre_zona", { ascending: true }),
       supabase.from("lesson_whiteboards").select("lesson_id, image"),
       supabase.from("skills").select("id, name, block").order("created_at", { ascending: true }),
     ]);
@@ -87,7 +87,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     setData({
       students,
-      zones: (zonesRes.data ?? []).map((z: any) => ({ id: z.id, name: z.name })),
+      zones: (zonesRes.data ?? []).map((z: any) => ({ id: z.id, name: z.nombre_zona })),
       skills: (skillsRes.data ?? []).map((k: any) => ({ id: k.id, name: k.name, block: k.block })) as SkillItem[],
     });
     setLoading(false);
@@ -177,12 +177,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       addZone: async (zone) => {
         if (data.zones.some((z) => z.name.toLowerCase() === zone.toLowerCase())) return;
         const { data: u } = await supabase.auth.getUser();
-        const { error } = await supabase.from("zones").insert({ name: zone, profesor_id: u.user!.id });
+        const { error } = await supabase
+          .from("zonas_profesor")
+          .insert({ nombre_zona: zone, profesor_id: u.user!.id });
         if (error) throw new Error("No se pudo añadir la zona");
         await refresh();
       },
       deleteZone: async (id) => {
-        const { error } = await supabase.from("zones").delete().eq("id", id);
+        const { error } = await supabase.from("zonas_profesor").delete().eq("id", id);
         if (error) throw new Error("No se pudo eliminar la zona");
         setData((d) => ({ ...d, zones: d.zones.filter((z) => z.id !== id) }));
       },
