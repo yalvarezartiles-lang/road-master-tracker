@@ -135,7 +135,7 @@ export function LessonDialog({
               <MapPin className="size-5" /> Zona
             </Label>
             <div className="flex gap-2">
-              <Select value={zone || undefined} onValueChange={setZone}>
+              <Select value={zone} onValueChange={setZone}>
                 <SelectTrigger className="h-14 flex-1 rounded-2xl text-base">
                   <SelectValue
                     placeholder={data.zones.length ? "Elige una zona" : "Aún no tienes zonas"}
