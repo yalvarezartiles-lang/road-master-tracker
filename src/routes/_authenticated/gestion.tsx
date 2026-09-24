@@ -66,7 +66,7 @@ function Section({
   };
 
   return (
-    <section className="rounded-3xl border bg-card p-5">
+    <section className="rounded-3xl border bg-card shadow-sm hover:shadow-md transition-shadow p-5">
       <h2 className="mb-3 flex items-center gap-2 text-lg font-bold">
         {icon} {title}
       </h2>
@@ -158,7 +158,7 @@ function VehicleSection() {
     else toast.success("Matrícula guardada");
   };
   return (
-    <section className="rounded-3xl border bg-card p-5">
+    <section className="rounded-3xl border bg-card shadow-sm hover:shadow-md transition-shadow p-5">
       <h2 className="mb-3 flex items-center gap-2 text-lg font-bold">
         <Car className="size-5" /> Matrícula de mi coche
       </h2>
@@ -182,7 +182,7 @@ function GestionPage() {
   const { data, addZone, deleteZone } = useStore();
   return (
     <div className="min-h-screen bg-background pb-16">
-      <header className="sticky top-0 z-10 border-b bg-background/95 px-4 py-3 backdrop-blur">
+      <header className="sticky top-0 z-50 border-b border-border/60 bg-card/80 backdrop-blur-md px-4 py-3">
         <div className="mx-auto flex max-w-2xl items-center justify-between">
           <Link
             to="/panel"

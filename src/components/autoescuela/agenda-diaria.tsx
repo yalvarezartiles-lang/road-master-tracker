@@ -138,7 +138,7 @@ export function AgendaDiaria({
   };
 
   return (
-    <section className="rounded-3xl border bg-card p-4">
+    <section className="rounded-3xl border bg-card shadow-sm hover:shadow-md transition-shadow p-4">
       <div className="flex items-center gap-2">
         <CalendarDays className="size-6 text-primary" />
         <h2 className="flex-1 text-lg font-bold">{title ?? "Agenda diaria"}</h2>

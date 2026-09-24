@@ -100,7 +100,7 @@ export function OfficePanel({ userId }: { userId: string }) {
           )}
         </section>
 
-        <section className="rounded-3xl border bg-card p-4">
+        <section className="rounded-3xl border bg-card shadow-sm hover:shadow-md transition-shadow p-4">
           <div className="flex items-center justify-between gap-2">
             <h2 className="text-lg font-bold">Alumnos ({students.length})</h2>
           </div>
