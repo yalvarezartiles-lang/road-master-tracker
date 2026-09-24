@@ -87,7 +87,15 @@ export const createFirstAdmin = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     if ((await countUsers()) > 0) throw new Error("Ya existe una cuenta de administrador");
-    await createAccount(data);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: a } = await supabaseAdmin.from("autoescuelas").select("id").order("created_at").limit(1).maybeSingle();
+    let autoescuelaId = a?.id ?? null;
+    if (!autoescuelaId) {
+      const { data: n, error } = await supabaseAdmin.from("autoescuelas").insert({ nombre_comercial: "Mi autoescuela" }).select("id").single();
+      if (error) throw new Error(error.message);
+      autoescuelaId = n.id;
+    }
+    await createAccount({ ...data, autoescuelaId });
     return { ok: true };
   });
 
