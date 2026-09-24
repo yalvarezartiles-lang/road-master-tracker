@@ -153,11 +153,7 @@ export function AgendaDiaria({
         </Button>
       </div>
 
-      {!officeMode && !loading && slots.length > 0 && (
-        <SwipeCards slots={slots} fecha={fecha} students={students} />
-      )}
-
-      {(officeMode || canEdit || loading || slots.length === 0) && (
+      {(
       <ul className="mt-4 space-y-2">
         {loading && (
           <li className="flex justify-center p-4"><Loader2 className="size-6 animate-spin" /></li>
@@ -168,7 +164,6 @@ export function AgendaDiaria({
         {!loading &&
           slots.map((s) => {
             const cancelled = s.estado === "cancelada";
-            if (!canEdit && !officeMode) return null;
             if (!canEdit) {
               const inner = (
                 <>
