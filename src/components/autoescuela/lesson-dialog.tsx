@@ -92,6 +92,30 @@ export function LessonDialog({
   const toggleTopic = (t: string) =>
     setTopics((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
 
+  const zoneQuery = zoneSearch.trim().toLowerCase();
+  const filteredZones = zoneQuery
+    ? data.zones.filter((z) => z.name.toLowerCase().includes(zoneQuery))
+    : data.zones;
+  const canCreateZone =
+    zoneQuery.length > 0 && !data.zones.some((z) => z.name.toLowerCase() === zoneQuery);
+
+  const handleCreateZone = async () => {
+    const name = zoneSearch.trim();
+    if (!name) return;
+    setCreatingZone(true);
+    try {
+      await addZone(name);
+      setZone(name);
+      setZoneSearch("");
+      setZoneOpen(false);
+      toast.success("Zona creada");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "No se pudo crear la zona");
+    } finally {
+      setCreatingZone(false);
+    }
+  };
+
   const submit = async () => {
     if (!selected) {
       toast.error("Selecciona un alumno");
