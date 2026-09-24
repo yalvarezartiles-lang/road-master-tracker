@@ -99,6 +99,13 @@
       "when": 1790267381484,
       "tag": "0013_students_soft_delete",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1790274437646,
+      "tag": "0014_complete_agenda_class",
+      "breakpoints": true
     }
   ]
 }
