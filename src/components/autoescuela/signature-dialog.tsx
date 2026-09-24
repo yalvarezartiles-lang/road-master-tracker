@@ -74,13 +74,28 @@ export function SignatureDialog({
   const alumnoRef = React.useRef<SignatureCanvas | null>(null);
   const profRef = React.useRef<SignatureCanvas | null>(null);
 
+  const [duration, setDuration] = React.useState<45 | 90>(45);
+  const minus = (hhmm: string, mins: number) => {
+    const [h, m] = hhmm.split(":").map(Number);
+    const t = (((h ?? 0) * 60 + (m ?? 0) - mins) % 1440 + 1440) % 1440;
+    return `${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`;
+  };
+  const applyDuration = (d: 45 | 90, endTime = end) => {
+    setDuration(d);
+    if (endTime) setStart(minus(endTime, d));
+  };
+
   React.useEffect(() => {
     if (lessonId) {
-      setStart(lesson?.horaInicio ?? defaultStart ?? "");
-      setEnd(lesson?.horaFin ?? new Date().toTimeString().slice(0, 5));
+      const now = new Date().toTimeString().slice(0, 5);
+      const e = lesson?.horaFin ?? now;
+      setEnd(e);
+      setDuration(45);
+      setStart(lesson?.horaInicio ?? minus(e, 45));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lessonId]);
+  void defaultStart;
 
   const save = async (pending: boolean) => {
     if (!lessonId) return;
@@ -127,6 +142,19 @@ export function SignatureDialog({
               Clase {lesson.number} · {lesson.matricula || "sin matrícula"}
             </p>
           )}
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          {([45, 90] as const).map((d) => (
+            <Button
+              key={d}
+              type="button"
+              variant={duration === d ? "default" : "outline"}
+              onClick={() => applyDuration(d)}
+              className="h-14 rounded-full text-lg font-bold"
+            >
+              {d} min
+            </Button>
+          ))}
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
