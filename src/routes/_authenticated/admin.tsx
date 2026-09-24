@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useCurrentUser } from "@/lib/auth";
-import { createAutoescuela, createTeamMember, deleteTeamMember, listAutoescuelas, listTeam } from "@/lib/admin.functions";
+import { createAutoescuela, createTeamMember, deleteTeamMember, listArchivedStudents, listAutoescuelas, listTeam, purgeStudent } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -72,6 +72,10 @@ function AdminPage() {
   const [password, setPassword] = React.useState("");
   const [role, setRole] = React.useState<"admin" | "admin_oficina" | "profesor">("profesor");
   const [toDelete, setToDelete] = React.useState<Member | null>(null);
+  const fetchArchived = useServerFn(listArchivedStudents);
+  const purge = useServerFn(purgeStudent);
+  const [archived, setArchived] = React.useState<{ id: string; name: string; apellidos: string; dni: string; autoescuela_id: string | null }[]>([]);
+  const [toPurge, setToPurge] = React.useState<{ id: string; name: string; apellidos: string } | null>(null);
 
   const load = React.useCallback(async () => {
     setLoading(true);
@@ -80,6 +84,7 @@ function AdminPage() {
       const sc = await fetchSchools({});
       setSchools(sc);
       setSchoolId((cur) => cur || sc[0]?.id || "");
+      setArchived(await fetchArchived({}));
     } catch {
       toast.error("No se pudo cargar el equipo");
     } finally {
@@ -263,6 +268,26 @@ function AdminPage() {
           </form>
         </section>
 
+        <section className="rounded-3xl border bg-card p-5">
+          <h2 className="text-lg font-bold">Alumnos archivados ({archived.length})</h2>
+          <ul className="mt-3 divide-y">
+            {archived.length === 0 && <li className="py-4 text-center text-muted-foreground">No hay alumnos archivados.</li>}
+            {archived.map((a) => (
+              <li key={a.id} className="flex items-center gap-2 py-3">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-semibold">{[a.name, a.apellidos].filter(Boolean).join(" ")}</p>
+                  <p className="truncate text-sm text-muted-foreground">
+                    DNI: {a.dni || "—"} · {schools.find((sc) => sc.id === a.autoescuela_id)?.nombre_comercial ?? "Sin autoescuela"}
+                  </p>
+                </div>
+                <Button variant="destructive" className="h-12 rounded-xl" onClick={() => setToPurge(a)}>
+                  <Trash2 className="size-5" /> Eliminar permanentemente
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </section>
+
         <section>
           <h2 className="mb-3 text-lg font-bold">Equipo ({team.length})</h2>
           <ul className="space-y-3">
@@ -318,6 +343,36 @@ function AdminPage() {
               className="h-14 rounded-2xl bg-destructive text-base text-white hover:bg-destructive/90"
             >
               Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog open={!!toPurge} onOpenChange={(o) => !o && setToPurge(null)}>
+        <AlertDialogContent className="rounded-3xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar permanentemente?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se borrarán para siempre {toPurge?.name} {toPurge?.apellidos}, sus clases, firmas y pizarras. No se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="h-14 rounded-2xl text-base">Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async (e) => {
+                e.preventDefault();
+                if (!toPurge) return;
+                try {
+                  await purge({ data: { studentId: toPurge.id } });
+                  toast.success("Alumno eliminado definitivamente");
+                  setToPurge(null);
+                  setArchived(await fetchArchived({}));
+                } catch (err) {
+                  toast.error(err instanceof Error ? err.message : "No se pudo eliminar");
+                }
+              }}
+              className="h-14 rounded-2xl bg-destructive text-base text-white hover:bg-destructive/90"
+            >
+              Eliminar permanentemente
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
