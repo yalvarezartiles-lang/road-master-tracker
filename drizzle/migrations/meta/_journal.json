@@ -36,6 +36,13 @@
       "when": 1790249833489,
       "tag": "0004_skill_blocks_admin_managed",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790251348892,
+      "tag": "0005_zonas_profesor",
+      "breakpoints": true
     }
   ]
 }
