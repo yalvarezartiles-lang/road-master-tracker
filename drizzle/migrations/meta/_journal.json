@@ -57,6 +57,13 @@
       "when": 1790253764588,
       "tag": "0007_dgt_signatures",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1790255454831,
+      "tag": "0008_profile_matricula_vehiculo",
+      "breakpoints": true
     }
   ]
 }

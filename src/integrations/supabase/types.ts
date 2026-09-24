@@ -113,6 +113,7 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          matricula_vehiculo: string
         }
         Insert: {
           apellidos?: string
@@ -121,6 +122,7 @@ export type Database = {
           email?: string
           full_name?: string
           id: string
+          matricula_vehiculo?: string
         }
         Update: {
           apellidos?: string
@@ -129,6 +131,7 @@ export type Database = {
           email?: string
           full_name?: string
           id?: string
+          matricula_vehiculo?: string
         }
         Relationships: []
       }
