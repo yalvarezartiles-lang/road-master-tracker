@@ -43,6 +43,13 @@
       "when": 1790251348892,
       "tag": "0005_zonas_profesor",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790252287589,
+      "tag": "0006_student_dgt_fields",
+      "breakpoints": true
     }
   ]
 }
