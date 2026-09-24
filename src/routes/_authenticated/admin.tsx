@@ -89,7 +89,7 @@ function AdminPage() {
 
   React.useEffect(() => {
     if (loadingUser) return;
-    if (!isAdmin && !isOffice) {
+    if (!isAdmin) {
       navigate({ to: "/panel", replace: true });
       return;
     }

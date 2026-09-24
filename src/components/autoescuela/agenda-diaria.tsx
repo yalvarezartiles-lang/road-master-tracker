@@ -23,7 +23,17 @@ const toISO = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const hm = (t: string) => t.slice(0, 5);
 
-export function AgendaDiaria({ profesorId, title }: { profesorId: string; title?: string }) {
+export function AgendaDiaria({
+  profesorId,
+  title,
+  officeMode = false,
+  studentsVersion = 0,
+}: {
+  profesorId: string;
+  title?: string;
+  officeMode?: boolean;
+  studentsVersion?: number;
+}) {
   const [day, setDay] = React.useState(() => new Date());
   const [slots, setSlots] = React.useState<Slot[]>([]);
   const [students, setStudents] = React.useState<StudentOpt[]>([]);
@@ -31,6 +41,7 @@ export function AgendaDiaria({ profesorId, title }: { profesorId: string; title?
   const [start, setStart] = React.useState("09:00");
   const [end, setEnd] = React.useState("09:45");
   const [newStudent, setNewStudent] = React.useState("");
+  const [formOpen, setFormOpen] = React.useState(false);
   const fecha = toISO(day);
 
   const load = React.useCallback(async () => {
@@ -80,8 +91,9 @@ export function AgendaDiaria({ profesorId, title }: { profesorId: string; title?
       toast.error("No se pudo añadir el hueco");
       return;
     }
-    toast.success("Hueco añadido");
+    toast.success(officeMode ? "Clase añadida" : "Hueco añadido");
     setNewStudent("");
+    setFormOpen(false);
     void load();
   };
 
@@ -167,23 +179,34 @@ export function AgendaDiaria({ profesorId, title }: { profesorId: string; title?
           })}
       </ul>
 
+      {officeMode && !formOpen ? (
+        <Button onClick={() => setFormOpen(true)} className="mt-4 h-14 w-full rounded-2xl text-base font-bold">
+          <Plus className="size-6" /> Añadir clase a este profesor
+        </Button>
+      ) : (
       <form onSubmit={add} className="mt-4 space-y-2 rounded-2xl bg-muted/40 p-3">
-        <p className="text-sm font-semibold text-muted-foreground">Añadir hueco</p>
+        <p className="text-sm font-semibold text-muted-foreground">{officeMode ? "Nueva clase" : "Añadir hueco"}</p>
+        <select required={officeMode} value={newStudent} onChange={(e) => setNewStudent(e.target.value)} className="h-12 w-full rounded-xl border bg-background px-3 text-base" aria-label="Alumno del nuevo hueco">
+          <option value="">{officeMode ? "— Elige alumno —" : "— Hueco libre —"}</option>
+          {students.map((st) => (
+            <option key={st.id} value={st.id}>{[st.name, st.apellidos].filter(Boolean).join(" ")}</option>
+          ))}
+        </select>
         <div className="flex items-center gap-2">
           <Input type="time" value={start} onChange={(e) => setStart(e.target.value)} className="h-12 flex-1 rounded-xl text-base" aria-label="Nueva hora inicio" />
           <span>–</span>
           <Input type="time" value={end} onChange={(e) => setEnd(e.target.value)} className="h-12 flex-1 rounded-xl text-base" aria-label="Nueva hora fin" />
         </div>
-        <select value={newStudent} onChange={(e) => setNewStudent(e.target.value)} className="h-12 w-full rounded-xl border bg-background px-3 text-base" aria-label="Alumno del nuevo hueco">
-          <option value="">— Hueco libre —</option>
-          {students.map((st) => (
-            <option key={st.id} value={st.id}>{[st.name, st.apellidos].filter(Boolean).join(" ")}</option>
-          ))}
-        </select>
-        <Button type="submit" className="h-12 w-full rounded-xl text-base font-semibold">
-          <Plus className="size-5" /> Añadir
-        </Button>
+        <div className="flex gap-2">
+          {officeMode && (
+            <Button type="button" variant="outline" onClick={() => setFormOpen(false)} className="h-12 flex-1 rounded-xl text-base">Cancelar</Button>
+          )}
+          <Button type="submit" className="h-12 flex-1 rounded-xl text-base font-semibold">
+            <Plus className="size-5" /> {officeMode ? "Guardar clase" : "Añadir"}
+          </Button>
+        </div>
       </form>
+      )}
     </section>
   );
 }
