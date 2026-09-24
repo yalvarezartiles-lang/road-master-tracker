@@ -1,5 +1,16 @@
 import * as React from "react";
-import { LogOut, Pencil, UserPlus } from "lucide-react";
+import { Archive, LogOut, Pencil, UserPlus } from "lucide-react";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -17,7 +28,8 @@ interface Teacher {
 
 export function OfficePanel({ userId }: { userId: string }) {
   const signOut = useSignOut();
-  const { data } = useStore();
+  const { data, deleteStudent: archiveStudent } = useStore();
+  const [toArchive, setToArchive] = React.useState<Student | null>(null);
   const [school, setSchool] = React.useState("");
   const [teachers, setTeachers] = React.useState<Teacher[]>([]);
   const [selected, setSelected] = React.useState("");
@@ -121,11 +133,49 @@ export function OfficePanel({ userId }: { userId: string }) {
                 >
                   <Pencil className="size-5" />
                 </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="size-12 rounded-xl"
+                  aria-label={`Archivar ${s.name}`}
+                  onClick={() => setToArchive(s)}
+                >
+                  <Archive className="size-5" />
+                </Button>
               </li>
             ))}
           </ul>
         </section>
       </main>
+      <AlertDialog open={!!toArchive} onOpenChange={(o) => !o && setToArchive(null)}>
+        <AlertDialogContent className="rounded-3xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Archivar este alumno?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {toArchive?.name} desaparecerá de las listas y agendas, pero sus datos se conservan por normativa legal.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="h-14 rounded-2xl text-base">Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="h-14 rounded-2xl text-base"
+              onClick={async (e) => {
+                e.preventDefault();
+                if (!toArchive) return;
+                try {
+                  await archiveStudent(toArchive.id);
+                  toast.success("Alumno archivado");
+                  setToArchive(null);
+                } catch (err) {
+                  toast.error(err instanceof Error ? err.message : "No se pudo archivar");
+                }
+              }}
+            >
+              Archivar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <StudentDialog open={studentOpen} onOpenChange={setStudentOpen} student={editing} />
     </div>
   );

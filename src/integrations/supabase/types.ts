@@ -254,6 +254,7 @@ export type Database = {
       students: {
         Row: {
           apellidos: string
+          archivado: boolean
           autoescuela_id: string | null
           avatar_color: string
           created_at: string
@@ -267,6 +268,7 @@ export type Database = {
         }
         Insert: {
           apellidos?: string
+          archivado?: boolean
           autoescuela_id?: string | null
           avatar_color?: string
           created_at?: string
@@ -280,6 +282,7 @@ export type Database = {
         }
         Update: {
           apellidos?: string
+          archivado?: boolean
           autoescuela_id?: string | null
           avatar_color?: string
           created_at?: string

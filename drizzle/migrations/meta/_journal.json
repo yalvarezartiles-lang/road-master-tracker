@@ -92,6 +92,13 @@
       "when": 1790266331794,
       "tag": "0012_agenda_autonomo",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1790267381484,
+      "tag": "0013_students_soft_delete",
+      "breakpoints": true
     }
   ]
 }

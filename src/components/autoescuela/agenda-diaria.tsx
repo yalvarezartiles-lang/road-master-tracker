@@ -65,7 +65,7 @@ export function AgendaDiaria({
         .eq("profesor_id", profesorId)
         .eq("fecha", fecha)
         .order("hora_inicio"),
-      supabase.from("students").select("id, name, apellidos").order("name"),
+      supabase.from("students").select("id, name, apellidos").eq("archivado", false).order("name"),
     ]);
     if (a.error) toast.error("No se pudo cargar la agenda");
     setSlots((a.data ?? []) as Slot[]);

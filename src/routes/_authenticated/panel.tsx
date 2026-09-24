@@ -7,7 +7,7 @@ import {
   Search,
   Settings,
   Shield,
-  Trash2,
+  Archive,
   UserPlus,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -99,10 +99,10 @@ function TeacherDashboard() {
     setDeleting(true);
     try {
       await deleteStudent(toDelete.id);
-      toast.success("Alumno eliminado");
+      toast.success("Alumno archivado");
       setToDelete(null);
     } catch {
-      toast.error("No se pudo eliminar el alumno");
+      toast.error("No se pudo archivar el alumno");
     } finally {
       setDeleting(false);
     }
@@ -206,11 +206,11 @@ function TeacherDashboard() {
               <Button
                 variant="ghost"
                 size="icon"
-                aria-label={`Eliminar ${s.name}`}
+                aria-label={`Archivar ${s.name}`}
                 onClick={() => setToDelete({ id: s.id, name: s.name })}
                 className="size-14 shrink-0 rounded-2xl text-destructive hover:bg-destructive/10"
               >
-                <Trash2 className="size-6" />
+                <Archive className="size-6" />
               </Button>
             </li>
           ))}
@@ -240,11 +240,10 @@ function TeacherDashboard() {
         <AlertDialogContent className="rounded-3xl">
           <AlertDialogHeader>
             <AlertDialogTitle>
-              ¿Estás seguro de que deseas eliminar este alumno?
+              ¿Archivar este alumno?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Se borrarán también todas las clases de {toDelete?.name}. Esta acción no se
-              puede deshacer.
+              {toDelete?.name} desaparecerá de las listas, pero sus datos y clases se conservan por normativa legal.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -259,7 +258,7 @@ function TeacherDashboard() {
               }}
               className="h-14 rounded-2xl bg-destructive text-base text-white hover:bg-destructive/90"
             >
-              Eliminar
+              Archivar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
