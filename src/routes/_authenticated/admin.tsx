@@ -41,6 +41,8 @@ export const Route = createFileRoute("/_authenticated/admin")({
 interface Member {
   id: string;
   full_name: string;
+  apellidos?: string;
+  dni?: string;
   email: string;
   role: "admin" | "profesor";
 }
@@ -56,6 +58,8 @@ function AdminPage() {
   const [loading, setLoading] = React.useState(true);
   const [busy, setBusy] = React.useState(false);
   const [fullName, setFullName] = React.useState("");
+  const [apellidos, setApellidos] = React.useState("");
+  const [dni, setDni] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [role, setRole] = React.useState<"admin" | "profesor">("profesor");
@@ -85,9 +89,11 @@ function AdminPage() {
     e.preventDefault();
     setBusy(true);
     try {
-      await createMember({ data: { fullName, email, password, role } });
+      await createMember({ data: { fullName, apellidos, dni, email, password, role } });
       toast.success("Cuenta creada");
       setFullName("");
+      setApellidos("");
+      setDni("");
       setEmail("");
       setPassword("");
       setRole("profesor");
@@ -153,6 +159,14 @@ function AdminPage() {
               />
             </div>
             <div className="space-y-2">
+              <Label htmlFor="ap" className="text-base">Apellidos</Label>
+              <Input id="ap" value={apellidos} onChange={(e) => setApellidos(e.target.value)} required className="h-14 rounded-2xl text-base" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="dn" className="text-base">DNI</Label>
+              <Input id="dn" value={dni} onChange={(e) => setDni(e.target.value.toUpperCase())} required placeholder="00000000A" className="h-14 rounded-2xl text-base" />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="em" className="text-base">
                 Email
               </Label>
@@ -214,7 +228,7 @@ function AdminPage() {
                 className="flex items-center gap-3 rounded-3xl border bg-card p-4"
               >
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-base font-bold">{m.full_name || m.email}</p>
+                  <p className="truncate text-base font-bold">{[m.full_name, m.apellidos].filter(Boolean).join(" ") || m.email}{m.dni ? ` · ${m.dni}` : ""}</p>
                   <p className="truncate text-sm text-muted-foreground">{m.email}</p>
                   <span className="mt-1 inline-flex rounded-full bg-muted px-3 py-1 text-xs font-semibold uppercase">
                     {m.role === "admin" ? "Administrador" : "Profesor"}

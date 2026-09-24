@@ -25,6 +25,8 @@ import { useStore } from "@/lib/autoescuela/store";
 import { DEFAULT_TOPICS, NOTE_PRESETS } from "@/lib/autoescuela/types";
 import { SkillSemaphore } from "./skill-semaphore";
 import { Whiteboard } from "./whiteboard";
+import { Input } from "@/components/ui/input";
+import { SignatureDialog } from "./signature-dialog";
 
 function Chip({
   active,
@@ -61,7 +63,10 @@ export function LessonDialog({
   onOpenChange: (open: boolean) => void;
   studentId?: string;
 }) {
-  const { data, addLesson, addZone } = useStore();
+  const { data, addLesson, addZone, lastMatricula } = useStore();
+  const [matricula, setMatricula] = React.useState("");
+  const [signLessonId, setSignLessonId] = React.useState<string | null>(null);
+  const [startTime, setStartTime] = React.useState("");
   const [selected, setSelected] = React.useState<string | undefined>(studentId);
   const [zone, setZone] = React.useState<string>(data.zones[0]?.name ?? "");
   const [zoneOpen, setZoneOpen] = React.useState(false);
@@ -82,6 +87,8 @@ export function LessonDialog({
       setNotes("");
       setBoard(null);
       setBoardKey((k) => k + 1);
+      setStartTime(new Date().toTimeString().slice(0, 5));
+      void lastMatricula().then(setMatricula);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, studentId]);
@@ -121,17 +128,22 @@ export function LessonDialog({
       toast.error("Selecciona un alumno");
       return;
     }
-    try {
-      await addLesson(selected, { date: new Date().toISOString(), zone, topics, notes, whiteboard: board });
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Error al guardar");
+    if (!matricula.trim()) {
+      toast.error("Indica la matrícula del vehículo");
       return;
     }
-    toast.success(`Clase ${nextNumber} registrada`);
-    onOpenChange(false);
+    try {
+      const id = await addLesson(selected, { date: new Date().toISOString(), zone, topics, notes, whiteboard: board, matricula: matricula.trim().toUpperCase() });
+      toast.success(`Clase ${nextNumber} registrada`);
+      onOpenChange(false);
+      setSignLessonId(id);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Error al guardar");
+    }
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[92vh] max-w-xl overflow-y-auto rounded-3xl p-5">
         <DialogHeader className="text-left">
@@ -162,6 +174,18 @@ export function LessonDialog({
               </div>
             </section>
           )}
+
+          <section>
+            <Label className="mb-2 flex items-center gap-2 text-base">
+              <Car className="size-5" /> Matrícula
+            </Label>
+            <Input
+              value={matricula}
+              onChange={(e) => setMatricula(e.target.value.toUpperCase())}
+              placeholder="0000 ABC"
+              className="h-14 rounded-2xl text-lg font-bold tracking-wider"
+            />
+          </section>
 
           <section>
             <Label className="mb-2 flex items-center gap-2 text-base">
@@ -284,10 +308,17 @@ export function LessonDialog({
           </section>
 
           <Button onClick={() => void submit()} className="h-16 w-full rounded-2xl text-lg font-bold">
-            <Save className="size-6" /> Guardar clase {nextNumber}
+            <Save className="size-6" /> Finalizar clase {nextNumber}
           </Button>
         </div>
       </DialogContent>
     </Dialog>
+    <SignatureDialog
+      lessonId={signLessonId}
+      studentId={selected}
+      defaultStart={startTime}
+      onClose={() => setSignLessonId(null)}
+    />
+    </>
   );
 }

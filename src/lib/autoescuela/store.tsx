@@ -16,8 +16,13 @@ interface StoreValue {
   ) => Promise<void>;
   addLesson: (
     studentId: string,
-    input: { date: string; zone: string; topics: string[]; notes: string; whiteboard?: string | null },
+    input: { date: string; zone: string; topics: string[]; notes: string; whiteboard?: string | null; matricula: string },
+  ) => Promise<string>;
+  signLesson: (
+    lessonId: string,
+    input: { horaInicio: string; horaFin: string; firmaAlumno: string | null; firmaProfesor: string | null },
   ) => Promise<void>;
+  lastMatricula: () => Promise<string>;
   setSkill: (studentId: string, skill: SkillKey, level: SkillLevel) => Promise<void>;
   addZone: (zone: string) => Promise<void>;
   deleteZone: (id: string) => Promise<void>;
@@ -88,6 +93,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           topics: l.topics ?? [],
           notes: l.notes ?? "",
           whiteboard: boards.get(l.id) ?? null,
+          matricula: l.matricula ?? "",
+          horaInicio: l.hora_inicio ?? null,
+          horaFin: l.hora_fin ?? null,
+          firmaAlumno: l.firma_alumno ?? null,
+          firmaProfesor: l.firma_profesor ?? null,
+          profesorId: l.created_by ?? null,
         })),
     }));
 
@@ -159,6 +170,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           zone: input.zone,
           topics: input.topics,
           notes: input.notes,
+          matricula: input.matricula,
         }).select("id").single();
         if (error || !lesson) throw new Error("No se pudo guardar la clase");
         if (input.whiteboard) {
@@ -168,6 +180,28 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           if (wErr) throw new Error("Clase guardada, pero no la pizarra");
         }
         await refresh();
+        return lesson.id;
+      },
+      signLesson: async (lessonId, i) => {
+        const { error } = await supabase
+          .from("lessons")
+          .update({ hora_inicio: i.horaInicio, hora_fin: i.horaFin, firma_alumno: i.firmaAlumno, firma_profesor: i.firmaProfesor })
+          .eq("id", lessonId);
+        if (error) throw new Error("No se pudieron guardar las firmas");
+        await refresh();
+      },
+      lastMatricula: async () => {
+        const { data: u } = await supabase.auth.getUser();
+        if (!u.user) return "";
+        const { data: row } = await supabase
+          .from("lessons")
+          .select("matricula")
+          .eq("created_by", u.user.id)
+          .neq("matricula", "")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        return row?.matricula ?? "";
       },
       setSkill: async (studentId, skill, level) => {
         const student = data.students.find((s) => s.id === studentId);
