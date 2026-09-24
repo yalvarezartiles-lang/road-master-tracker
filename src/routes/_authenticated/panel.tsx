@@ -7,7 +7,7 @@ import {
   Search,
   Settings,
   Shield,
-  Trash2,
+  Archive,
   UserPlus,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -206,11 +206,11 @@ function TeacherDashboard() {
               <Button
                 variant="ghost"
                 size="icon"
-                aria-label={`Eliminar ${s.name}`}
+                aria-label={`Archivar ${s.name}`}
                 onClick={() => setToDelete({ id: s.id, name: s.name })}
                 className="size-14 shrink-0 rounded-2xl text-destructive hover:bg-destructive/10"
               >
-                <Trash2 className="size-6" />
+                <Archive className="size-6" />
               </Button>
             </li>
           ))}

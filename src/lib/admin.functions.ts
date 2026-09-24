@@ -182,3 +182,38 @@ export const createAutoescuela = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+/** Super admin: alumnos archivados de todas las autoescuelas. */
+export const listArchivedStudents = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("students")
+      .select("id, name, apellidos, dni, autoescuela_id")
+      .eq("archivado", true)
+      .order("name");
+    if (error) throw new Error(error.message);
+    return (data ?? []) as { id: string; name: string; apellidos: string; dni: string; autoescuela_id: string | null }[];
+  });
+
+/** Super admin: borrado físico definitivo de un alumno archivado. */
+export const purgeStudent = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { studentId: string }) => ({ studentId: String(input.studentId) }))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: st } = await supabaseAdmin.from("students").select("archivado").eq("id", data.studentId).maybeSingle();
+    if (!st) throw new Error("Alumno no encontrado");
+    if (!st.archivado) throw new Error("Solo se pueden eliminar alumnos archivados");
+    const { data: ls } = await supabaseAdmin.from("lessons").select("id").eq("student_id", data.studentId);
+    const ids = (ls ?? []).map((l) => l.id);
+    if (ids.length) await supabaseAdmin.from("lesson_whiteboards").delete().in("lesson_id", ids);
+    await supabaseAdmin.from("lessons").delete().eq("student_id", data.studentId);
+    await supabaseAdmin.from("agenda_diaria").delete().eq("student_id", data.studentId);
+    const { error } = await supabaseAdmin.from("students").delete().eq("id", data.studentId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
