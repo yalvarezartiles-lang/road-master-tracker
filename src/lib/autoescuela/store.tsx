@@ -32,7 +32,13 @@ interface StoreValue {
   deleteStudent: (studentId: string) => Promise<void>;
 }
 
-const StoreContext = React.createContext<StoreValue | null>(null);
+// El contexto se guarda en globalThis para que su identidad sobreviva a
+// recargas en caliente del módulo (HMR) y a instancias duplicadas del mismo:
+// así el proveedor y los consumidores siempre comparten el mismo contexto.
+const StoreContext: React.Context<StoreValue | null> =
+  ((globalThis as any).__autoescuelaStoreContext ??= React.createContext<StoreValue | null>(
+    null,
+  ));
 
 const AVATAR_COLORS = [
   "oklch(0.62 0.17 250)",
