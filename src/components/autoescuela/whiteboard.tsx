@@ -144,13 +144,14 @@ function drawElement(ctx: CanvasRenderingContext2D, element: BoardElement) {
   ctx.restore();
 }
 
+// Pizarra efímera: su contenido vive solo en memoria y nunca se envía a la nube.
 export function Whiteboard({
-  saved,
-  onSave,
+  saved = false,
+  onSave = () => {},
 }: {
-  saved: boolean;
-  onSave: (dataUrl: string | null) => void;
-}) {
+  saved?: boolean;
+  onSave?: (dataUrl: string | null) => void;
+} = {}) {
   const fullscreenRef = React.useRef<HTMLDivElement>(null);
   const ref = React.useRef<HTMLCanvasElement>(null);
   const boardRef = React.useRef<HTMLDivElement>(null);
@@ -431,10 +432,6 @@ export function Whiteboard({
         </div>
       </div>
 
-      <Button type="button" variant={saved ? "secondary" : "outline"} disabled={!dirty} className="h-13 w-full rounded-2xl text-base font-semibold" onClick={saveBoard}>
-        {saved ? <CheckCircle className="size-5" /> : <Save className="size-5" />}
-        {saved ? "Explicación lista (se guarda con la clase)" : "Guardar explicación"}
-      </Button>
     </div>
   );
 }
