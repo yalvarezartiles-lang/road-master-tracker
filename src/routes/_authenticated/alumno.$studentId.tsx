@@ -3,7 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, CalendarDays, MapPin, Phone, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/lib/autoescuela/store";
-import { SkillPicker } from "@/components/autoescuela/skill-traffic-light";
+import { SkillSemaphore, SkillProgressBanner } from "@/components/autoescuela/skill-semaphore";
 import { LessonDialog } from "@/components/autoescuela/lesson-dialog";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
@@ -38,7 +38,7 @@ const fmt = (iso: string) =>
 
 function StudentPage() {
   const { studentId } = Route.useParams();
-  const { data, setSkill } = useStore();
+  const { data } = useStore();
   const [lessonOpen, setLessonOpen] = React.useState(false);
   const student = data.students.find((s) => s.id === studentId);
 
@@ -72,6 +72,7 @@ function StudentPage() {
       </header>
 
       <main className="mx-auto max-w-2xl space-y-8 px-4 py-5">
+        <SkillProgressBanner student={student} />
         <section className="rounded-3xl border bg-card p-5">
           <h1 className="text-2xl font-extrabold">{student.name}</h1>
           <div className="mt-3 grid gap-2 text-base text-muted-foreground">
@@ -89,20 +90,8 @@ function StudentPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-lg font-bold">Habilidades</h2>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {data.skills.length === 0 && (
-              <p className="text-sm text-muted-foreground">Aún no has creado habilidades.</p>
-            )}
-            {data.skills.map((s) => (
-              <SkillPicker
-                key={s.id}
-                label={s.name}
-                value={student.skills[s.id] ?? "rojo"}
-                onChange={(level) => setSkill(student.id, s.id, level)}
-              />
-            ))}
-          </div>
+          <h2 className="mb-3 text-lg font-bold">Semáforo de habilidades</h2>
+          <SkillSemaphore student={student} />
         </section>
 
         <section>
