@@ -9,7 +9,11 @@ interface StoreValue {
   hydrated: boolean;
   loading: boolean;
   refresh: () => Promise<void>;
-  addStudent: (input: { name: string; phone: string }) => Promise<Student | null>;
+  addStudent: (input: { name: string; apellidos: string; dni: string; phone: string }) => Promise<Student | null>;
+  updateStudent: (
+    studentId: string,
+    input: { name: string; apellidos: string; dni: string; phone: string },
+  ) => Promise<void>;
   addLesson: (
     studentId: string,
     input: { date: string; zone: string; topics: string[]; notes: string; whiteboard?: string | null },
@@ -68,6 +72,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const students: Student[] = (studentsRes.data ?? []).map((s: any) => ({
       id: s.id,
       name: s.name,
+      apellidos: s.apellidos ?? "",
+      dni: s.dni ?? "",
       phone: s.phone ?? "",
       startDate: s.start_date,
       avatarColor: s.avatar_color,
@@ -108,11 +114,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       hydrated,
       loading,
       refresh,
-      addStudent: async ({ name, phone }) => {
+      addStudent: async ({ name, apellidos, dni, phone }) => {
         const { data: inserted, error } = await supabase
           .from("students")
           .insert({
             name,
+            apellidos,
+            dni,
             phone,
             avatar_color:
               AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)] ??
@@ -125,12 +133,22 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         return {
           id: inserted.id,
           name: inserted.name,
+          apellidos: inserted.apellidos ?? "",
+          dni: inserted.dni ?? "",
           phone: inserted.phone ?? "",
           startDate: inserted.start_date,
           avatarColor: inserted.avatar_color,
           skills: parseSkills(inserted.skills),
           lessons: [],
         };
+      },
+      updateStudent: async (studentId, { name, apellidos, dni, phone }) => {
+        const { error } = await supabase
+          .from("students")
+          .update({ name, apellidos, dni, phone })
+          .eq("id", studentId);
+        if (error) throw new Error("No se pudo guardar el alumno");
+        await refresh();
       },
       addLesson: async (studentId, input) => {
         const student = data.students.find((s) => s.id === studentId);
