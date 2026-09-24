@@ -311,6 +311,7 @@ export function LessonDialog({
       studentId={selected}
       defaultStart={startTime}
       onClose={() => setSignLessonId(null)}
+      autoAdvance
     />
     </>
   );

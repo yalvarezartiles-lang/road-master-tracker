@@ -375,6 +375,7 @@ export type Database = {
         Returns: boolean
       }
       can_self_schedule: { Args: never; Returns: boolean }
+      complete_agenda_class: { Args: { _id: string }; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

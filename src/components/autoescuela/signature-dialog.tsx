@@ -11,7 +11,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useNavigate } from "@tanstack/react-router";
+import { supabase } from "@/integrations/supabase/client";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useStore } from "@/lib/autoescuela/store";
@@ -37,7 +38,7 @@ function SigPad({ label, padRef }: { label: string; padRef: React.RefObject<Sign
         <Label className="flex items-center gap-2 text-base">
           <PenLine className="size-5" /> {label}
         </Label>
-        <Button type="button" variant="outline" className="h-11 rounded-xl" onClick={() => padRef.current?.clear()}>
+        <Button type="button" variant="outline" className="h-12 min-w-12 rounded-xl" onClick={() => padRef.current?.clear()}>
           <Eraser className="size-5" /> Limpiar
         </Button>
       </div>
@@ -59,7 +60,9 @@ export function SignatureDialog({
   studentId,
   defaultStart,
   onClose,
+  autoAdvance = false,
 }: {
+  autoAdvance?: boolean;
   lessonId: string | null;
   studentId?: string | undefined;
   defaultStart?: string | undefined;
@@ -74,28 +77,75 @@ export function SignatureDialog({
   const alumnoRef = React.useRef<SignatureCanvas | null>(null);
   const profRef = React.useRef<SignatureCanvas | null>(null);
 
-  const [duration, setDuration] = React.useState<45 | 90>(45);
+  const [agendaId, setAgendaId] = React.useState<string | null>(null);
+  const navigate = useNavigate();
   const minus = (hhmm: string, mins: number) => {
     const [h, m] = hhmm.split(":").map(Number);
     const t = (((h ?? 0) * 60 + (m ?? 0) - mins) % 1440 + 1440) % 1440;
     return `${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`;
   };
-  const applyDuration = (d: 45 | 90, endTime = end) => {
-    setDuration(d);
-    if (endTime) setStart(minus(endTime, d));
+  const today = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   };
 
   React.useEffect(() => {
-    if (lessonId) {
-      const now = new Date().toTimeString().slice(0, 5);
-      const e = lesson?.horaFin ?? now;
-      setEnd(e);
-      setDuration(45);
-      setStart(lesson?.horaInicio ?? minus(e, 45));
-    }
+    if (!lessonId) return;
+    const now = new Date().toTimeString().slice(0, 5);
+    const e = lesson?.horaFin ?? now;
+    setEnd(e);
+    setStart(lesson?.horaInicio ?? minus(e, 45));
+    setAgendaId(null);
+    void (async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user || !studentId) return;
+      const { data: rows } = await supabase
+        .from("agenda_diaria")
+        .select("id, hora_inicio, hora_fin")
+        .eq("profesor_id", u.user.id)
+        .eq("fecha", today())
+        .eq("student_id", studentId)
+        .neq("estado", "cancelada")
+        .order("hora_inicio");
+      const row = rows?.[0];
+      if (row) {
+        setAgendaId(row.id);
+        if (!lesson?.horaInicio) {
+          setStart(String(row.hora_inicio).slice(0, 5));
+          setEnd(String(row.hora_fin).slice(0, 5));
+        }
+      }
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lessonId]);
   void defaultStart;
+
+  const goNext = async () => {
+    const { data: u } = await supabase.auth.getUser();
+    if (!u.user) return navigate({ to: "/panel" });
+    const { data: rows } = await supabase
+      .from("agenda_diaria")
+      .select("student_id, hora_inicio, estado")
+      .eq("profesor_id", u.user.id)
+      .eq("fecha", today())
+      .not("student_id", "is", null)
+      .order("hora_inicio");
+    const { data: done } = await supabase
+      .from("lessons")
+      .select("student_id")
+      .gte("date", new Date(new Date().setHours(0, 0, 0, 0)).toISOString());
+    const doneIds = new Set((done ?? []).map((d) => d.student_id));
+    const next = (rows ?? []).find(
+      (r) => r.student_id !== studentId && r.estado !== "cancelada" && r.estado !== "completada" && !doneIds.has(r.student_id),
+    );
+    if (next?.student_id) {
+      toast.info("Siguiente alumno");
+      navigate({ to: "/alumno/$studentId", params: { studentId: next.student_id }, search: { evaluar: true } });
+    } else {
+      toast.success("No quedan más clases hoy");
+      navigate({ to: "/panel" });
+    }
+  };
 
   const save = async (pending: boolean) => {
     if (!lessonId) return;
@@ -116,8 +166,10 @@ export function SignatureDialog({
     setSaving(true);
     try {
       await signLesson(lessonId, { horaInicio: start, horaFin: end, firmaAlumno: fa, firmaProfesor: fp });
+      if (agendaId) await supabase.rpc("complete_agenda_class", { _id: agendaId });
       toast.success(pending ? "Clase guardada con firma pendiente" : "Clase firmada y cerrada");
       onClose();
+      if (autoAdvance) void goNext();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Error al guardar");
     } finally {
@@ -143,29 +195,10 @@ export function SignatureDialog({
             </p>
           )}
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          {([45, 90] as const).map((d) => (
-            <Button
-              key={d}
-              type="button"
-              variant={duration === d ? "default" : "outline"}
-              onClick={() => applyDuration(d)}
-              className="h-14 rounded-full text-lg font-bold"
-            >
-              {d} min
-            </Button>
-          ))}
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <Label className="mb-2 flex items-center gap-2 text-base"><Clock className="size-5" /> Hora inicio</Label>
-            <Input type="time" value={start} onChange={(e) => setStart(e.target.value)} className="h-14 rounded-2xl text-lg" />
-          </div>
-          <div>
-            <Label className="mb-2 flex items-center gap-2 text-base"><Clock className="size-5" /> Hora fin</Label>
-            <Input type="time" value={end} onChange={(e) => { setEnd(e.target.value); applyDuration(duration, e.target.value); }} className="h-14 rounded-2xl text-lg" />
-          </div>
-        </div>
+        <p className="flex items-center gap-2 rounded-2xl border px-4 py-3 text-base font-semibold">
+          <Clock className="size-5 text-primary" /> {start || "--:--"} – {end || "--:--"}
+          <span className="ml-auto text-sm font-normal text-muted-foreground">automático</span>
+        </p>
         {lessonId && (
           <div className="space-y-4">
             <SigPad label="Firma Alumno" padRef={alumnoRef} />

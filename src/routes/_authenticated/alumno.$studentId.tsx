@@ -47,6 +47,9 @@ function StudentPage() {
   const { data } = useStore();
   const { evaluar } = Route.useSearch();
   const [lessonOpen, setLessonOpen] = React.useState(!!evaluar);
+  React.useEffect(() => {
+    if (evaluar) setLessonOpen(true);
+  }, [evaluar, studentId]);
   const [editOpen, setEditOpen] = React.useState(false);
   const [signId, setSignId] = React.useState<string | null>(null);
   const [exporting, setExporting] = React.useState(false);
