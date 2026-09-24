@@ -30,7 +30,7 @@ export function SkillPicker({
   onChange: (level: SkillLevel) => void;
 }) {
   return (
-    <div className="rounded-2xl border bg-card p-3">
+    <div className="rounded-2xl border bg-card shadow-sm hover:shadow-md transition-shadow p-3">
       <p className="mb-2 text-base font-semibold">{label}</p>
       <div className="grid grid-cols-3 gap-2">
         {LEVELS.map((l) => (

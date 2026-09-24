@@ -71,7 +71,7 @@ function StudentPage() {
 
   return (
     <div className="min-h-screen bg-background pb-32">
-      <header className="sticky top-0 z-10 border-b bg-background/95 px-4 py-3 backdrop-blur">
+      <header className="sticky top-0 z-50 border-b border-border/60 bg-card/80 backdrop-blur-md px-4 py-3">
         <div className="mx-auto flex max-w-2xl items-center justify-between">
           <Link
             to="/panel"
@@ -88,7 +88,7 @@ function StudentPage() {
 
       <main className="mx-auto max-w-2xl space-y-8 px-4 py-5">
         <SkillProgressBanner student={student} />
-        <section className="rounded-3xl border bg-card p-5">
+        <section className="rounded-3xl border bg-card shadow-sm hover:shadow-md transition-shadow p-5">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <h1 className="text-2xl font-extrabold">
@@ -177,7 +177,7 @@ function StudentPage() {
           </div>
           <ol className="space-y-3">
             {lessons.map((l) => (
-              <li key={l.id} className="rounded-3xl border bg-card p-4">
+              <li key={l.id} className="rounded-3xl border bg-card shadow-sm hover:shadow-md transition-shadow p-4">
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-lg font-bold">Clase {l.number}</p>
                   <p className="text-sm text-muted-foreground">{fmt(l.date)}</p>
@@ -237,7 +237,7 @@ function StudentPage() {
         </section>
       </main>
 
-      <div className="fixed inset-x-0 bottom-0 border-t bg-background/95 p-4 backdrop-blur">
+      <div className="fixed inset-x-0 bottom-0 border-t bg-background/95 p-4">
         <div className="mx-auto max-w-2xl">
           <Button
             onClick={() => setLessonOpen(true)}

@@ -164,7 +164,7 @@ function AdminPage() {
 
   return (
     <div className="min-h-screen bg-background pb-16">
-      <header className="sticky top-0 z-10 border-b bg-background/95 px-4 py-3 backdrop-blur">
+      <header className="sticky top-0 z-50 border-b border-border/60 bg-card/80 backdrop-blur-md px-4 py-3">
         <div className="mx-auto flex max-w-2xl items-center justify-between">
           <Link
             to="/panel"
@@ -189,7 +189,7 @@ function AdminPage() {
         </div>
 
         {isAdmin && (
-          <section className="rounded-3xl border bg-card p-5">
+          <section className="rounded-3xl border bg-card shadow-sm hover:shadow-md transition-shadow p-5">
             <h2 className="text-lg font-bold">Autoescuelas ({schools.length})</h2>
             <ul className="mt-3 space-y-1 text-base">
               {schools.map((a) => <li key={a.id}>• {a.nombre_comercial}</li>)}
@@ -201,7 +201,7 @@ function AdminPage() {
           </section>
         )}
 
-        <section className="rounded-3xl border bg-card p-5">
+        <section className="rounded-3xl border bg-card shadow-sm hover:shadow-md transition-shadow p-5">
           <h2 className="text-lg font-bold">Crear cuenta de {isAdmin ? "usuario" : "profesor"}</h2>
           <form onSubmit={onCreate} className="mt-4 space-y-4">
             <div className="space-y-2">
@@ -285,7 +285,7 @@ function AdminPage() {
           </form>
         </section>
 
-        <section className="rounded-3xl border bg-card p-5">
+        <section className="rounded-3xl border bg-card shadow-sm hover:shadow-md transition-shadow p-5">
           <h2 className="text-lg font-bold">Alumnos archivados ({archived.length})</h2>
           <ul className="mt-3 divide-y">
             {archived.length === 0 && <li className="py-4 text-center text-muted-foreground">No hay alumnos archivados.</li>}
@@ -311,7 +311,7 @@ function AdminPage() {
             {team.map((m) => (
               <li
                 key={m.id}
-                className="rounded-3xl border bg-card p-4"
+                className="rounded-3xl border bg-card shadow-sm hover:shadow-md transition-shadow p-4"
               >
                 <div className="flex items-center gap-3">
                   <div className="min-w-0 flex-1">

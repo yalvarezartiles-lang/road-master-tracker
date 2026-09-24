@@ -80,7 +80,7 @@ export function SkillSemaphore({
             <AccordionPrimitive.Item
               key={block.id}
               value={String(block.id)}
-              className="overflow-hidden rounded-3xl border bg-card"
+              className="overflow-hidden rounded-3xl border bg-card shadow-sm hover:shadow-md transition-shadow"
             >
               <AccordionPrimitive.Header className="flex items-center gap-2 p-2">
                 <AccordionPrimitive.Trigger className="group flex min-h-16 flex-1 items-center gap-3 rounded-2xl px-3 text-left">
@@ -126,7 +126,7 @@ export function SkillSemaphore({
                           onClick={() => !modoLectura && setSkill(student.id, k.id, nextLevel(level)).catch(err)}
                           aria-label={modoLectura ? `${k.name}: ${label}` : `${k.name}: ${label}. Pulsa para cambiar`}
                           className={cn(
-                            "flex h-14 min-w-32 items-center justify-center gap-2 rounded-2xl px-3 text-sm font-bold transition",
+                            "flex h-14 min-w-32 items-center justify-center gap-2 rounded-2xl px-3 text-sm font-bold transition-all duration-200 ease-in-out",
                             modoLectura ? "cursor-default" : "active:scale-95",
                             levelClasses[level],
                           )}

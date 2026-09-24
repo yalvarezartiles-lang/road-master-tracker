@@ -8,8 +8,7 @@ import {
   Settings,
   Shield,
   Archive,
-  UserPlus,
-} from "lucide-react";
+  UserPlus, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -72,14 +71,24 @@ function TeacherDashboard() {
   const { data, loading, deleteStudent } = useStore();
   const { isAdmin, user } = useCurrentUser();
   const [teacherName, setTeacherName] = React.useState("");
+  const [schoolName, setSchoolName] = React.useState("");
   React.useEffect(() => {
     if (!user) return;
     void supabase
       .from("profiles")
-      .select("full_name")
+      .select("full_name, autoescuela_id")
       .eq("id", user.id)
       .maybeSingle()
-      .then(({ data: p }) => setTeacherName((p?.full_name ?? "").split(" ")[0] ?? ""));
+      .then(async ({ data: p }) => {
+        setTeacherName((p?.full_name ?? "").split(" ")[0] ?? "");
+        if (!p?.autoescuela_id) return;
+        const { data: a } = await supabase
+          .from("autoescuelas")
+          .select("nombre_comercial")
+          .eq("id", p.autoescuela_id)
+          .maybeSingle();
+        setSchoolName(a?.nombre_comercial ?? "");
+      });
   }, [user]);
   const signOut = useSignOut();
   const [query, setQuery] = React.useState("");
@@ -110,11 +119,18 @@ function TeacherDashboard() {
 
   return (
     <div className="min-h-screen bg-background pb-32">
-      <header className="sticky top-0 z-10 border-b bg-background/95 px-4 py-4 backdrop-blur">
+      <header className="sticky top-0 z-50 border-b border-border/60 bg-card/80 backdrop-blur-md px-4 py-4">
         <div className="mx-auto flex max-w-2xl items-center justify-between gap-3">
-          <h1 className="min-w-0 truncate text-2xl leading-tight font-bold">
-            {teacherName ? `Hola, ${teacherName}` : "Panel"}
-          </h1>
+          <div className="min-w-0">
+            <h1 className="truncate text-2xl leading-tight font-bold tracking-tight">
+              {teacherName ? `Hola, ${teacherName}` : "Panel"}
+            </h1>
+            {schoolName && (
+              <p className="flex items-center gap-1.5 truncate text-sm font-medium text-muted-foreground">
+                <Building2 className="size-4 shrink-0" /> {schoolName}
+              </p>
+            )}
+          </div>
           <div className="flex shrink-0 items-center gap-1">
             {isAdmin && (
               <Button asChild variant="ghost" size="icon" className="size-12 rounded-2xl">
@@ -177,7 +193,7 @@ function TeacherDashboard() {
               <Link
                 to="/alumno/$studentId"
                 params={{ studentId: s.id }}
-                className="flex flex-1 items-center gap-4 rounded-3xl border bg-card p-4 transition active:scale-[0.99]"
+                className="flex flex-1 items-center gap-4 rounded-3xl border bg-card shadow-sm hover:shadow-md transition-shadow p-4 transition active:scale-[0.99]"
               >
                 <span
                   className="flex size-16 shrink-0 items-center justify-center rounded-2xl text-xl font-bold text-white"
@@ -222,7 +238,7 @@ function TeacherDashboard() {
         </ul>
       </main>
 
-      <div className="fixed inset-x-0 bottom-0 border-t bg-background/95 p-4 backdrop-blur">
+      <div className="fixed inset-x-0 bottom-0 border-t bg-background/95 p-4">
         <div className="mx-auto max-w-2xl">
           <Button
             onClick={() => setLessonOpen(true)}

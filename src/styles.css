@@ -83,8 +83,8 @@
   --warning-foreground: oklch(0.2 0.03 85);
   --danger: oklch(0.57 0.22 27);
   --danger-foreground: oklch(0.99 0 0);
-  --background: oklch(0.99 0.004 95);
-  --foreground: oklch(0.16 0.02 260);
+  --background: oklch(0.984 0.003 247.858);
+  --foreground: oklch(0.208 0.042 265.755);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.129 0.042 264.695);
   --popover: oklch(1 0 0);
@@ -161,6 +161,10 @@
 @layer base {
   * {
     border-color: var(--color-border);
+  }
+
+  h1, h2, h3 {
+    letter-spacing: -0.025em;
   }
 
   body {
