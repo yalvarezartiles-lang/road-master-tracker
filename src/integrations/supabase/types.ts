@@ -57,6 +57,7 @@ export type Database = {
           hora_inicio: string | null
           id: string
           matricula: string
+          notas_profesor: string
           notes: string
           number: number
           student_id: string
@@ -73,6 +74,7 @@ export type Database = {
           hora_inicio?: string | null
           id?: string
           matricula?: string
+          notas_profesor?: string
           notes?: string
           number: number
           student_id: string
@@ -89,6 +91,7 @@ export type Database = {
           hora_inicio?: string | null
           id?: string
           matricula?: string
+          notas_profesor?: string
           notes?: string
           number?: number
           student_id?: string
