@@ -5,7 +5,7 @@ import type { User } from "@supabase/supabase-js";
 
 export function useCurrentUser() {
   const [user, setUser] = React.useState<User | null>(null);
-  const [role, setRole] = React.useState<"admin" | "profesor" | null>(null);
+  const [role, setRole] = React.useState<"admin" | "admin_oficina" | "profesor" | null>(null);
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
@@ -22,7 +22,7 @@ export function useCurrentUser() {
           .eq("user_id", data.user.id);
         if (!active) return;
         const list = (roles ?? []).map((r: any) => r.role);
-        setRole(list.includes("admin") ? "admin" : list.length ? "profesor" : null);
+        setRole(list.includes("admin") ? "admin" : list.includes("admin_oficina") ? "admin_oficina" : list.length ? "profesor" : null);
       } else {
         setRole(null);
       }
@@ -41,7 +41,7 @@ export function useCurrentUser() {
     };
   }, []);
 
-  return { user, role, isAdmin: role === "admin", loading };
+  return { user, role, isAdmin: role === "admin", isOffice: role === "admin_oficina", loading };
 }
 
 export function useSignOut() {

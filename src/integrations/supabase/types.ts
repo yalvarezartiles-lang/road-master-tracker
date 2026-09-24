@@ -14,6 +14,81 @@ export type Database = {
   }
   public: {
     Tables: {
+      agenda_diaria: {
+        Row: {
+          autoescuela_id: string
+          created_at: string
+          created_by: string | null
+          estado: string
+          fecha: string
+          hora_fin: string
+          hora_inicio: string
+          id: string
+          notas: string
+          profesor_id: string
+          student_id: string | null
+        }
+        Insert: {
+          autoescuela_id?: string
+          created_at?: string
+          created_by?: string | null
+          estado?: string
+          fecha: string
+          hora_fin: string
+          hora_inicio: string
+          id?: string
+          notas?: string
+          profesor_id: string
+          student_id?: string | null
+        }
+        Update: {
+          autoescuela_id?: string
+          created_at?: string
+          created_by?: string | null
+          estado?: string
+          fecha?: string
+          hora_fin?: string
+          hora_inicio?: string
+          id?: string
+          notas?: string
+          profesor_id?: string
+          student_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agenda_diaria_autoescuela_id_fkey"
+            columns: ["autoescuela_id"]
+            isOneToOne: false
+            referencedRelation: "autoescuelas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agenda_diaria_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      autoescuelas: {
+        Row: {
+          created_at: string
+          id: string
+          nombre_comercial: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nombre_comercial: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nombre_comercial?: string
+        }
+        Relationships: []
+      }
       lesson_whiteboards: {
         Row: {
           created_at: string
@@ -111,6 +186,7 @@ export type Database = {
       profiles: {
         Row: {
           apellidos: string
+          autoescuela_id: string | null
           created_at: string
           dni: string
           email: string
@@ -120,6 +196,7 @@ export type Database = {
         }
         Insert: {
           apellidos?: string
+          autoescuela_id?: string | null
           created_at?: string
           dni?: string
           email?: string
@@ -129,6 +206,7 @@ export type Database = {
         }
         Update: {
           apellidos?: string
+          autoescuela_id?: string | null
           created_at?: string
           dni?: string
           email?: string
@@ -136,7 +214,15 @@ export type Database = {
           id?: string
           matricula_vehiculo?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_autoescuela_id_fkey"
+            columns: ["autoescuela_id"]
+            isOneToOne: false
+            referencedRelation: "autoescuelas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       skills: {
         Row: {
@@ -165,6 +251,7 @@ export type Database = {
       students: {
         Row: {
           apellidos: string
+          autoescuela_id: string | null
           avatar_color: string
           created_at: string
           created_by: string | null
@@ -177,6 +264,7 @@ export type Database = {
         }
         Insert: {
           apellidos?: string
+          autoescuela_id?: string | null
           avatar_color?: string
           created_at?: string
           created_by?: string | null
@@ -189,6 +277,7 @@ export type Database = {
         }
         Update: {
           apellidos?: string
+          autoescuela_id?: string | null
           avatar_color?: string
           created_at?: string
           created_by?: string | null
@@ -199,7 +288,15 @@ export type Database = {
           skills?: Json
           start_date?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "students_autoescuela_id_fkey"
+            columns: ["autoescuela_id"]
+            isOneToOne: false
+            referencedRelation: "autoescuelas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -267,6 +364,10 @@ export type Database = {
     }
     Functions: {
       can_access_lesson: { Args: { _lesson_id: string }; Returns: boolean }
+      can_manage_agenda: {
+        Args: { _autoescuela: string; _profesor: string; _student: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -274,9 +375,11 @@ export type Database = {
         }
         Returns: boolean
       }
+      my_autoescuela: { Args: never; Returns: string }
+      student_in_my_school: { Args: { _student_id: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "admin" | "profesor"
+      app_role: "admin" | "profesor" | "admin_oficina"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -404,7 +507,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "profesor"],
+      app_role: ["admin", "profesor", "admin_oficina"],
     },
   },
 } as const

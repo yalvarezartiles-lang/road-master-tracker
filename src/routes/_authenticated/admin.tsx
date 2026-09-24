@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useCurrentUser } from "@/lib/auth";
-import { createTeamMember, deleteTeamMember, listTeam } from "@/lib/admin.functions";
+import { createAutoescuela, createTeamMember, deleteTeamMember, listAutoescuelas, listTeam } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -44,12 +44,20 @@ interface Member {
   apellidos?: string;
   dni?: string;
   email: string;
-  role: "admin" | "profesor";
+  role: "admin" | "admin_oficina" | "profesor";
+  autoescuela_id?: string | null;
 }
+
+const ROLE_LABEL = { admin: "Administrador", admin_oficina: "Oficina", profesor: "Profesor" } as const;
 
 function AdminPage() {
   const navigate = useNavigate();
-  const { isAdmin, loading: loadingUser } = useCurrentUser();
+  const { isAdmin, isOffice, loading: loadingUser } = useCurrentUser();
+  const fetchSchools = useServerFn(listAutoescuelas);
+  const addSchool = useServerFn(createAutoescuela);
+  const [schools, setSchools] = React.useState<{ id: string; nombre_comercial: string }[]>([]);
+  const [schoolId, setSchoolId] = React.useState("");
+  const [newSchool, setNewSchool] = React.useState("");
   const fetchTeam = useServerFn(listTeam);
   const createMember = useServerFn(createTeamMember);
   const removeMember = useServerFn(deleteTeamMember);
@@ -62,13 +70,16 @@ function AdminPage() {
   const [dni, setDni] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
-  const [role, setRole] = React.useState<"admin" | "profesor">("profesor");
+  const [role, setRole] = React.useState<"admin" | "admin_oficina" | "profesor">("profesor");
   const [toDelete, setToDelete] = React.useState<Member | null>(null);
 
   const load = React.useCallback(async () => {
     setLoading(true);
     try {
       setTeam((await fetchTeam({})) as Member[]);
+      const sc = await fetchSchools({});
+      setSchools(sc);
+      setSchoolId((cur) => cur || sc[0]?.id || "");
     } catch {
       toast.error("No se pudo cargar el equipo");
     } finally {
@@ -78,18 +89,30 @@ function AdminPage() {
 
   React.useEffect(() => {
     if (loadingUser) return;
-    if (!isAdmin) {
+    if (!isAdmin && !isOffice) {
       navigate({ to: "/panel", replace: true });
       return;
     }
     void load();
-  }, [isAdmin, loadingUser, load, navigate]);
+  }, [isAdmin, isOffice, loadingUser, load, navigate]);
+
+  const onCreateSchool = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await addSchool({ data: { nombre: newSchool } });
+      toast.success("Autoescuela creada");
+      setNewSchool("");
+      await load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "No se pudo crear");
+    }
+  };
 
   const onCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
     try {
-      await createMember({ data: { fullName, apellidos, dni, email, password, role } });
+      await createMember({ data: { fullName, apellidos, dni, email, password, role, autoescuelaId: schoolId || null } });
       toast.success("Cuenta creada");
       setFullName("");
       setApellidos("");
@@ -143,8 +166,21 @@ function AdminPage() {
           </div>
         </div>
 
+        {isAdmin && (
+          <section className="rounded-3xl border bg-card p-5">
+            <h2 className="text-lg font-bold">Autoescuelas ({schools.length})</h2>
+            <ul className="mt-3 space-y-1 text-base">
+              {schools.map((a) => <li key={a.id}>• {a.nombre_comercial}</li>)}
+            </ul>
+            <form onSubmit={onCreateSchool} className="mt-4 flex gap-2">
+              <Input value={newSchool} onChange={(e) => setNewSchool(e.target.value)} placeholder="Nombre comercial" required className="h-14 rounded-2xl text-base" />
+              <Button type="submit" className="h-14 rounded-2xl px-5 text-base">Crear</Button>
+            </form>
+          </section>
+        )}
+
         <section className="rounded-3xl border bg-card p-5">
-          <h2 className="text-lg font-bold">Crear cuenta de profesor</h2>
+          <h2 className="text-lg font-bold">Crear cuenta de {isAdmin ? "usuario" : "profesor"}</h2>
           <form onSubmit={onCreate} className="mt-4 space-y-4">
             <div className="space-y-2">
               <Label htmlFor="nm" className="text-base">
@@ -192,8 +228,16 @@ function AdminPage() {
                 className="h-14 rounded-2xl text-base"
               />
             </div>
-            <div className="flex gap-2">
-              {(["profesor", "admin"] as const).map((r) => (
+            {isAdmin && (
+              <div className="space-y-2">
+                <Label htmlFor="sc" className="text-base">Autoescuela</Label>
+                <select id="sc" value={schoolId} onChange={(e) => setSchoolId(e.target.value)} className="h-14 w-full rounded-2xl border bg-background px-4 text-base">
+                  {schools.map((a) => <option key={a.id} value={a.id}>{a.nombre_comercial}</option>)}
+                </select>
+              </div>
+            )}
+            {isAdmin && <div className="flex gap-2">
+              {(["profesor", "admin_oficina", "admin"] as const).map((r) => (
                 <button
                   key={r}
                   type="button"
@@ -204,10 +248,10 @@ function AdminPage() {
                       : "border-border bg-muted/40"
                   }`}
                 >
-                  {r === "admin" ? "Administrador" : "Profesor"}
+                  {ROLE_LABEL[r]}
                 </button>
               ))}
-            </div>
+            </div>}
             <Button
               type="submit"
               disabled={busy}
@@ -231,7 +275,7 @@ function AdminPage() {
                   <p className="truncate text-base font-bold">{[m.full_name, m.apellidos].filter(Boolean).join(" ") || m.email}{m.dni ? ` · ${m.dni}` : ""}</p>
                   <p className="truncate text-sm text-muted-foreground">{m.email}</p>
                   <span className="mt-1 inline-flex rounded-full bg-muted px-3 py-1 text-xs font-semibold uppercase">
-                    {m.role === "admin" ? "Administrador" : "Profesor"}
+                    {ROLE_LABEL[m.role]}{isAdmin && m.autoescuela_id ? ` · ${schools.find((a) => a.id === m.autoescuela_id)?.nombre_comercial ?? ""}` : ""}
                   </span>
                 </div>
                 <Button

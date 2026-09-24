@@ -71,6 +71,20 @@
       "when": 1790257686437,
       "tag": "0009_lessons_notas_profesor",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1790263828667,
+      "tag": "0010_add_admin_oficina_role",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1790263857061,
+      "tag": "0011_multi_tenant_autoescuelas",
+      "breakpoints": true
     }
   ]
 }
