@@ -8,7 +8,7 @@ import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 export default defineConfig({
   vite: {
-    optimizeDeps: { include: ["@radix-ui/react-accordion", "@radix-ui/react-popover", "cmdk"] },
+    optimizeDeps: { include: ["@radix-ui/react-accordion", "@radix-ui/react-popover", "cmdk", "react-signature-canvas", "jspdf", "jspdf-autotable"] },
   },
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
