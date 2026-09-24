@@ -15,6 +15,16 @@ import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useStore } from "@/lib/autoescuela/store";
 import { deliverTicket } from "@/lib/autoescuela/progress-ticket";
 
@@ -77,6 +87,7 @@ export function SignatureDialog({
   const [saving, setSaving] = React.useState(false);
   const alumnoRef = React.useRef<SignatureCanvas | null>(null);
   const profRef = React.useRef<SignatureCanvas | null>(null);
+  const [waPhone, setWaPhone] = React.useState<string | null>(null);
 
   const [agendaId, setAgendaId] = React.useState<string | null>(null);
   const [schoolName, setSchoolName] = React.useState("");
