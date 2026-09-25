@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useStore } from "@/lib/autoescuela/store";
 import { deliverTicket } from "@/lib/autoescuela/progress-ticket";
+import { ProgressTicketCard } from "@/components/autoescuela/progress-ticket-card";
 
 function SigPad({ label, padRef }: { label: string; padRef: React.RefObject<SignatureCanvas | null> }) {
   const boxRef = React.useRef<HTMLDivElement>(null);
@@ -87,7 +88,9 @@ export function SignatureDialog({
   const [saving, setSaving] = React.useState(false);
   const alumnoRef = React.useRef<SignatureCanvas | null>(null);
   const profRef = React.useRef<SignatureCanvas | null>(null);
+  const ticketRef = React.useRef<HTMLDivElement | null>(null);
   const [waPhone, setWaPhone] = React.useState<string | null>(null);
+  const greens = student ? data.skills.filter((k) => student.skills[k.id] === "verde").map((k) => k.name) : [];
 
   const [agendaId, setAgendaId] = React.useState<string | null>(null);
   const [schoolName, setSchoolName] = React.useState("");
@@ -187,14 +190,10 @@ export function SignatureDialog({
       fp = profRef.current.getCanvas().toDataURL("image/png");
     }
     setSaving(true);
-    // Ticket de progreso efímero: se inicia ya para conservar el gesto del usuario.
+    // Ticket de progreso efímero: se captura del nodo siempre montado fuera de pantalla.
     const ticket =
-      !pending && student
-        ? deliverTicket({
-            school: schoolName,
-            student: `${student.name} ${student.apellidos}`.trim(),
-            greens: data.skills.filter((k) => student.skills[k.id] === "verde").map((k) => k.name),
-          }).catch(() => null)
+      !pending && student && ticketRef.current
+        ? deliverTicket(ticketRef.current).catch(() => null)
         : null;
     try {
       await signLesson(lessonId, { horaInicio: start, horaFin: end, firmaAlumno: fa, firmaProfesor: fp });
@@ -227,6 +226,13 @@ export function SignatureDialog({
 
   return (
     <>
+    <ProgressTicketCard
+      ref={ticketRef}
+      school={schoolName}
+      studentName={student ? `${student.name} ${student.apellidos}`.trim() : ""}
+      studentId={studentId}
+      greens={greens}
+    />
     <AlertDialog open={!!waPhone} onOpenChange={(o) => !o && closeWa()}>
       <AlertDialogContent className="rounded-3xl">
         <AlertDialogHeader>
@@ -240,7 +246,7 @@ export function SignatureDialog({
           <AlertDialogAction
             className="h-12 rounded-2xl"
             onClick={() => {
-              const textoWa = "🚗 ¡Gran trabajo hoy! Has sumado nuevos verdes en tu perfil. Pega la imagen aquí para ver tu progreso. ✅";
+              const textoWa = "\uD83D\uDE97 \xA1Gran trabajo hoy! Has sumado nuevos verdes en tu perfil. Pega la imagen aqu\xED para ver tu progreso. \u2705";
               window.open(`https://wa.me/${waPhone}?text=${encodeURIComponent(textoWa)}`, "_blank", "noopener,noreferrer");
             }}
           >
