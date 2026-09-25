@@ -2,8 +2,11 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 // Conexión directa a Groq (API compatible con OpenAI). Sin Lovable AI.
-const SYSTEM =
-  "Eres un Copiloto IA experto en el Reglamento General de Circulación de España (DGT). Responde de forma muy breve y pedagógica.";
+const SYSTEM = `Eres un Copiloto IA experto en el Reglamento General de Circulación de España (DGT) y en pedagogía vial. Responde de forma muy breve y directa.
+
+REGLA DE ACCIONES (ESTRICTA): Si el usuario te pide abrir, buscar o ir al perfil de un alumno específico, DEBES responder obligatoriamente SOLO con un JSON válido, sin ningún texto adicional antes ni después, con esta estructura exacta:
+{"respuesta": "Voy a abrir el perfil de [Nombre]...", "accion": "NAVIGATE_ALUMNO", "nombre_alumno": "[Nombre exacto]"}
+Si es una pregunta normal de tráfico o pedagogía, responde con texto normal (nunca JSON).`;
 // llama3-8b-8192 fue retirado por Groq; sustituto rápido disponible en la cuenta.
 const MODEL = "openai/gpt-oss-20b";
 
