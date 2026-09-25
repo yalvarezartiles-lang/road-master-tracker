@@ -21,7 +21,7 @@ export function CopilotSheet({ student, notes }: { student: Student; notes: stri
     if (!open) {
       window.speechSynthesis?.cancel();
       setSpeaking(false);
-      return;
+      return undefined;
     }
     const c = { verde: 0, amarillo: 0, rojo: 0 };
     data.skills.forEach((k) => {
