@@ -264,7 +264,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       },
       deleteStudent: async (studentId) => {
         // Soft delete: se archiva, nunca se borra físicamente
-        const { error } = await supabase.from("students").update({ archivado: true }).eq("id", studentId);
+        const { error } = await supabase
+          .from("students")
+          .update({ archivado: true, fecha_archivado: new Date().toISOString() })
+          .eq("id", studentId);
         if (error) throw new Error(error.message);
         setData((d) => ({ ...d, students: d.students.filter((s) => s.id !== studentId) }));
       },

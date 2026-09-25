@@ -1,7 +1,7 @@
 import * as React from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, Loader2, Shield, Trash2, UserPlus } from "lucide-react";
+import { ArrowLeft, Check, Loader2, Pencil, Shield, Trash2, Undo2, UserPlus, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useCurrentUser } from "@/lib/auth";
-import { createAutoescuela, createTeamMember, deleteTeamMember, listArchivedStudents, listAutoescuelas, listTeam, purgeStudent, setTeacherAutonomo } from "@/lib/admin.functions";
+import { createAutoescuela, createTeamMember, deleteAutoescuela, deleteTeamMember, listArchivedStudents, listAutoescuelas, listTeam, purgeStudent, restoreStudentAdmin, setTeacherAutonomo, updateAutoescuela } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -51,6 +51,11 @@ interface Member {
 
 const ROLE_LABEL = { admin: "Administrador", admin_oficina: "Oficina", profesor: "Profesor" } as const;
 
+function fmtArchivado(iso: string | null) {
+  if (!iso) return "Archivado (fecha desconocida)";
+  return `Archivado el ${new Date(iso).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" })}`;
+}
+
 function AdminPage() {
   const navigate = useNavigate();
   const { isAdmin, isOffice, loading: loadingUser } = useCurrentUser();
@@ -77,7 +82,12 @@ function AdminPage() {
   const [toDelete, setToDelete] = React.useState<Member | null>(null);
   const fetchArchived = useServerFn(listArchivedStudents);
   const purge = useServerFn(purgeStudent);
-  const [archived, setArchived] = React.useState<{ id: string; name: string; apellidos: string; dni: string; autoescuela_id: string | null }[]>([]);
+  const restoreAdmin = useServerFn(restoreStudentAdmin);
+  const editSchool = useServerFn(updateAutoescuela);
+  const removeSchool = useServerFn(deleteAutoescuela);
+  const [editingSchool, setEditingSchool] = React.useState<{ id: string; nombre: string } | null>(null);
+  const [schoolToDelete, setSchoolToDelete] = React.useState<{ id: string; nombre_comercial: string } | null>(null);
+  const [archived, setArchived] = React.useState<{ id: string; name: string; apellidos: string; dni: string; autoescuela_id: string | null; fecha_archivado: string | null }[]>([]);
   const [toPurge, setToPurge] = React.useState<{ id: string; name: string; apellidos: string } | null>(null);
 
   const load = React.useCallback(async () => {
@@ -191,8 +201,51 @@ function AdminPage() {
         {isAdmin && (
           <section className="rounded-3xl border bg-card shadow-sm hover:shadow-md transition-shadow p-5">
             <h2 className="text-lg font-bold">Autoescuelas ({schools.length})</h2>
-            <ul className="mt-3 space-y-1 text-base">
-              {schools.map((a) => <li key={a.id}>• {a.nombre_comercial}</li>)}
+            <ul className="mt-3 divide-y text-base">
+              {schools.map((a) => (
+                <li key={a.id} className="flex items-center gap-2 py-2">
+                  {editingSchool?.id === a.id ? (
+                    <>
+                      <Input
+                        value={editingSchool.nombre}
+                        onChange={(e) => setEditingSchool({ id: a.id, nombre: e.target.value })}
+                        className="h-12 flex-1 rounded-xl text-base"
+                        autoFocus
+                      />
+                      <Button
+                        size="icon"
+                        className="size-12 rounded-xl"
+                        aria-label="Guardar nombre"
+                        onClick={async () => {
+                          try {
+                            await editSchool({ data: { id: a.id, nombre: editingSchool.nombre } });
+                            toast.success("Autoescuela actualizada");
+                            setEditingSchool(null);
+                            await load();
+                          } catch (err) {
+                            toast.error(err instanceof Error ? err.message : "No se pudo guardar");
+                          }
+                        }}
+                      >
+                        <Check className="size-5" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="size-12 rounded-xl" aria-label="Cancelar" onClick={() => setEditingSchool(null)}>
+                        <X className="size-5" />
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <span className="min-w-0 flex-1 truncate font-semibold">{a.nombre_comercial}</span>
+                      <Button variant="outline" size="icon" className="size-12 rounded-xl" aria-label={`Editar ${a.nombre_comercial}`} onClick={() => setEditingSchool({ id: a.id, nombre: a.nombre_comercial })}>
+                        <Pencil className="size-5" />
+                      </Button>
+                      <Button variant="outline" size="icon" className="size-12 rounded-xl text-destructive" aria-label={`Eliminar ${a.nombre_comercial}`} onClick={() => setSchoolToDelete(a)}>
+                        <Trash2 className="size-5" />
+                      </Button>
+                    </>
+                  )}
+                </li>
+              ))}
             </ul>
             <form onSubmit={onCreateSchool} className="mt-4 flex gap-2">
               <Input value={newSchool} onChange={(e) => setNewSchool(e.target.value)} placeholder="Nombre comercial" required className="h-14 rounded-2xl text-base" />
@@ -290,13 +343,31 @@ function AdminPage() {
           <ul className="mt-3 divide-y">
             {archived.length === 0 && <li className="py-4 text-center text-muted-foreground">No hay alumnos archivados.</li>}
             {archived.map((a) => (
-              <li key={a.id} className="flex items-center gap-2 py-3">
+              <li key={a.id} className="flex flex-wrap items-center gap-2 py-3">
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-semibold">{[a.name, a.apellidos].filter(Boolean).join(" ")}</p>
+                  <p className="text-sm font-semibold text-warning-foreground">
+                    <span className="rounded-full bg-warning/20 px-2 py-0.5">{fmtArchivado(a.fecha_archivado)}</span>
+                  </p>
                   <p className="truncate text-sm text-muted-foreground">
                     DNI: {a.dni || "—"} · {schools.find((sc) => sc.id === a.autoescuela_id)?.nombre_comercial ?? "Sin autoescuela"}
                   </p>
                 </div>
+                <Button
+                  variant="outline"
+                  className="h-12 rounded-xl"
+                  onClick={async () => {
+                    try {
+                      await restoreAdmin({ data: { studentId: a.id } });
+                      setArchived((l) => l.filter((x) => x.id !== a.id));
+                      toast.success("Alumno recuperado");
+                    } catch (err) {
+                      toast.error(err instanceof Error ? err.message : "No se pudo recuperar");
+                    }
+                  }}
+                >
+                  <Undo2 className="size-5" /> Recuperar
+                </Button>
                 <Button variant="destructive" className="h-12 rounded-xl" onClick={() => setToPurge(a)}>
                   <Trash2 className="size-5" /> Eliminar permanentemente
                 </Button>
@@ -411,6 +482,37 @@ function AdminPage() {
               className="h-14 rounded-2xl bg-destructive text-base text-white hover:bg-destructive/90"
             >
               Eliminar permanentemente
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog open={!!schoolToDelete} onOpenChange={(o) => !o && setSchoolToDelete(null)}>
+        <AlertDialogContent className="rounded-3xl border-2 border-destructive">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-destructive">¿Eliminar la autoescuela "{schoolToDelete?.nombre_comercial}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción es irreversible. Solo se puede eliminar si ya no tiene cuentas ni alumnos (tampoco archivados). Su agenda se borrará.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="h-14 rounded-2xl text-base">Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async (e) => {
+                e.preventDefault();
+                if (!schoolToDelete) return;
+                try {
+                  await removeSchool({ data: { id: schoolToDelete.id } });
+                  toast.success("Autoescuela eliminada");
+                  setSchoolToDelete(null);
+                  setSchoolId("");
+                  await load();
+                } catch (err) {
+                  toast.error(err instanceof Error ? err.message : "No se pudo eliminar");
+                }
+              }}
+              className="h-14 rounded-2xl bg-destructive text-base text-white hover:bg-destructive/90"
+            >
+              Eliminar definitivamente
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

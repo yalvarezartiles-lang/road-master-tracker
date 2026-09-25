@@ -260,6 +260,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           dni: string
+          fecha_archivado: string | null
           id: string
           name: string
           phone: string
@@ -274,6 +275,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           dni?: string
+          fecha_archivado?: string | null
           id?: string
           name: string
           phone?: string
@@ -288,6 +290,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           dni?: string
+          fecha_archivado?: string | null
           id?: string
           name?: string
           phone?: string
