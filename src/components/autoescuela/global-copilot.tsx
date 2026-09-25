@@ -177,14 +177,17 @@ export function GlobalCopilot() {
       // Intercepción de acciones: el Copiloto puede navegar a un alumno.
       if (res.accion === "NAVIGATE_ALUMNO") {
         const nombre = (res.nombre_alumno || "").replace(/[,()%"]/g, "").trim();
+        const tokens = nombre.toLowerCase().split(/\s+/).filter(Boolean);
         let alumnoId: string | null = null;
-        if (nombre) {
+        if (tokens.length > 0) {
           const { data: alumnos } = await supabase
             .from("students")
-            .select("id")
-            .or(`name.ilike.%${nombre}%,apellidos.ilike.%${nombre}%`)
-            .limit(1);
-          alumnoId = alumnos?.[0]?.id ?? null;
+            .select("id, name, apellidos");
+          const found = (alumnos ?? []).find((a) => {
+            const full = `${a.name} ${a.apellidos ?? ""}`.toLowerCase();
+            return tokens.every((t) => full.includes(t));
+          });
+          alumnoId = found?.id ?? null;
         }
         if (alumnoId) {
           keepSpeakingRef.current = true;
