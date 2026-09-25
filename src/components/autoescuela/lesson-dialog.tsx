@@ -25,7 +25,6 @@ import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/autoescuela/store";
 import { DEFAULT_TOPICS } from "@/lib/autoescuela/types";
 import { SkillSemaphore } from "./skill-semaphore";
-import { CopilotSheet } from "./copilot-sheet";
 import { Whiteboard } from "./whiteboard";
 import { Input } from "@/components/ui/input";
 import { SignatureDialog } from "./signature-dialog";
@@ -266,10 +265,7 @@ export function LessonDialog({
 
           {student && (
             <section>
-              <div className="mb-2 flex items-center justify-between gap-2">
-                <Label className="block text-base">Semáforo de habilidades</Label>
-                <CopilotSheet student={student} notes={notasProfesor} />
-              </div>
+              <Label className="mb-2 block text-base">Semáforo de habilidades</Label>
               <SkillSemaphore student={student} modoLectura={false} />
             </section>
           )}
