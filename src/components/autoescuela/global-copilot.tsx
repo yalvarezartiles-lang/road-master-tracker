@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 
 type Msg = { role: "copiloto" | "profesor"; text: string };
 
@@ -214,20 +215,30 @@ export function GlobalCopilot() {
     }
   };
 
+  const constraintsRef = React.useRef<HTMLDivElement>(null);
+  const draggedRef = React.useRef(false);
+
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        aria-label="Abrir Copiloto IA"
-        className={cn(
-          "fixed right-6 z-50 flex size-16 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl ring-4 ring-primary/25 transition-all duration-200 ease-in-out hover:scale-105 active:scale-95",
-          ctx === "alumno" ? "bottom-32" : "bottom-6",
-        )}
+      <div ref={constraintsRef} className="pointer-events-none fixed inset-0 z-50" />
+      <motion.div
+        drag
+        dragMomentum={false}
+        dragConstraints={constraintsRef}
+        onDragStart={() => { draggedRef.current = true; }}
+        onDragEnd={() => { setTimeout(() => { draggedRef.current = false; }, 50); }}
+        className={cn("fixed right-6 z-50 touch-none", ctx === "alumno" ? "bottom-32" : "bottom-6")}
       >
-        <span className="absolute inset-0 animate-ping rounded-full bg-primary/30 [animation-duration:2.5s]" />
-        <Sparkles className="relative size-7" />
-      </button>
+        <button
+          type="button"
+          onClick={() => { if (!draggedRef.current) setOpen(true); }}
+          aria-label="Abrir Copiloto IA"
+          className="relative flex size-16 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl ring-4 ring-primary/25 transition-transform duration-200 ease-in-out hover:scale-105 active:scale-95"
+        >
+          <span className="absolute inset-0 animate-ping rounded-full bg-primary/30 [animation-duration:2.5s]" />
+          <Sparkles className="relative size-7" />
+        </button>
+      </motion.div>
 
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-md">

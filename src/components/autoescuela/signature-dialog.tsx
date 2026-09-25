@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -85,6 +86,8 @@ export function SignatureDialog({
   const lesson = student?.lessons.find((l) => l.id === lessonId);
   const [start, setStart] = React.useState("");
   const [end, setEnd] = React.useState("");
+  const [dur, setDur] = React.useState<"45" | "90" | "custom" | null>(null);
+  const [customMin, setCustomMin] = React.useState("");
   const [saving, setSaving] = React.useState(false);
   const alumnoRef = React.useRef<SignatureCanvas | null>(null);
   const profRef = React.useRef<SignatureCanvas | null>(null);
@@ -120,7 +123,9 @@ export function SignatureDialog({
     const now = new Date().toTimeString().slice(0, 5);
     const e = lesson?.horaFin ?? now;
     setEnd(e);
-    setStart(lesson?.horaInicio ?? minus(e, 45));
+    setStart("");
+    setDur(null);
+    setCustomMin("");
     setAgendaId(null);
     void (async () => {
       const { data: u } = await supabase.auth.getUser();
@@ -136,10 +141,7 @@ export function SignatureDialog({
       const row = rows?.[0];
       if (row) {
         setAgendaId(row.id);
-        if (!lesson?.horaInicio) {
-          setStart(String(row.hora_inicio).slice(0, 5));
-          setEnd(String(row.hora_fin).slice(0, 5));
-        }
+
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -175,10 +177,16 @@ export function SignatureDialog({
 
   const save = async (pending: boolean) => {
     if (!lessonId) return;
-    if (!start || !end) {
-      toast.error("Indica hora de inicio y fin");
+    const mins = dur === "45" ? 45 : dur === "90" ? 90 : dur === "custom" ? parseInt(customMin, 10) : NaN;
+    if (!dur) {
+      toast.error("Elige la duración de la clase");
       return;
     }
+    if (!Number.isFinite(mins) || mins < 1 || mins > 600) {
+      toast.error("Indica los minutos de la clase");
+      return;
+    }
+    const start = minus(end, mins);
     let fa: string | null = null;
     let fp: string | null = null;
     if (!pending) {
@@ -274,10 +282,37 @@ export function SignatureDialog({
             </p>
           )}
         </div>
-        <p className="flex items-center gap-2 rounded-2xl border px-4 py-3 text-base font-semibold">
-          <Clock className="size-5 text-primary" /> {start || "--:--"} – {end || "--:--"}
-          <span className="ml-auto text-sm font-normal text-muted-foreground">automático</span>
-        </p>
+        <div className="space-y-2">
+          <Label className="flex items-center gap-2 text-base">
+            <Clock className="size-5 text-primary" /> Duración de la clase
+          </Label>
+          <div className="grid grid-cols-3 gap-2">
+            {([["45", "45 min"], ["90", "90 min"], ["custom", "Personalizado"]] as const).map(([v, l]) => (
+              <Button
+                key={v}
+                type="button"
+                variant={dur === v ? "default" : "outline"}
+                aria-pressed={dur === v}
+                onClick={() => setDur(v)}
+                className="h-14 rounded-2xl text-base font-bold"
+              >
+                {l}
+              </Button>
+            ))}
+          </div>
+          {dur === "custom" && (
+            <Input
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={600}
+              placeholder="Minutos"
+              value={customMin}
+              onChange={(e) => setCustomMin(e.target.value)}
+              className="h-12 rounded-xl text-base"
+            />
+          )}
+        </div>
         {lessonId && (
           <div className="space-y-4">
             <SigPad label="Firma Alumno" padRef={alumnoRef} />
