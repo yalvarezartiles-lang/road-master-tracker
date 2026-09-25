@@ -4,7 +4,8 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 // Conexión directa a Groq (API compatible con OpenAI). Sin Lovable AI.
 const SYSTEM =
   "Eres un Copiloto IA experto en el Reglamento General de Circulación de España (DGT). Responde de forma muy breve y pedagógica.";
-const MODEL = "llama3-8b-8192";
+// llama3-8b-8192 fue retirado por Groq; sustituto rápido disponible en la cuenta.
+const MODEL = "openai/gpt-oss-20b";
 
 type Input = { message: string; context: string };
 
