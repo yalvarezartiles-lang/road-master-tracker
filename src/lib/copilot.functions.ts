@@ -1,8 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+// Conexión directa a Groq (API compatible con OpenAI). Sin Lovable AI.
 const SYSTEM =
-  "Eres un Copiloto IA experto en el Reglamento General de Circulación de España (DGT) y en pedagogía vial. Tu objetivo es ayudar a los profesores de autoescuela. Responde siempre de forma muy breve, directa y profesional. Si te preguntan por normas, básate estrictamente en la DGT de España. Si te pasan datos del semáforo de un alumno, sugiere una ruta o ejercicio concreto.";
+  "Eres un Copiloto IA experto en el Reglamento General de Circulación de España (DGT). Responde de forma muy breve y pedagógica.";
+const MODEL = "llama3-8b-8192";
 
 type Input = { message: string; context: string };
 
@@ -14,23 +16,16 @@ export const askCopilot = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data }) => {
     if (!data.message.trim()) return { ok: false as const, error: "Escribe una pregunta" };
-    const key = process.env["LOVABLE_API_KEY"];
-    if (!key) return { ok: false as const, error: "La IA no está configurada" };
+    const key = process.env["GROQ_API_KEY"];
+    if (!key) return { ok: false as const, error: "Falta la clave de Groq" };
 
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
+    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Lovable-API-Key": key,
-        "X-Lovable-AIG-SDK": "fetch",
-      },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
       body: JSON.stringify({
-        model: "openai/gpt-6-astra",
-        stream: true,
-        store: false,
-        reasoning: { effort: "low" },
-        instructions: SYSTEM,
-        input: [
+        model: MODEL,
+        messages: [
+          { role: "system", content: SYSTEM },
           {
             role: "user",
             content: `Contexto de la pantalla actual:\n${data.context || "(sin datos)"}\n\nPregunta del profesor:\n${data.message}`,
@@ -39,39 +34,18 @@ export const askCopilot = createServerFn({ method: "POST" })
       }),
     });
 
-    if (!res.ok || !res.body) {
-      if (res.status === 429) return { ok: false as const, error: "Demasiadas preguntas seguidas. Espera un momento." };
-      if (res.status === 402) return { ok: false as const, error: "Se han agotado los créditos de IA." };
+    if (!res.ok) {
       const t = await res.text().catch(() => "");
-      console.error("copilot error", res.status, t);
+      console.error("groq error", res.status, t);
+      if (res.status === 429) return { ok: false as const, error: "Demasiadas preguntas seguidas. Espera un momento." };
+      if (res.status === 401) return { ok: false as const, error: "La clave de Groq no es válida." };
       return { ok: false as const, error: "El Copiloto no está disponible ahora mismo." };
     }
-
-    const reader = res.body.getReader();
-    const dec = new TextDecoder();
-    let buf = "";
-    let out = "";
-    for (;;) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      buf += dec.decode(value, { stream: true });
-      const lines = buf.split("\n");
-      buf = lines.pop() ?? "";
-      for (const line of lines) {
-        if (!line.startsWith("data:")) continue;
-        const payload = line.slice(5).trim();
-        if (!payload || payload === "[DONE]") continue;
-        try {
-          const ev = JSON.parse(payload);
-          if (ev.type === "response.output_text.delta") out += ev.delta ?? "";
-          if (ev.type === "error" || ev.type === "response.failed")
-            return { ok: false as const, error: "El Copiloto no pudo responder." };
-        } catch {
-          /* ignore partial */
-        }
-      }
-    }
-    out = out.replace(/\*\*/g, "").replace(/^#+\s*/gm, "").trim();
+    const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
+    const out = (json.choices?.[0]?.message?.content ?? "")
+      .replace(/\*\*/g, "")
+      .replace(/^#+\s*/gm, "")
+      .trim();
     if (!out) return { ok: false as const, error: "El Copiloto no ha devuelto respuesta." };
     return { ok: true as const, text: out };
   });
