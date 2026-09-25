@@ -71,7 +71,7 @@ export const askCopilot = createServerFn({ method: "POST" })
         }
       }
     }
-    out = out.trim();
+    out = out.replace(/\*\*/g, "").replace(/^#+\s*/gm, "").trim();
     if (!out) return { ok: false as const, error: "El Copiloto no ha devuelto respuesta." };
     return { ok: true as const, text: out };
   });
