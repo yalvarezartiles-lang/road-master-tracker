@@ -12,6 +12,35 @@ const MODEL = "openai/gpt-oss-20b";
 
 type Input = { message: string; context: string };
 
+type ActionPayload = { respuesta: string; accion: string; nombre_alumno: string };
+
+// Extrae el JSON de acción de una respuesta del modelo. gpt-oss a veces lo
+// emite envuelto como llamada a herramienta ({"name","arguments"}), también
+// válido: se desenvuelve igualmente.
+function parseAction(raw: string): ActionPayload | null {
+  const m = raw.match(/\{[\s\S]*\}/);
+  if (!m) return null;
+  try {
+    const parsed = JSON.parse(m[0]) as Record<string, unknown>;
+    let inner: unknown = parsed;
+    if (parsed["arguments"] !== undefined) inner = parsed["arguments"];
+    if (typeof inner === "string") {
+      try { inner = JSON.parse(inner); } catch { return null; }
+    }
+    const a = inner as Record<string, unknown> | null;
+    if (a && typeof a["respuesta"] === "string" && typeof a["accion"] === "string" && a["accion"]) {
+      return {
+        respuesta: a["respuesta"],
+        accion: a["accion"],
+        nombre_alumno: typeof a["nombre_alumno"] === "string" ? a["nombre_alumno"] : "",
+      };
+    }
+  } catch {
+    // JSON inválido: texto normal.
+  }
+  return null;
+}
+
 export const askCopilot = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: Input) => ({
