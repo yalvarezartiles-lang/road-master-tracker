@@ -31,6 +31,7 @@ import { useCurrentUser, useSignOut } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { OfficePanel } from "@/components/autoescuela/office-panel";
 import { AgendaDiaria } from "@/components/autoescuela/agenda-diaria";
+import { PasswordCard } from "@/components/autoescuela/password-card";
 
 export const Route = createFileRoute("/_authenticated/panel")({
   head: () => ({
@@ -238,6 +239,7 @@ function TeacherDashboard() {
             </li>
           )}
         </ul>
+        <PasswordCard />
       </main>
 
       <div className="fixed inset-x-0 bottom-0 border-t bg-background/95 p-4">
