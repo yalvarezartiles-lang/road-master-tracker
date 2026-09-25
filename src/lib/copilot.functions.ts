@@ -51,5 +51,24 @@ export const askCopilot = createServerFn({ method: "POST" })
       .replace(/^#+\s*/gm, "")
       .trim();
     if (!out) return { ok: false as const, error: "El Copiloto no ha devuelto respuesta." };
-    return { ok: true as const, text: out };
+
+    // Intercepción de acciones: si Groq respondió con JSON de navegación, se
+    // extrae y se devuelve estructurado; texto plano se envuelve como NONE.
+    const m = out.match(/\{[\s\S]*\}/);
+    if (m) {
+      try {
+        const parsed = JSON.parse(m[0]) as { respuesta?: unknown; accion?: unknown; nombre_alumno?: unknown };
+        if (typeof parsed.respuesta === "string" && typeof parsed.accion === "string" && parsed.accion) {
+          return {
+            ok: true as const,
+            respuesta: parsed.respuesta,
+            accion: parsed.accion,
+            nombre_alumno: typeof parsed.nombre_alumno === "string" ? parsed.nombre_alumno : "",
+          };
+        }
+      } catch {
+        // JSON inválido: se trata como texto normal.
+      }
+    }
+    return { ok: true as const, respuesta: out, accion: "NONE", nombre_alumno: "" };
   });
