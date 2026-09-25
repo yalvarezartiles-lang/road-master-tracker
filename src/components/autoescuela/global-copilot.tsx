@@ -215,6 +215,9 @@ export function GlobalCopilot() {
     }
   };
 
+  const constraintsRef = React.useRef<HTMLDivElement>(null);
+  const draggedRef = React.useRef(false);
+
   return (
     <>
       <div ref={constraintsRef} className="pointer-events-none fixed inset-0 z-50" />
