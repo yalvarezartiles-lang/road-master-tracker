@@ -76,6 +76,7 @@ export interface Student {
   apellidos: string;
   dni: string;
   phone: string;
+  seccion: string;
   startDate: string; // ISO
   avatarColor: string;
   skills: Record<SkillKey, SkillLevel>;

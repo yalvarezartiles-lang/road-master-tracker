@@ -194,6 +194,7 @@ export type Database = {
           full_name: string
           id: string
           matricula_vehiculo: string
+          seccion: string
         }
         Insert: {
           apellidos?: string
@@ -205,6 +206,7 @@ export type Database = {
           full_name?: string
           id: string
           matricula_vehiculo?: string
+          seccion?: string
         }
         Update: {
           apellidos?: string
@@ -216,6 +218,7 @@ export type Database = {
           full_name?: string
           id?: string
           matricula_vehiculo?: string
+          seccion?: string
         }
         Relationships: [
           {
@@ -264,6 +267,7 @@ export type Database = {
           id: string
           name: string
           phone: string
+          seccion: string
           skills: Json
           start_date: string
         }
@@ -279,6 +283,7 @@ export type Database = {
           id?: string
           name: string
           phone?: string
+          seccion?: string
           skills?: Json
           start_date?: string
         }
@@ -294,6 +299,7 @@ export type Database = {
           id?: string
           name?: string
           phone?: string
+          seccion?: string
           skills?: Json
           start_date?: string
         }
@@ -387,6 +393,10 @@ export type Database = {
         Returns: boolean
       }
       my_autoescuela: { Args: never; Returns: string }
+      set_profesor_seccion: {
+        Args: { _profesor: string; _seccion: string }
+        Returns: undefined
+      }
       student_in_my_school: { Args: { _student_id: string }; Returns: boolean }
     }
     Enums: {

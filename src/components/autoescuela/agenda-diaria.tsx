@@ -1,3 +1,4 @@
+import { Badge } from "@/components/ui/badge";
 import * as React from "react";
 import { Link } from "@tanstack/react-router";
 import { CalendarDays, CalendarPlus, CheckCircle2, ChevronLeft, ChevronRight, Clock, Loader2, MessageCircle, Plus, RotateCcw, UserRound, X } from "lucide-react";
@@ -15,11 +16,14 @@ interface Slot {
   estado: string;
   student_id: string | null;
 }
+const shortSec = (x: string) => x.replace(/^secci[oó]n\s*/i, "Sec. ");
+
 interface StudentOpt {
   id: string;
   name: string;
   apellidos: string;
   phone: string;
+  seccion: string;
 }
 
 const toISO = (d: Date) =>
@@ -72,7 +76,7 @@ export function AgendaDiaria({
         .eq("profesor_id", profesorId)
         .eq("fecha", fecha)
         .order("hora_inicio"),
-      supabase.from("students").select("id, name, apellidos, phone").eq("archivado", false).order("name"),
+      supabase.from("students").select("id, name, apellidos, phone, seccion").eq("archivado", false).order("name"),
       supabase
         .from("lessons")
         .select("student_id")
@@ -312,7 +316,8 @@ export function AgendaDiaria({
                   )}
                 </div>
                 <p className="flex items-center gap-2 truncate text-lg font-bold">
-                  <UserRound className="size-5 shrink-0 text-muted-foreground" /> {nameOf(s.student_id)}
+                  <UserRound className="size-5 shrink-0 text-muted-foreground" /> <span className="min-w-0 truncate">{nameOf(s.student_id)}</span>
+                  {st?.seccion && <Badge className="shrink-0 text-xs" variant="outline">{shortSec(st.seccion)}</Badge>}
                 </p>
                 <div className="mt-auto flex gap-3">
                   <button

@@ -9,10 +9,10 @@ interface StoreValue {
   hydrated: boolean;
   loading: boolean;
   refresh: () => Promise<void>;
-  addStudent: (input: { name: string; apellidos: string; dni: string; phone: string }) => Promise<Student | null>;
+  addStudent: (input: { name: string; apellidos: string; dni: string; phone: string; seccion: string }) => Promise<Student | null>;
   updateStudent: (
     studentId: string,
-    input: { name: string; apellidos: string; dni: string; phone: string },
+    input: { name: string; apellidos: string; dni: string; phone: string; seccion: string },
   ) => Promise<void>;
   addLesson: (
     studentId: string,
@@ -86,6 +86,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       apellidos: s.apellidos ?? "",
       dni: s.dni ?? "",
       phone: s.phone ?? "",
+      seccion: s.seccion ?? "",
       startDate: s.start_date,
       avatarColor: s.avatar_color,
       skills: parseSkills(s.skills),
@@ -132,7 +133,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       hydrated,
       loading,
       refresh,
-      addStudent: async ({ name, apellidos, dni, phone }) => {
+      addStudent: async ({ name, apellidos, dni, phone, seccion }) => {
         const { data: inserted, error } = await supabase
           .from("students")
           .insert({
@@ -140,6 +141,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             apellidos,
             dni,
             phone,
+            seccion,
             avatar_color:
               AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)] ??
               "oklch(0.62 0.17 250)",
@@ -154,16 +156,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           apellidos: inserted.apellidos ?? "",
           dni: inserted.dni ?? "",
           phone: inserted.phone ?? "",
+          seccion: inserted.seccion ?? "",
           startDate: inserted.start_date,
           avatarColor: inserted.avatar_color,
           skills: parseSkills(inserted.skills),
           lessons: [],
         };
       },
-      updateStudent: async (studentId, { name, apellidos, dni, phone }) => {
+      updateStudent: async (studentId, { name, apellidos, dni, phone, seccion }) => {
         const { error } = await supabase
           .from("students")
-          .update({ name, apellidos, dni, phone })
+          .update({ name, apellidos, dni, phone, seccion })
           .eq("id", studentId);
         if (error) throw new Error("No se pudo guardar el alumno");
         await refresh();
