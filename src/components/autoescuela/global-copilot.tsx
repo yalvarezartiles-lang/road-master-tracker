@@ -59,11 +59,13 @@ export function GlobalCopilot() {
   // Welcome message depending on where the user is
   React.useEffect(() => {
     if (!open) {
-      window.speechSynthesis?.cancel();
+      // En una navegación por acción del Copiloto se conserva la voz en curso.
+      if (!keepSpeakingRef.current) window.speechSynthesis?.cancel();
       recRef.current?.abort?.();
       setSpeakingIdx(null);
       return;
     }
+    keepSpeakingRef.current = false;
     let alive = true;
     (async () => {
       let text: string;
