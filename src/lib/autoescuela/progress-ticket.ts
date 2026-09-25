@@ -5,7 +5,14 @@ import { toBlob } from "html-to-image";
 
 /** Captura el nodo del ticket y lo copia al portapapeles; si no se puede, comparte o descarga en local. */
 export async function deliverTicket(node: HTMLElement): Promise<"copied" | "shared" | "downloaded"> {
-  const blobPromise = toBlob(node, { pixelRatio: 2, cacheBust: true, backgroundColor: "#ffffff" }).then((blob) => {
+  const blobPromise = toBlob(node, {
+    pixelRatio: 2,
+    cacheBust: true,
+    backgroundColor: "#ffffff",
+    // El nodo vive fuera de pantalla (left: -9999px); en el clon se anula esa
+    // posición o el contenido se pintaría fuera del lienzo (cuadrado blanco).
+    style: { position: "static", left: "0px", top: "0px", zIndex: "0" },
+  }).then((blob) => {
     if (!blob) throw new Error("No se pudo generar la imagen");
     return blob;
   });
