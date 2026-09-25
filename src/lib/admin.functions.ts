@@ -201,6 +201,39 @@ export const createAutoescuela = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const updateAutoescuela = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { id: string; nombre: string }) => {
+    const nombre = String(input.nombre ?? "").trim();
+    if (!nombre) throw new Error("El nombre es obligatorio");
+    return { id: String(input.id), nombre };
+  })
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("autoescuelas").update({ nombre_comercial: data.nombre }).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const deleteAutoescuela = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { id: string }) => ({ id: String(input.id) }))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const [{ count: users }, { count: students }] = await Promise.all([
+      supabaseAdmin.from("profiles").select("id", { count: "exact", head: true }).eq("autoescuela_id", data.id),
+      supabaseAdmin.from("students").select("id", { count: "exact", head: true }).eq("autoescuela_id", data.id),
+    ]);
+    if ((users ?? 0) > 0 || (students ?? 0) > 0)
+      throw new Error(`No se puede eliminar: tiene ${users ?? 0} cuentas y ${students ?? 0} alumnos. Elimínalos o muévelos antes.`);
+    await supabaseAdmin.from("agenda_diaria").delete().eq("autoescuela_id", data.id);
+    const { error } = await supabaseAdmin.from("autoescuelas").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 /** Super admin: alumnos archivados de todas las autoescuelas. */
 export const listArchivedStudents = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -209,11 +242,23 @@ export const listArchivedStudents = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin
       .from("students")
-      .select("id, name, apellidos, dni, autoescuela_id")
+      .select("id, name, apellidos, dni, autoescuela_id, fecha_archivado")
       .eq("archivado", true)
-      .order("name");
+      .order("fecha_archivado", { ascending: false });
     if (error) throw new Error(error.message);
-    return (data ?? []) as { id: string; name: string; apellidos: string; dni: string; autoescuela_id: string | null }[];
+    return (data ?? []) as { id: string; name: string; apellidos: string; dni: string; autoescuela_id: string | null; fecha_archivado: string | null }[];
+  });
+
+/** Super admin: recupera un alumno archivado de cualquier autoescuela. */
+export const restoreStudentAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { studentId: string }) => ({ studentId: String(input.studentId) }))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("students").update({ archivado: false, fecha_archivado: null }).eq("id", data.studentId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
 
 /** Super admin: borrado físico definitivo de un alumno archivado. */
