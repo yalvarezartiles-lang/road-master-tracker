@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Archive, LogOut, Pencil, UserPlus } from "lucide-react";
+import { Archive, LogOut, Pencil, Undo2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -26,9 +26,17 @@ interface Teacher {
   apellidos: string;
 }
 
+interface Archived {
+  id: string;
+  name: string;
+  apellidos: string;
+  dni: string;
+  fecha_archivado: string | null;
+}
+
 export function OfficePanel({ userId }: { userId: string }) {
   const signOut = useSignOut();
-  const { data, deleteStudent: archiveStudent } = useStore();
+  const { data, deleteStudent: archiveStudent, refresh } = useStore();
   const [toArchive, setToArchive] = React.useState<Student | null>(null);
   const [school, setSchool] = React.useState("");
   const [teachers, setTeachers] = React.useState<Teacher[]>([]);
@@ -52,6 +60,31 @@ export function OfficePanel({ userId }: { userId: string }) {
       setSelected((cur) => cur || list[0]?.id || "");
     })();
   }, [userId]);
+
+  const [archived, setArchived] = React.useState<Archived[]>([]);
+  const loadArchived = React.useCallback(async () => {
+    const { data: me } = await supabase.from("profiles").select("autoescuela_id").eq("id", userId).maybeSingle();
+    if (!me?.autoescuela_id) return setArchived([]);
+    const { data: rows } = await supabase
+      .from("students")
+      .select("id, name, apellidos, dni, fecha_archivado")
+      .eq("archivado", true)
+      .eq("autoescuela_id", me.autoescuela_id)
+      .order("fecha_archivado", { ascending: false });
+    setArchived((rows ?? []) as Archived[]);
+  }, [userId]);
+  const activeCount = data.students.length;
+  React.useEffect(() => {
+    void loadArchived();
+  }, [loadArchived, activeCount]);
+
+  const restore = async (id: string) => {
+    const { error } = await supabase.from("students").update({ archivado: false, fecha_archivado: null }).eq("id", id);
+    if (error) return toast.error(error.message);
+    setArchived((l) => l.filter((x) => x.id !== id));
+    await refresh();
+    toast.success("Alumno recuperado");
+  };
 
   const current = teachers.find((t) => t.id === selected);
   const students = data.students;
@@ -141,6 +174,31 @@ export function OfficePanel({ userId }: { userId: string }) {
                   onClick={() => setToArchive(s)}
                 >
                   <Archive className="size-5" />
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section className="rounded-3xl border bg-card shadow-sm hover:shadow-md transition-shadow p-4">
+          <h2 className="text-lg font-bold">Alumnos archivados ({archived.length})</h2>
+          <ul className="mt-3 divide-y">
+            {archived.length === 0 && <li className="py-4 text-center text-muted-foreground">No hay alumnos archivados.</li>}
+            {archived.map((a) => (
+              <li key={a.id} className="flex items-center gap-2 py-3">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-semibold">{[a.name, a.apellidos].filter(Boolean).join(" ")}</p>
+                  <p className="text-sm font-semibold">
+                    <span className="rounded-full bg-warning/20 px-2 py-0.5">
+                      {a.fecha_archivado
+                        ? `Archivado el ${new Date(a.fecha_archivado).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" })}`
+                        : "Archivado (fecha desconocida)"}
+                    </span>
+                  </p>
+                  <p className="truncate text-sm text-muted-foreground">DNI: {a.dni || "—"}</p>
+                </div>
+                <Button variant="outline" className="h-12 rounded-xl" onClick={() => void restore(a.id)}>
+                  <Undo2 className="size-5" /> Recuperar
                 </Button>
               </li>
             ))}
