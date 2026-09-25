@@ -72,15 +72,17 @@ function TeacherDashboard() {
   const { isAdmin, user } = useCurrentUser();
   const [teacherName, setTeacherName] = React.useState("");
   const [schoolName, setSchoolName] = React.useState("");
+  const [seccion, setSeccion] = React.useState("");
   React.useEffect(() => {
     if (!user) return;
     void supabase
       .from("profiles")
-      .select("full_name, autoescuela_id")
+      .select("full_name, autoescuela_id, seccion")
       .eq("id", user.id)
       .maybeSingle()
       .then(async ({ data: p }) => {
         setTeacherName((p?.full_name ?? "").split(" ")[0] ?? "");
+        setSeccion(p?.seccion ?? "");
         if (!p?.autoescuela_id) return;
         const { data: a } = await supabase
           .from("autoescuelas")
@@ -127,7 +129,7 @@ function TeacherDashboard() {
             </h1>
             {schoolName && (
               <p className="flex items-center gap-1.5 truncate text-sm font-medium text-muted-foreground">
-                <Building2 className="size-4 shrink-0" /> {schoolName}
+                <Building2 className="size-4 shrink-0" /> {schoolName}{seccion ? ` - ${seccion}` : ""}
               </p>
             )}
           </div>

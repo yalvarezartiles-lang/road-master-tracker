@@ -28,6 +28,7 @@ export function StudentDialog({
   const [apellidos, setApellidos] = React.useState("");
   const [dni, setDni] = React.useState("");
   const [phone, setPhone] = React.useState("");
+  const [seccion, setSeccion] = React.useState("");
   const [saving, setSaving] = React.useState(false);
 
   React.useEffect(() => {
@@ -36,6 +37,7 @@ export function StudentDialog({
       setApellidos(student?.apellidos ?? "");
       setDni(student?.dni ?? "");
       setPhone(student?.phone ?? "");
+      setSeccion(student?.seccion ?? "");
     }
   }, [open, student]);
 
@@ -44,9 +46,13 @@ export function StudentDialog({
       toast.error("Nombre, apellidos y DNI son obligatorios");
       return;
     }
+    if (!seccion.trim()) {
+      toast.error("La sección es obligatoria");
+      return;
+    }
     setSaving(true);
     try {
-      const input = { name: name.trim(), apellidos: apellidos.trim(), dni: dni.trim(), phone: phone.trim() };
+      const input = { name: name.trim(), apellidos: apellidos.trim(), dni: dni.trim(), phone: phone.trim(), seccion: seccion.trim() };
       if (student) {
         await updateStudent(student.id, input);
         toast.success("Cambios guardados");
@@ -118,6 +124,23 @@ export function StudentDialog({
               placeholder="+34 600 000 000"
               className="h-14 rounded-2xl text-base"
             />
+          </div>
+          <div>
+            <Label className="mb-2 block text-base">Sección *</Label>
+            <Input
+              value={seccion}
+              onChange={(e) => setSeccion(e.target.value)}
+              placeholder="Sección 1"
+              list="secciones-sugeridas"
+              maxLength={40}
+              className="h-14 rounded-2xl text-base"
+            />
+            <datalist id="secciones-sugeridas">
+              <option value="Sección 0" />
+              <option value="Sección 1" />
+              <option value="Sección 2" />
+              <option value="Sección 3" />
+            </datalist>
           </div>
           <Button
             onClick={() => void submit()}

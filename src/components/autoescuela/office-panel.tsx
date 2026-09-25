@@ -1,3 +1,4 @@
+import { Badge } from "@/components/ui/badge";
 import * as React from "react";
 import { Archive, LogOut, Pencil, Undo2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
@@ -24,6 +25,7 @@ interface Teacher {
   id: string;
   full_name: string;
   apellidos: string;
+  seccion: string;
 }
 
 interface Archived {
@@ -50,7 +52,7 @@ export function OfficePanel({ userId }: { userId: string }) {
       if (!me?.autoescuela_id) return;
       const [{ data: a }, { data: profs }, { data: roles }] = await Promise.all([
         supabase.from("autoescuelas").select("nombre_comercial").eq("id", me.autoescuela_id).maybeSingle(),
-        supabase.from("profiles").select("id, full_name, apellidos").eq("autoescuela_id", me.autoescuela_id).order("full_name"),
+        supabase.from("profiles").select("id, full_name, apellidos, seccion").eq("autoescuela_id", me.autoescuela_id).order("full_name"),
         supabase.from("user_roles").select("user_id, role"),
       ]);
       setSchool(a?.nombre_comercial ?? "");
@@ -87,6 +89,17 @@ export function OfficePanel({ userId }: { userId: string }) {
   };
 
   const current = teachers.find((t) => t.id === selected);
+  const [secDraft, setSecDraft] = React.useState<string | null>(null);
+  React.useEffect(() => setSecDraft(null), [selected]);
+  const saveSec = async () => {
+    if (!current) return;
+    const value = (secDraft ?? current.seccion).trim();
+    if (!value) { toast.error("La sección es obligatoria"); return; }
+    const { error } = await supabase.rpc("set_profesor_seccion", { _profesor: current.id, _seccion: value });
+    if (error) { toast.error(error.message); return; }
+    setTeachers((l) => l.map((t) => (t.id === current.id ? { ...t, seccion: value } : t)));
+    toast.success("Sección guardada");
+  };
   const students = data.students;
   const studentsVersion = students.map((s) => `${s.id}${s.name}${s.apellidos}`).join("|").length + students.length;
 
@@ -123,6 +136,25 @@ export function OfficePanel({ userId }: { userId: string }) {
             ))}
           </select>
           {current && (
+            <div className="flex items-end gap-2">
+              <div className="min-w-0 flex-1">
+                <label htmlFor="prof-sec" className="mb-1 block text-sm font-semibold text-muted-foreground">Sección del profesor</label>
+                <input
+                  id="prof-sec"
+                  key={current.id}
+                  defaultValue={current.seccion}
+                  list="secciones-prof"
+                  maxLength={40}
+                  placeholder="Sección 1"
+                  onChange={(e) => setSecDraft(e.target.value)}
+                  className="h-12 w-full rounded-2xl border bg-background px-4 text-base"
+                />
+                <datalist id="secciones-prof"><option value="Sección 0" /><option value="Sección 1" /><option value="Sección 2" /></datalist>
+              </div>
+              <Button className="h-12 rounded-2xl px-5 font-bold" onClick={() => void saveSec()}>Guardar</Button>
+            </div>
+          )}
+          {current && (
             <AgendaDiaria
               key={current.id}
               profesorId={current.id}
@@ -151,7 +183,7 @@ export function OfficePanel({ userId }: { userId: string }) {
             {students.map((s) => (
               <li key={s.id} className="flex items-center gap-2 py-2">
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold">{[s.name, s.apellidos].filter(Boolean).join(" ")}</p>
+                  <p className="flex items-center gap-2 font-semibold"><span className="truncate">{[s.name, s.apellidos].filter(Boolean).join(" ")}</span><Badge variant="outline" className="shrink-0 text-xs">{s.seccion || "Sin sección"}</Badge></p>
                   <p className="truncate text-sm text-muted-foreground">DNI: {s.dni || "—"}{s.phone ? ` · ${s.phone}` : ""}</p>
                 </div>
                 <Button
