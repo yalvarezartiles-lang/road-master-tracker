@@ -11,14 +11,14 @@ export function PasswordCard() {
   const [pw2, setPw2] = React.useState("");
   const [saving, setSaving] = React.useState(false);
 
-  const submit = async (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
-    if (pw.length < 6) return toast.error("La contraseña debe tener al menos 6 caracteres");
-    if (pw !== pw2) return toast.error("Las contraseñas no coinciden");
+    if (pw.length < 6) { toast.error("La contraseña debe tener al menos 6 caracteres"); return; }
+    if (pw !== pw2) { toast.error("Las contraseñas no coinciden"); return; }
     setSaving(true);
     const { error } = await supabase.auth.updateUser({ password: pw });
     setSaving(false);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("Contraseña actualizada");
     setPw("");
     setPw2("");
