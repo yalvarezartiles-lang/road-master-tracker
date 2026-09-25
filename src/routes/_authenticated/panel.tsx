@@ -291,51 +291,6 @@ function TeacherDashboard() {
           )}
         </ul>
 
-        <Tabs defaultValue="general" className="mt-8">
-          <TabsList className="h-12 w-full rounded-2xl p-1">
-            <TabsTrigger value="general" className="h-10 flex-1 rounded-xl text-base">
-              General
-            </TabsTrigger>
-            <TabsTrigger value="ajustes" className="h-10 flex-1 rounded-xl text-base">
-              <Settings className="size-5" /> Ajustes
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="general" className="mt-4">
-            <div className="rounded-3xl border bg-card p-5">
-              <h2 className="text-lg font-bold">Perfil del Profesor</h2>
-              <div className="mt-4 flex items-center gap-4">
-                <span className="flex size-16 shrink-0 items-center justify-center rounded-2xl bg-primary text-xl font-bold text-primary-foreground">
-                  {initials(teacherName || "P")}
-                </span>
-                <div className="min-w-0">
-                  <p className="truncate text-lg font-bold">{teacherName || "Profesor"}</p>
-                  {user?.email && (
-                    <p className="truncate text-sm text-muted-foreground">{user.email}</p>
-                  )}
-                </div>
-              </div>
-              <dl className="mt-5 space-y-3 text-base">
-                <div className="flex items-center justify-between gap-3">
-                  <dt className="flex items-center gap-2 text-muted-foreground">
-                    <Building2 className="size-5" /> Autoescuela
-                  </dt>
-                  <dd className="truncate font-semibold">{schoolName || "—"}</dd>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <dt className="flex items-center gap-2 text-muted-foreground">
-                    <Users className="size-5" /> Sección
-                  </dt>
-                  <dd className="truncate font-semibold">{seccion || "—"}</dd>
-                </div>
-              </dl>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="ajustes" className="mt-4">
-            <PasswordCard />
-          </TabsContent>
-        </Tabs>
       </main>
 
       <div className="fixed inset-x-0 bottom-0 border-t bg-background/95 p-4">
