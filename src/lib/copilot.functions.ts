@@ -70,6 +70,17 @@ export const askCopilot = createServerFn({ method: "POST" })
     if (!res.ok) {
       const t = await res.text().catch(() => "");
       console.error("groq error", res.status, t);
+      // gpt-oss a veces presenta el JSON de acción como llamada a herramienta y
+      // Groq lo rechaza con 400, pero incluye la generación en el cuerpo.
+      if (res.status === 400) {
+        try {
+          const body = JSON.parse(t) as { error?: { failed_generation?: string } };
+          const recovered = body.error?.failed_generation ? parseAction(body.error.failed_generation) : null;
+          if (recovered) return { ok: true as const, ...recovered };
+        } catch {
+          // cuerpo no parseable: error genérico
+        }
+      }
       if (res.status === 429) return { ok: false as const, error: "Demasiadas preguntas seguidas. Espera un momento." };
       if (res.status === 401) return { ok: false as const, error: "La clave de Groq no es válida." };
       return { ok: false as const, error: "El Copiloto no está disponible ahora mismo." };
@@ -81,23 +92,9 @@ export const askCopilot = createServerFn({ method: "POST" })
       .trim();
     if (!out) return { ok: false as const, error: "El Copiloto no ha devuelto respuesta." };
 
-    // Intercepción de acciones: si Groq respondió con JSON de navegación, se
-    // extrae y se devuelve estructurado; texto plano se envuelve como NONE.
-    const m = out.match(/\{[\s\S]*\}/);
-    if (m) {
-      try {
-        const parsed = JSON.parse(m[0]) as { respuesta?: unknown; accion?: unknown; nombre_alumno?: unknown };
-        if (typeof parsed.respuesta === "string" && typeof parsed.accion === "string" && parsed.accion) {
-          return {
-            ok: true as const,
-            respuesta: parsed.respuesta,
-            accion: parsed.accion,
-            nombre_alumno: typeof parsed.nombre_alumno === "string" ? parsed.nombre_alumno : "",
-          };
-        }
-      } catch {
-        // JSON inválido: se trata como texto normal.
-      }
-    }
+    // Intercepción de acciones: JSON de navegación se devuelve estructurado;
+    // texto plano se envuelve como NONE.
+    const action = parseAction(out);
+    if (action) return { ok: true as const, ...action };
     return { ok: true as const, respuesta: out, accion: "NONE", nombre_alumno: "" };
   });
