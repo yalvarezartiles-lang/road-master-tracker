@@ -57,7 +57,7 @@ export function VoiceNotes({ value, onChange }: Props) {
   return (
     <section>
       <div className="mb-2 flex items-center justify-between gap-3">
-        <Label htmlFor="notas-profesor" className="text-base">Notas / Recordatorios (Opcional)</Label>
+        <Label htmlFor="notas-profesor" className="text-base">Notas de la clase</Label>
         <button
           type="button"
           onClick={toggle}

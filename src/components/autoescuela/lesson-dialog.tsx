@@ -23,8 +23,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/autoescuela/store";
-import { DEFAULT_TOPICS, NOTE_PRESETS } from "@/lib/autoescuela/types";
+import { DEFAULT_TOPICS } from "@/lib/autoescuela/types";
 import { SkillSemaphore } from "./skill-semaphore";
+import { CopilotSheet } from "./copilot-sheet";
 import { Whiteboard } from "./whiteboard";
 import { Input } from "@/components/ui/input";
 import { SignatureDialog } from "./signature-dialog";
@@ -265,33 +266,13 @@ export function LessonDialog({
 
           {student && (
             <section>
-              <Label className="mb-2 block text-base">Semáforo de habilidades</Label>
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <Label className="block text-base">Semáforo de habilidades</Label>
+                <CopilotSheet student={student} notes={notasProfesor} />
+              </div>
               <SkillSemaphore student={student} modoLectura={false} />
             </section>
           )}
-
-          <section>
-            <Label className="mb-2 block text-base">Observaciones</Label>
-            <Textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={3}
-              placeholder="Notas rápidas de la clase…"
-              className="rounded-2xl text-base"
-            />
-            <div className="mt-2 flex flex-wrap gap-2">
-              {NOTE_PRESETS.map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => setNotes(p)}
-                  className="rounded-full border bg-muted px-3 py-2 text-sm font-medium text-muted-foreground"
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
-          </section>
 
           <VoiceNotes value={notasProfesor} onChange={setNotasProfesor} />
 

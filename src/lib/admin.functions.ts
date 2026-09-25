@@ -227,11 +227,14 @@ export const deleteAutoescuela = createServerFn({ method: "POST" })
       supabaseAdmin.from("students").select("id", { count: "exact", head: true }).eq("autoescuela_id", data.id),
     ]);
     if ((users ?? 0) > 0 || (students ?? 0) > 0)
-      throw new Error(`No se puede eliminar: tiene ${users ?? 0} cuentas y ${students ?? 0} alumnos. Elimínalos o muévelos antes.`);
+      return {
+        ok: false as const,
+        error: `No se puede eliminar: tiene ${users ?? 0} cuentas y ${students ?? 0} alumnos. Elimínalos o muévelos antes.`,
+      };
     await supabaseAdmin.from("agenda_diaria").delete().eq("autoescuela_id", data.id);
     const { error } = await supabaseAdmin.from("autoescuelas").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
-    return { ok: true };
+    if (error) return { ok: false as const, error: error.message };
+    return { ok: true as const, error: null };
   });
 
 /** Super admin: alumnos archivados de todas las autoescuelas. */

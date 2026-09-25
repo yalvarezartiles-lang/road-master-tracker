@@ -501,7 +501,12 @@ function AdminPage() {
                 e.preventDefault();
                 if (!schoolToDelete) return;
                 try {
-                  await removeSchool({ data: { id: schoolToDelete.id } });
+                  const res = await removeSchool({ data: { id: schoolToDelete.id } });
+                  if (!res.ok) {
+                    toast.error(res.error);
+                    setSchoolToDelete(null);
+                    return;
+                  }
                   toast.success("Autoescuela eliminada");
                   setSchoolToDelete(null);
                   setSchoolId("");
