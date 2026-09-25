@@ -195,7 +195,7 @@ export function GlobalCopilot() {
           const fb = "No he encontrado a ningún alumno con ese nombre en la base de datos.";
           setMsgs((m) => {
             const copy = [...m];
-            copy[idx] = { ...copy[idx], text: fb };
+            copy[idx] = { role: "copiloto", text: fb };
             return copy;
           });
           setTimeout(() => speak(idx, fb), 0);
