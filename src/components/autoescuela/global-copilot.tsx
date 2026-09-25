@@ -171,9 +171,39 @@ export function GlobalCopilot() {
       let idx = 0;
       setMsgs((m) => {
         idx = m.length;
-        return [...m, { role: "copiloto", text: res.text }];
+        return [...m, { role: "copiloto", text: res.respuesta }];
       });
-      setTimeout(() => speak(idx, res.text), 0);
+
+      // Intercepción de acciones: el Copiloto puede navegar a un alumno.
+      if (res.accion === "NAVIGATE_ALUMNO") {
+        const nombre = (res.nombre_alumno || "").replace(/[,()%"]/g, "").trim();
+        let alumnoId: string | null = null;
+        if (nombre) {
+          const { data: alumnos } = await supabase
+            .from("students")
+            .select("id")
+            .or(`name.ilike.%${nombre}%,apellidos.ilike.%${nombre}%`)
+            .limit(1);
+          alumnoId = alumnos?.[0]?.id ?? null;
+        }
+        if (alumnoId) {
+          keepSpeakingRef.current = true;
+          setTimeout(() => speak(idx, res.respuesta), 0);
+          navigate({ to: "/alumno/$studentId", params: { studentId: alumnoId } });
+          setOpen(false); // libera la pantalla tras la navegación
+        } else {
+          const fb = "No he encontrado a ningún alumno con ese nombre en la base de datos.";
+          setMsgs((m) => {
+            const copy = [...m];
+            copy[idx] = { ...copy[idx], text: fb };
+            return copy;
+          });
+          setTimeout(() => speak(idx, fb), 0);
+        }
+        return;
+      }
+
+      setTimeout(() => speak(idx, res.respuesta), 0);
     } catch {
       toast.error("No se pudo contactar con el Copiloto");
     } finally {
