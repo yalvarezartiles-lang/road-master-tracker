@@ -40,7 +40,7 @@ export function CopilotSheet({ student, notes }: { student: Student; notes: stri
 
   const speak = () => {
     const synth = window.speechSynthesis;
-    if (!synth) return toast.error("Tu navegador no permite la lectura en voz alta");
+    if (!synth) { toast.error("Tu navegador no permite la lectura en voz alta"); return; }
     if (speaking) {
       synth.cancel();
       setSpeaking(false);
