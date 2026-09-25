@@ -2,7 +2,11 @@ import * as React from "react";
 import { useLocation } from "@tanstack/react-router";
 import { Loader2, Mic, MicOff, Send, Sparkles, Square, Volume2 } from "lucide-react";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
+import { useStore } from "@/lib/autoescuela/store";
+import { SKILL_BLOCKS } from "@/lib/autoescuela/types";
+import { askCopilot } from "@/lib/copilot.functions";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -13,14 +17,6 @@ type Msg = { role: "copiloto" | "profesor"; text: string };
 const toISO = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
-function mockAnswer(ctx: "alumno" | "agenda" | "otro") {
-  if (ctx === "alumno")
-    return "Simulación: He revisado el semáforo de este alumno. Recomiendo reforzar glorietas e incorporaciones antes de marcarlas en verde.";
-  if (ctx === "agenda")
-    return "Simulación: Tu próxima clase empieza pronto. Te recomiendo revisar la zona asignada antes de salir.";
-  return "Simulación: Estoy aquí para ayudarte. Pronto podré responder preguntas reales sobre tráfico y tus alumnos.";
-}
-
 export function GlobalCopilot() {
   const { pathname } = useLocation();
   const ctx: "alumno" | "agenda" | "otro" = pathname.startsWith("/alumno/")
@@ -29,6 +25,25 @@ export function GlobalCopilot() {
       ? "agenda"
       : "otro";
 
+  const { data } = useStore();
+  const ask = useServerFn(askCopilot);
+  const agendaCountRef = React.useRef(0);
+  const buildContext = () => {
+    if (ctx === "alumno") {
+      const id = pathname.split("/")[2];
+      const st = data.students.find((x) => x.id === id);
+      if (!st) return "Pantalla: ficha de alumno (no encontrado).";
+      const lines = SKILL_BLOCKS.map((b) => {
+        const items = data.skills.filter((k) => k.block === b.id);
+        const txt = items.map((k) => `${k.name}=${st.skills[k.id] ?? "rojo"}`).join(", ");
+        return `- ${b.name}: ${txt || "sin habilidades"}`;
+      });
+      const zonas = [...new Set(st.lessons.map((l) => l.zone))].join(", ");
+      return `Pantalla: ficha del alumno ${st.name}. Clases realizadas: ${st.lessons.length}. Zonas recorridas: ${zonas || "ninguna"}.\nSemáforo (rojo=necesita práctica, amarillo=en progreso, verde=dominado):\n${lines.join("\n")}`;
+    }
+    if (ctx === "agenda") return `Pantalla: panel/agenda del profesor. Clases hoy: ${agendaCountRef.current}. Alumnos activos: ${data.students.length}.`;
+    return `Pantalla: ${pathname}.`;
+  };
   const [open, setOpen] = React.useState(false);
   const [msgs, setMsgs] = React.useState<Msg[]>([]);
   const [input, setInput] = React.useState("");
@@ -65,6 +80,7 @@ export function GlobalCopilot() {
             .neq("estado", "cancelada")
             .not("student_id", "is", null);
           count = c ?? 0;
+          agendaCountRef.current = count;
         }
         text = `Hola, soy tu Copiloto. Tienes ${count} ${count === 1 ? "clase" : "clases"} hoy. ¿Quieres que te lea la agenda o busque a un alumno?`;
       } else {
@@ -135,17 +151,30 @@ export function GlobalCopilot() {
     setSpeakingIdx(idx);
   };
 
-  const send = () => {
+  const send = async () => {
     const q = input.trim();
     if (!q || thinking) return;
     recRef.current?.stop?.();
     setMsgs((m) => [...m, { role: "profesor", text: q }]);
     setInput("");
     setThinking(true);
-    setTimeout(() => {
-      setMsgs((m) => [...m, { role: "copiloto", text: mockAnswer(ctx) }]);
+    try {
+      const res = await ask({ data: { message: q, context: buildContext() } });
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      let idx = 0;
+      setMsgs((m) => {
+        idx = m.length;
+        return [...m, { role: "copiloto", text: res.text }];
+      });
+      setTimeout(() => speak(idx, res.text), 0);
+    } catch {
+      toast.error("No se pudo contactar con el Copiloto");
+    } finally {
       setThinking(false);
-    }, 1500);
+    }
   };
 
   return (
@@ -169,7 +198,7 @@ export function GlobalCopilot() {
             <SheetTitle className="flex items-center gap-2 text-xl">
               <Sparkles className="size-5 text-primary" /> Copiloto
             </SheetTitle>
-            <SheetDescription>Respuestas simuladas · aún sin inteligencia artificial real</SheetDescription>
+            <SheetDescription>Experto en normativa DGT y pedagogía vial</SheetDescription>
           </SheetHeader>
 
           <div className="flex-1 space-y-3 overflow-y-auto p-4">
@@ -209,7 +238,7 @@ export function GlobalCopilot() {
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
-                  send();
+                  void send();
                 }
               }}
               rows={3}
@@ -233,7 +262,7 @@ export function GlobalCopilot() {
                 {listening && <span>Escuchando...</span>}
               </button>
               <Button
-                onClick={send}
+                onClick={() => void send()}
                 disabled={!input.trim() || thinking}
                 className="h-14 flex-1 rounded-2xl text-base font-bold"
               >
