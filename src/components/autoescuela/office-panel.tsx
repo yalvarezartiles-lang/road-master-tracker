@@ -80,7 +80,7 @@ export function OfficePanel({ userId }: { userId: string }) {
 
   const restore = async (id: string) => {
     const { error } = await supabase.from("students").update({ archivado: false, fecha_archivado: null }).eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     setArchived((l) => l.filter((x) => x.id !== id));
     await refresh();
     toast.success("Alumno recuperado");
