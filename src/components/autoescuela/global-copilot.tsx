@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useLocation } from "@tanstack/react-router";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import { Loader2, Mic, MicOff, Send, Sparkles, Square, Volume2 } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
