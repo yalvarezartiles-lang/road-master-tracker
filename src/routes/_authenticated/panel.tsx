@@ -150,11 +150,54 @@ function TeacherDashboard() {
                 </Link>
               </Button>
             )}
-            <Button asChild variant="ghost" size="icon" className="size-12 rounded-2xl">
-              <Link to="/gestion" aria-label="Mis zonas y habilidades">
-                <Settings className="size-6" />
-              </Link>
-            </Button>
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="size-12 rounded-2xl" aria-label="Ajustes de perfil">
+                  <Settings className="size-6" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-full max-w-sm overflow-y-auto p-5">
+                <SheetHeader className="p-0 text-left">
+                  <SheetTitle className="text-xl font-bold">Ajustes de Perfil</SheetTitle>
+                  <SheetDescription>Tus datos y seguridad</SheetDescription>
+                </SheetHeader>
+                <div className="mt-6 rounded-3xl border bg-card p-5">
+                  <div className="flex items-center gap-4">
+                    <span className="flex size-16 shrink-0 items-center justify-center rounded-2xl bg-primary text-xl font-bold text-primary-foreground">
+                      {initials(teacherName || "P")}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate text-lg font-bold">{teacherName || "Profesor"}</p>
+                      {user?.email && (
+                        <p className="truncate text-sm text-muted-foreground">{user.email}</p>
+                      )}
+                    </div>
+                  </div>
+                  <dl className="mt-5 space-y-3 text-base">
+                    <div className="flex items-center justify-between gap-3">
+                      <dt className="flex items-center gap-2 text-muted-foreground">
+                        <Building2 className="size-5" /> Autoescuela
+                      </dt>
+                      <dd className="truncate font-semibold">{schoolName || "—"}</dd>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <dt className="flex items-center gap-2 text-muted-foreground">
+                        <Users className="size-5" /> Sección
+                      </dt>
+                      <dd className="truncate font-semibold">{seccion || "—"}</dd>
+                    </div>
+                  </dl>
+                </div>
+                <div className="mt-4">
+                  <PasswordCard />
+                </div>
+                <Button asChild variant="secondary" className="mt-4 h-14 w-full rounded-2xl text-base font-semibold">
+                  <Link to="/gestion" aria-label="Mis zonas y habilidades">
+                    <Settings className="size-5" /> Mis zonas y habilidades
+                  </Link>
+                </Button>
+              </SheetContent>
+            </Sheet>
             <ThemeToggle />
             <Button
               variant="ghost"
