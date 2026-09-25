@@ -7,11 +7,12 @@ import { toBlob } from "html-to-image";
 export async function deliverTicket(node: HTMLElement): Promise<"copied" | "shared" | "downloaded"> {
   const blobPromise = toBlob(node, {
     pixelRatio: 2,
+    skipFonts: true,
     cacheBust: true,
     backgroundColor: "#ffffff",
-    // El nodo vive fuera de pantalla (left: -9999px); en el clon se anula esa
-    // posición o el contenido se pintaría fuera del lienzo (cuadrado blanco).
-    style: { position: "static", left: "0px", top: "0px", zIndex: "0" },
+    // El nodo está fijo e invisible (opacity-0, z negativo); en el clon se
+    // restaura la opacidad para que la imagen no salga en blanco.
+    style: { position: "static", opacity: "1", zIndex: "0", left: "0px", top: "0px" },
   }).then((blob) => {
     if (!blob) throw new Error("No se pudo generar la imagen");
     return blob;

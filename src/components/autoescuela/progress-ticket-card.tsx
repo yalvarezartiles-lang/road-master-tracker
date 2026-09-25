@@ -35,7 +35,7 @@ export const ProgressTicketCard = React.forwardRef<
     <div
       ref={ref}
       aria-hidden
-      className="absolute -left-[9999px] top-0 w-[400px] h-auto bg-white rounded-3xl shadow-xl border border-slate-100 overflow-visible p-6 z-[-1]"
+      className="fixed top-0 left-0 w-[400px] h-fit min-h-[600px] bg-white opacity-0 pointer-events-none z-[-50] overflow-hidden p-6 rounded-3xl shadow-xl"
     >
       <div className="flex items-center justify-between">
         <div className="text-[13px] font-bold uppercase tracking-[0.18em] text-slate-500">
