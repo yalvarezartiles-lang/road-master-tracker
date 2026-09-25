@@ -51,7 +51,7 @@ interface Member {
 
 const ROLE_LABEL = { admin: "Administrador", admin_oficina: "Oficina", profesor: "Profesor" } as const;
 
-export function fmtArchivado(iso: string | null) {
+function fmtArchivado(iso: string | null) {
   if (!iso) return "Archivado (fecha desconocida)";
   return `Archivado el ${new Date(iso).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" })}`;
 }
