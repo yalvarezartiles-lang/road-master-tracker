@@ -246,7 +246,9 @@ export function SignatureDialog({
           <AlertDialogAction
             className="h-12 rounded-2xl"
             onClick={() => {
-              const textoWa = "\uD83D\uDE97 \xA1Gran trabajo hoy! Has sumado nuevos verdes en tu perfil. Pega la imagen aqu\xED para ver tu progreso. \u2705";
+              const carEmoji = String.fromCodePoint(128663);
+              const checkEmoji = String.fromCodePoint(9989);
+              const textoWa = `${carEmoji} ¡Gran trabajo hoy! Has sumado nuevos verdes en tu perfil. Pega la imagen aquí para ver tu progreso. ${checkEmoji}`;
               window.open(`https://wa.me/${waPhone}?text=${encodeURIComponent(textoWa)}`, "_blank", "noopener,noreferrer");
             }}
           >
