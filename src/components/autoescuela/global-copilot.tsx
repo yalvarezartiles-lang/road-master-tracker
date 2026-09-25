@@ -27,6 +27,8 @@ export function GlobalCopilot() {
 
   const { data } = useStore();
   const ask = useServerFn(askCopilot);
+  const navigate = useNavigate();
+  const keepSpeakingRef = React.useRef(false);
   const agendaCountRef = React.useRef(0);
   const buildContext = () => {
     if (ctx === "alumno") {
