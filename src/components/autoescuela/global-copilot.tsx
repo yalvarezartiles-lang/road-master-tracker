@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useLocation } from "@tanstack/react-router";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import { Loader2, Mic, MicOff, Send, Sparkles, Square, Volume2 } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
@@ -27,6 +27,8 @@ export function GlobalCopilot() {
 
   const { data } = useStore();
   const ask = useServerFn(askCopilot);
+  const navigate = useNavigate();
+  const keepSpeakingRef = React.useRef(false);
   const agendaCountRef = React.useRef(0);
   const buildContext = () => {
     if (ctx === "alumno") {
@@ -57,11 +59,13 @@ export function GlobalCopilot() {
   // Welcome message depending on where the user is
   React.useEffect(() => {
     if (!open) {
-      window.speechSynthesis?.cancel();
+      // En una navegación por acción del Copiloto se conserva la voz en curso.
+      if (!keepSpeakingRef.current) window.speechSynthesis?.cancel();
       recRef.current?.abort?.();
       setSpeakingIdx(null);
       return;
     }
+    keepSpeakingRef.current = false;
     let alive = true;
     (async () => {
       let text: string;
@@ -167,9 +171,42 @@ export function GlobalCopilot() {
       let idx = 0;
       setMsgs((m) => {
         idx = m.length;
-        return [...m, { role: "copiloto", text: res.text }];
+        return [...m, { role: "copiloto", text: res.respuesta }];
       });
-      setTimeout(() => speak(idx, res.text), 0);
+
+      // Intercepción de acciones: el Copiloto puede navegar a un alumno.
+      if (res.accion === "NAVIGATE_ALUMNO") {
+        const nombre = (res.nombre_alumno || "").replace(/[,()%"]/g, "").trim();
+        const tokens = nombre.toLowerCase().split(/\s+/).filter(Boolean);
+        let alumnoId: string | null = null;
+        if (tokens.length > 0) {
+          const { data: alumnos } = await supabase
+            .from("students")
+            .select("id, name, apellidos");
+          const found = (alumnos ?? []).find((a) => {
+            const full = `${a.name} ${a.apellidos ?? ""}`.toLowerCase();
+            return tokens.every((t) => full.includes(t));
+          });
+          alumnoId = found?.id ?? null;
+        }
+        if (alumnoId) {
+          keepSpeakingRef.current = true;
+          setTimeout(() => speak(idx, res.respuesta), 0);
+          navigate({ to: "/alumno/$studentId", params: { studentId: alumnoId } });
+          setOpen(false); // libera la pantalla tras la navegación
+        } else {
+          const fb = "No he encontrado a ningún alumno con ese nombre en la base de datos.";
+          setMsgs((m) => {
+            const copy = [...m];
+            copy[idx] = { role: "copiloto", text: fb };
+            return copy;
+          });
+          setTimeout(() => speak(idx, fb), 0);
+        }
+        return;
+      }
+
+      setTimeout(() => speak(idx, res.respuesta), 0);
     } catch {
       toast.error("No se pudo contactar con el Copiloto");
     } finally {
