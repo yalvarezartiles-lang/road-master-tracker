@@ -40,6 +40,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { OfficePanel } from "@/components/autoescuela/office-panel";
 import { AgendaDiaria } from "@/components/autoescuela/agenda-diaria";
 import { PasswordCard } from "@/components/autoescuela/password-card";
+import { ScanRosterButton } from "@/components/autoescuela/scan-roster-button";
 
 export const Route = createFileRoute("/_authenticated/panel")({
   head: () => ({
@@ -82,6 +83,7 @@ function TeacherDashboard() {
   const [teacherName, setTeacherName] = React.useState("");
   const [schoolName, setSchoolName] = React.useState("");
   const [seccion, setSeccion] = React.useState("");
+  const [agendaVersion, setAgendaVersion] = React.useState(0);
   React.useEffect(() => {
     if (!user) return;
     void supabase
@@ -233,7 +235,7 @@ function TeacherDashboard() {
 
         {user && (
           <div className="mt-4">
-            <AgendaDiaria profesorId={user.id} title="Mi agenda" />
+            <AgendaDiaria profesorId={user.id} title="Mi agenda" studentsVersion={agendaVersion} />
           </div>
         )}
 
@@ -294,10 +296,11 @@ function TeacherDashboard() {
       </main>
 
       <div className="fixed inset-x-0 bottom-0 border-t bg-background/95 p-4">
-        <div className="mx-auto max-w-2xl">
+        <div className="mx-auto flex max-w-2xl gap-2">
+          {user && <ScanRosterButton profesorId={user.id} onDone={() => setAgendaVersion((v) => v + 1)} />}
           <Button
             onClick={() => setLessonOpen(true)}
-            className="h-18 w-full rounded-3xl text-xl font-extrabold shadow-lg"
+            className="h-18 flex-1 rounded-3xl text-xl font-extrabold shadow-lg"
           >
             <Plus className="size-7" /> Nueva clase
           </Button>
