@@ -6,7 +6,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 // retirado por Groq; qwen/qwen3.8-27b es el modelo con visión disponible.
 const MODEL = "qwen/qwen3.8-27b";
 const PROMPT =
-  'Extrae los nombres completos (Nombre y Apellidos) de los alumnos de este cuadrante. Devuelve ÚNICAMENTE un array JSON válido de strings, sin texto adicional ni formato markdown. Ejemplo: ["Juan Perez", "Maria Garcia"]';
+  'Extrae los nombres completos (Nombre y Apellidos) de los alumnos y la HORA de su clase de este cuadrante. Devuelve ÚNICAMENTE un array JSON válido de objetos, sin texto adicional ni formato markdown. La clave para la hora debe ser formato HH:MM. Ejemplo estricto: [{"nombre": "Juan Perez", "hora": "10:30"}, {"nombre": "Maria Garcia", "hora": "16:00"}]';
 
 export const scanRoster = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
