@@ -4,6 +4,16 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // Simulación del lector de imágenes (sin API de visión externa).
 const mockVision = () =>
@@ -63,31 +73,67 @@ async function syncRoster(profesorId: string, nombres: string[]) {
 export function ScanRosterButton({ profesorId, onDone }: { profesorId: string; onDone?: () => void }) {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [busy, setBusy] = React.useState(false);
+  const [confirmOpen, setConfirmOpen] = React.useState(false);
 
   const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
+    if (!file) {
+      e.target.value = "";
+      return;
+    }
     setBusy(true);
+    const loadingId = toast.loading("Analizando cuadrante...");
     try {
       const nombres = await mockVision();
       const { found, created } = await syncRoster(profesorId, nombres);
-      toast.success(`Agenda actualizada: ${found} alumno(s) existentes añadidos y ${created} alumno(s) nuevos creados.`);
+      toast.success(`Agenda actualizada: ${found} alumno(s) existentes añadidos y ${created} alumno(s) nuevos creados.`, { id: loadingId });
       onDone?.();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "No se pudo procesar el cuadrante");
+      toast.error(err instanceof Error ? err.message : "No se pudo procesar el cuadrante", { id: loadingId });
     } finally {
       setBusy(false);
+      e.target.value = "";
     }
   };
 
   return (
     <>
-      <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
-      <Button variant="outline" onClick={() => inputRef.current?.click()} disabled={busy}
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/jpeg, image/png, image/jpg"
+        className="hidden"
+        onChange={onFile}
+      />
+      <Button variant="outline" onClick={() => setConfirmOpen(true)} disabled={busy}
         className="h-18 shrink-0 rounded-3xl border-2 border-primary px-4 text-base font-bold text-primary">
         <Camera className="size-6" /> Escanear Cuadrante 📸
       </Button>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent className="rounded-3xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-xl">¿Quieres escanear el cuadrante desde tu cámara o galería?</AlertDialogTitle>
+            <AlertDialogDescription className="text-base">
+              Selecciona una imagen y detectaremos los alumnos para añadirlos a tu agenda de hoy.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col gap-3 sm:flex-row">
+            <AlertDialogCancel className="h-14 rounded-2xl text-base font-semibold">Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="h-14 rounded-2xl text-base font-bold"
+              onClick={(ev) => {
+                ev.preventDefault();
+                setConfirmOpen(false);
+                inputRef.current?.click();
+              }}
+            >
+              Seleccionar Imagen
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Dialog open={busy}>
         <DialogContent className="rounded-3xl [&>button]:hidden">
           <DialogHeader>
