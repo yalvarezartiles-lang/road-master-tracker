@@ -127,6 +127,7 @@ export type Database = {
           created_by: string | null
           date: string
           firma_alumno: string | null
+          firma_alumno_2: string | null
           firma_profesor: string | null
           hora_fin: string | null
           hora_inicio: string | null
@@ -144,6 +145,7 @@ export type Database = {
           created_by?: string | null
           date?: string
           firma_alumno?: string | null
+          firma_alumno_2?: string | null
           firma_profesor?: string | null
           hora_fin?: string | null
           hora_inicio?: string | null
@@ -161,6 +163,7 @@ export type Database = {
           created_by?: string | null
           date?: string
           firma_alumno?: string | null
+          firma_alumno_2?: string | null
           firma_profesor?: string | null
           hora_fin?: string | null
           hora_inicio?: string | null

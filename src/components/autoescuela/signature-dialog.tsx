@@ -90,6 +90,7 @@ export function SignatureDialog({
   const [customMin, setCustomMin] = React.useState("");
   const [saving, setSaving] = React.useState(false);
   const alumnoRef = React.useRef<SignatureCanvas | null>(null);
+  const alumno2Ref = React.useRef<SignatureCanvas | null>(null);
   const profRef = React.useRef<SignatureCanvas | null>(null);
   const ticketRef = React.useRef<HTMLDivElement | null>(null);
   const [waPhone, setWaPhone] = React.useState<string | null>(null);
@@ -141,6 +142,11 @@ export function SignatureDialog({
       const row = rows?.[0];
       if (row) {
         setAgendaId(row.id);
+        const toM = (t: string) => { const [h, m] = t.slice(0, 5).split(":").map(Number); return (h ?? 0) * 60 + (m ?? 0); };
+        const d = toM(row.hora_fin) - toM(row.hora_inicio);
+        if (d === 45) setDur("45");
+        else if (d === 90) setDur("90");
+        else if (d > 0) { setDur("custom"); setCustomMin(String(d)); }
 
       }
     })();
@@ -175,6 +181,11 @@ export function SignatureDialog({
     }
   };
 
+  const selMins = dur === "45" ? 45 : dur === "90" ? 90 : dur === "custom" ? parseInt(customMin, 10) : NaN;
+  const doble = Number.isFinite(selMins) && selMins >= 90;
+  const addM = (hhmm: string, mins: number) => minus(hhmm, -mins);
+  const inicio = Number.isFinite(selMins) && end ? minus(end, selMins) : "";
+
   const save = async (pending: boolean) => {
     if (!lessonId) return;
     const mins = dur === "45" ? 45 : dur === "90" ? 90 : dur === "custom" ? parseInt(customMin, 10) : NaN;
@@ -189,12 +200,19 @@ export function SignatureDialog({
     const start = minus(end, mins);
     let fa: string | null = null;
     let fp: string | null = null;
+    let fa2: string | null = null;
+    const isDoble = mins >= 90;
     if (!pending) {
       if (!alumnoRef.current || alumnoRef.current.isEmpty() || !profRef.current || profRef.current.isEmpty()) {
-        toast.error("Faltan las dos firmas");
+        toast.error("Faltan las firmas");
+        return;
+      }
+      if (isDoble && (!alumno2Ref.current || alumno2Ref.current.isEmpty())) {
+        toast.error("Falta la Firma 2 del alumno (segundos 45 min)");
         return;
       }
       fa = alumnoRef.current.getCanvas().toDataURL("image/png");
+      if (isDoble) fa2 = alumno2Ref.current!.getCanvas().toDataURL("image/png");
       fp = profRef.current.getCanvas().toDataURL("image/png");
     }
     setSaving(true);
@@ -205,6 +223,8 @@ export function SignatureDialog({
         : null;
     try {
       await signLesson(lessonId, { horaInicio: start, horaFin: end, firmaAlumno: fa, firmaProfesor: fp });
+      const { error: e2 } = await supabase.from("lessons").update({ firma_alumno_2: fa2 }).eq("id", lessonId);
+      if (e2) throw new Error("No se pudo guardar la segunda firma");
       if (agendaId) await supabase.rpc("complete_agenda_class", { _id: agendaId });
       toast.success(pending ? "Clase guardada con firma pendiente" : "Clase firmada y cerrada");
       onClose();
@@ -315,7 +335,14 @@ export function SignatureDialog({
         </div>
         {lessonId && (
           <div className="space-y-4">
-            <SigPad label="Firma Alumno" padRef={alumnoRef} />
+            {doble ? (
+              <>
+                <SigPad key="a1" label={`Firma 1 - Primeros 45 min (${inicio || "inicio"})`} padRef={alumnoRef} />
+                <SigPad key="a2" label={`Firma 2 - Segundos 45 min (${inicio ? addM(inicio, 45) : "+45 min"})`} padRef={alumno2Ref} />
+              </>
+            ) : (
+              <SigPad key="a1" label="Firma Alumno" padRef={alumnoRef} />
+            )}
             <SigPad label="Firma Profesor" padRef={profRef} />
           </div>
         )}

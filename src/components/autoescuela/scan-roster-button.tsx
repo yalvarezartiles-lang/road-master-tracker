@@ -37,12 +37,38 @@ const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").t
 
 const DEFAULT_HORA = "00:00";
 
-async function syncRoster(profesorId: string, clases: { nombre: string; hora: string | null }[]) {
+const toMin = (t: string | null) => {
+  if (!t) return Number.POSITIVE_INFINITY;
+  const [h, m] = t.split(":").map(Number);
+  return (h ?? 0) * 60 + (m ?? 0);
+};
+
+type ClaseAgrupada = { nombre: string; hora: string | null; duracion: number };
+
+/** Agrupa las apariciones repetidas de un alumno en una sola clase de 90 min. */
+function mergeClases(clases: { nombre: string; hora: string | null }[]): ClaseAgrupada[] {
+  const map = clases.reduce<Map<string, ClaseAgrupada>>((acc, c) => {
+    const key = norm(c.nombre);
+    const prev = acc.get(key);
+    if (!prev) {
+      acc.set(key, { nombre: c.nombre, hora: c.hora, duracion: 45 });
+    } else {
+      prev.duracion = 90;
+      if (toMin(c.hora) < toMin(prev.hora)) prev.hora = c.hora;
+    }
+    return acc;
+  }, new Map());
+  return [...map.values()];
+}
+
+async function syncRoster(profesorId: string, rawClases: { nombre: string; hora: string | null }[]) {
+  const clases = mergeClases(rawClases);
   const { data: p } = await supabase.from("profiles").select("autoescuela_id, seccion").eq("id", profesorId).maybeSingle();
   const autoescuelaId = p?.autoescuela_id ?? null;
   const seccion = p?.seccion ?? "";
   let found = 0, created = 0, sinHora = 0;
-  const entradas: { id: string; hora: string | null }[] = [];
+  const dobles = clases.filter((c) => c.duracion >= 90).length;
+  const entradas: { id: string; hora: string | null; duracion: number }[] = [];
 
   for (const clase of clases) {
     const full = clase.nombre;
@@ -56,13 +82,13 @@ async function syncRoster(profesorId: string, clases: { nombre: string; hora: st
     const { data: cands } = await q;
     const match = (cands ?? []).find((c) => norm(`${c.name} ${c.apellidos}`) === norm(full))
       ?? (cands ?? []).find((c) => norm(`${c.name} ${c.apellidos}`).includes(norm(full)) || norm(full).includes(norm(`${c.name} ${c.apellidos}`)));
-    if (match) { entradas.push({ id: match.id, hora }); found++; continue; }
+    if (match) { entradas.push({ id: match.id, hora, duracion: clase.duracion }); found++; continue; }
     const { data: ins, error } = await supabase
       .from("students")
       .insert({ name: first!, apellidos, seccion, archivado: false, ...(autoescuelaId ? { autoescuela_id: autoescuelaId } : {}) })
       .select("id").single();
     if (error || !ins) throw new Error(`No se pudo crear a ${full}`);
-    entradas.push({ id: ins.id, hora }); created++;
+    entradas.push({ id: ins.id, hora, duracion: clase.duracion }); created++;
   }
 
   const fecha = toISO(new Date());
@@ -73,13 +99,13 @@ async function syncRoster(profesorId: string, clases: { nombre: string; hora: st
     .filter((e) => !already.has(e.id))
     .map((e) => {
       const hora_inicio = e.hora ?? DEFAULT_HORA;
-      return { profesor_id: profesorId, fecha, hora_inicio, hora_fin: addMin(hora_inicio, 45), student_id: e.id };
+      return { profesor_id: profesorId, fecha, hora_inicio, hora_fin: addMin(hora_inicio, e.duracion), student_id: e.id };
     });
   if (rows.length) {
     const { error } = await supabase.from("agenda_diaria").insert(rows);
     if (error) throw new Error("Alumnos listos, pero no tienes permiso para editar la agenda");
   }
-  return { found, created, sinHora };
+  return { found, created, sinHora, dobles };
 }
 
 export function ScanRosterButton({ profesorId, onDone }: { profesorId: string; onDone?: () => void }) {
@@ -101,9 +127,9 @@ export function ScanRosterButton({ profesorId, onDone }: { profesorId: string; o
       const data = await scan({ data: { image } });
       const clases = data.clases;
       if (!clases.length) throw new Error("No se detectaron alumnos en la imagen");
-      const { found, created, sinHora } = await syncRoster(profesorId, clases);
+      const { found, created, sinHora, dobles } = await syncRoster(profesorId, clases);
       toast.success(
-        `Agenda actualizada: ${found} alumno(s) existentes añadidos y ${created} alumno(s) nuevos creados.${sinHora ? ` ${sinHora} sin hora detectada (guardados a las ${DEFAULT_HORA}).` : ""}`,
+        `Agenda actualizada: ${found} alumno(s) existentes añadidos y ${created} alumno(s) nuevos creados.${dobles ? ` ${dobles} clase(s) doble(s) de 90 min agrupadas.` : ""}${sinHora ? ` ${sinHora} sin hora detectada (guardados a las ${DEFAULT_HORA}).` : ""}`,
         { id: loadingId },
       );
       onDone?.();
