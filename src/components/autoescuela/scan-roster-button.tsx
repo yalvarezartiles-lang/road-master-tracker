@@ -99,10 +99,13 @@ export function ScanRosterButton({ profesorId, onDone }: { profesorId: string; o
     try {
       const image = await toBase64(file);
       const data = await scan({ data: { image } });
-      const nombres = data.nombres;
-      if (!nombres.length) throw new Error("No se detectaron nombres en la imagen");
-      const { found, created } = await syncRoster(profesorId, nombres);
-      toast.success(`Agenda actualizada: ${found} alumno(s) existentes añadidos y ${created} alumno(s) nuevos creados.`, { id: loadingId });
+      const clases = data.clases;
+      if (!clases.length) throw new Error("No se detectaron alumnos en la imagen");
+      const { found, created, sinHora } = await syncRoster(profesorId, clases);
+      toast.success(
+        `Agenda actualizada: ${found} alumno(s) existentes añadidos y ${created} alumno(s) nuevos creados.${sinHora ? ` ${sinHora} sin hora detectada (guardados a las ${DEFAULT_HORA}).` : ""}`,
+        { id: loadingId },
+      );
       onDone?.();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "No se pudo procesar el cuadrante", { id: loadingId });
@@ -131,7 +134,7 @@ export function ScanRosterButton({ profesorId, onDone }: { profesorId: string; o
           <AlertDialogHeader>
             <AlertDialogTitle className="text-xl">¿Quieres escanear el cuadrante desde tu cámara o galería?</AlertDialogTitle>
             <AlertDialogDescription className="text-base">
-              Selecciona una imagen y detectaremos los alumnos para añadirlos a tu agenda de hoy.
+              Selecciona una imagen y detectaremos los alumnos y las horas de sus clases para añadirlos a tu agenda de hoy.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-col gap-3 sm:flex-row">
@@ -154,7 +157,7 @@ export function ScanRosterButton({ profesorId, onDone }: { profesorId: string; o
         <DialogContent className="rounded-3xl [&>button]:hidden">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2"><Loader2 className="size-6 animate-spin text-primary" /> Analizando cuadrante con IA...</DialogTitle>
-            <DialogDescription>Detectando alumnos y actualizando tu agenda de hoy.</DialogDescription>
+            <DialogDescription>Detectando alumnos y sus horas y actualizando tu agenda de hoy.</DialogDescription>
           </DialogHeader>
         </DialogContent>
       </Dialog>
