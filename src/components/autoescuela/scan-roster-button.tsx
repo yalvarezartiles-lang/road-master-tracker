@@ -15,9 +15,16 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-// Simulación del lector de imágenes (sin API de visión externa).
-const mockVision = () =>
-  new Promise<string[]>((r) => setTimeout(() => r(["Laura Pérez Morales", "Carlos Gómez Nuevo"]), 2000));
+import { useServerFn } from "@tanstack/react-start";
+import { scanRoster } from "@/lib/vision-scanner.functions";
+
+const toBase64 = (file: File) =>
+  new Promise<string>((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result as string);
+    r.onerror = () => rej(new Error("No se pudo leer la imagen"));
+    r.readAsDataURL(file);
+  });
 
 const toISO = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -74,6 +81,7 @@ export function ScanRosterButton({ profesorId, onDone }: { profesorId: string; o
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [busy, setBusy] = React.useState(false);
   const [confirmOpen, setConfirmOpen] = React.useState(false);
+  const scan = useServerFn(scanRoster);
 
   const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -84,7 +92,10 @@ export function ScanRosterButton({ profesorId, onDone }: { profesorId: string; o
     setBusy(true);
     const loadingId = toast.loading("Analizando cuadrante...");
     try {
-      const nombres = await mockVision();
+      const image = await toBase64(file);
+      const data = await scan({ data: { image } });
+      const nombres = data.nombres;
+      if (!nombres.length) throw new Error("No se detectaron nombres en la imagen");
       const { found, created } = await syncRoster(profesorId, nombres);
       toast.success(`Agenda actualizada: ${found} alumno(s) existentes añadidos y ${created} alumno(s) nuevos creados.`, { id: loadingId });
       onDone?.();
