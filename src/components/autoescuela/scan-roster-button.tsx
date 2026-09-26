@@ -105,7 +105,7 @@ async function syncRoster(profesorId: string, rawClases: { nombre: string; hora:
     const { error } = await supabase.from("agenda_diaria").insert(rows);
     if (error) throw new Error("Alumnos listos, pero no tienes permiso para editar la agenda");
   }
-  return { found, created, sinHora };
+  return { found, created, sinHora, dobles };
 }
 
 export function ScanRosterButton({ profesorId, onDone }: { profesorId: string; onDone?: () => void }) {
@@ -127,9 +127,9 @@ export function ScanRosterButton({ profesorId, onDone }: { profesorId: string; o
       const data = await scan({ data: { image } });
       const clases = data.clases;
       if (!clases.length) throw new Error("No se detectaron alumnos en la imagen");
-      const { found, created, sinHora } = await syncRoster(profesorId, clases);
+      const { found, created, sinHora, dobles } = await syncRoster(profesorId, clases);
       toast.success(
-        `Agenda actualizada: ${found} alumno(s) existentes añadidos y ${created} alumno(s) nuevos creados.${sinHora ? ` ${sinHora} sin hora detectada (guardados a las ${DEFAULT_HORA}).` : ""}`,
+        `Agenda actualizada: ${found} alumno(s) existentes añadidos y ${created} alumno(s) nuevos creados.${dobles ? ` ${dobles} clase(s) doble(s) de 90 min agrupadas.` : ""}${sinHora ? ` ${sinHora} sin hora detectada (guardados a las ${DEFAULT_HORA}).` : ""}`,
         { id: loadingId },
       );
       onDone?.();
