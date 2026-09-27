@@ -134,10 +134,10 @@ async function syncRoster(profesorId: string, fechaSel: string | null, rawClases
     const telefono = /^[67]\d{8}$/.test(numeroLimpio) ? numeroLimpio : null;
     const { data: ins, error } = await supabase
       .from("students")
-      .insert({ name: first ?? full, apellidos, seccion, archivado: false, phone: telefono, ...(autoescuelaId ? { autoescuela_id: autoescuelaId } : {}) })
+      .insert({ name: first ?? full, apellidos, seccion, archivado: false, ...(telefono ? { phone: telefono } : {}), ...(autoescuelaId ? { autoescuela_id: autoescuelaId } : {}) })
       .select("id").single();
     if (error || !ins) throw new Error(`No se pudo crear a ${full}`);
-    pool.push({ id: ins.id, name: first ?? full, apellidos, phone: telefono, seccion, n: normName(full) });
+    pool.push({ id: ins.id, name: first ?? full, apellidos, phone: telefono ?? "", seccion, n: normName(full) });
     entradas.push({ id: ins.id, hora, duracion: clase.duracion }); created++;
   }
 
