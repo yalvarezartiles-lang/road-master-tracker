@@ -6,7 +6,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 // retirado por Groq; qwen/qwen3.8-27b es el modelo con visión disponible.
 const MODEL = "qwen/qwen3.8-27b";
 const PROMPT =
-  'Extrae los nombres completos (Nombre y Apellidos), la HORA de la clase, y el TELÉFONO (si aparece) de los alumnos en este cuadrante. Devuelve ÚNICAMENTE un array JSON válido de objetos, sin texto adicional. Formato estricto: [{"nombre": "Juan Perez", "hora": "10:30", "telefono": "600123456"}]. Si un alumno no tiene teléfono visible, devuelve "telefono": null.';
+  'La imagen es un cuadrante impreso por ordenador. Extrae los nombres, horas (HH:MM) y teléfonos. REGLAS PARA EL TELÉFONO: Elimina cualquier espacio o guion que veas impreso. El número final DEBE tener exactamente 9 dígitos y empezar por 6 o 7 (ej: 611223344). Si tras limpiar los espacios no cumple esta regla, devuelve "telefono": null. Lee el texto impreso con precisión milimétrica. Devuelve ÚNICAMENTE un array JSON válido de objetos, sin texto adicional. Formato estricto: [{"nombre": "Juan Perez", "hora": "10:30", "telefono": "611223344"}].';
 
 export const scanRoster = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -58,8 +58,9 @@ export const scanRoster = createServerFn({ method: "POST" })
               }
             }
             const rawTel = typeof obj.telefono === "string" || typeof obj.telefono === "number" ? String(obj.telefono) : "";
-            const digits = rawTel.replace(/[^\d+]/g, "");
-            const telefono = digits.replace(/\D/g, "").length >= 9 ? digits : null;
+            let digits = rawTel.replace(/\D/g, "");
+            if (digits.length === 11 && digits.startsWith("34")) digits = digits.slice(2);
+            const telefono = /^[67]\d{8}$/.test(digits) ? digits : null;
             return { nombre: nombre.trim(), hora, telefono };
           })
           .filter((c): c is { nombre: string; hora: string | null; telefono: string | null } => c.nombre.length > 0);
