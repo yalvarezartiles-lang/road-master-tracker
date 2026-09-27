@@ -1,5 +1,5 @@
 import * as React from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { Car, Loader2, LogIn, ShieldPlus } from "lucide-react";
 import { toast } from "sonner";
@@ -155,9 +155,9 @@ function AuthPage() {
           </Button>
           <p className="text-center text-xs leading-relaxed text-muted-foreground">
             Al iniciar sesión, confirmas que actúas en nombre del Responsable del Tratamiento y aceptas nuestros{" "}
-            <a href="#" onClick={(e) => e.preventDefault()} className="font-semibold text-primary underline underline-offset-2">Términos de Uso</a>{" "}
+            <Link to="/terminos" className="font-semibold text-primary underline underline-offset-2">Términos de Uso</Link>{" "}
             y{" "}
-            <a href="#" onClick={(e) => e.preventDefault()} className="font-semibold text-primary underline underline-offset-2">Política de Privacidad</a>.
+            <Link to="/privacidad" className="font-semibold text-primary underline underline-offset-2">Política de Privacidad</Link>.
           </p>
         </form>
 
