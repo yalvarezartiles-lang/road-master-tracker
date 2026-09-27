@@ -38,6 +38,20 @@ function TerminosPage() {
           Última actualización: septiembre de 2026
         </p>
 
+        <div className="mt-6 rounded-lg border border-amber-500/40 bg-amber-500/10 p-4">
+          <p className="font-semibold text-amber-600 dark:text-amber-400">
+            ⚠️ Aviso: software en fase Beta
+          </p>
+          <p className="mt-2 text-sm leading-relaxed">
+            Este software se encuentra actualmente en fase de desarrollo (Beta).
+            Se ofrece <strong>sin coste</strong> con la única finalidad de
+            realizar pruebas y evaluación técnica. El servicio puede sufrir
+            reinicios, interrupciones o pérdidas temporales de disponibilidad en
+            cualquier momento, y no está destinado a uso comercial ni en
+            producción durante esta fase.
+          </p>
+        </div>
+
         <div className="mt-8 space-y-8 text-base leading-relaxed">
           <section>
             <h2 className="text-xl font-bold">1. Objeto del servicio</h2>
@@ -86,10 +100,13 @@ function TerminosPage() {
           <section>
             <h2 className="text-xl font-bold">5. Disponibilidad y soporte</h2>
             <p className="mt-2">
-              Se trabajará para mantener la disponibilidad del servicio, sin
-              garantizar la ausencia de interrupciones. El proveedor no será
-              responsable de daños derivados de un uso indebido de la
-              herramienta o de la pérdida de datos no atribuible a esta.
+              Al tratarse de un proyecto en fase Beta, el Desarrollador no
+              garantiza la disponibilidad continua del servicio: este puede
+              sufrir reinicios, interrupciones o períodos de indisponibilidad
+              sin previo aviso. El Desarrollador no será responsable de daños
+              derivados de un uso indebido de la herramienta, de la pérdida de
+              datos no atribuible a esta ni de las interrupciones propias de la
+              fase de pruebas.
             </p>
           </section>
 
