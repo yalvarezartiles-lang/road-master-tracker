@@ -153,6 +153,12 @@ function AuthPage() {
             )}
             {needsSetup ? "Crear administrador" : "Entrar"}
           </Button>
+          <p className="text-center text-xs leading-relaxed text-muted-foreground">
+            Al iniciar sesión, confirmas que actúas como Encargado de Tratamiento y aceptas nuestros{" "}
+            <a href="#" onClick={(e) => e.preventDefault()} className="font-semibold text-primary underline underline-offset-2">Términos de Uso</a>{" "}
+            y{" "}
+            <a href="#" onClick={(e) => e.preventDefault()} className="font-semibold text-primary underline underline-offset-2">Política de Privacidad</a>.
+          </p>
         </form>
 
         {!needsSetup && !checking && (
