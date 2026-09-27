@@ -100,20 +100,19 @@ function PrivacidadPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold">3. Finalidad y base jurídica</h2>
+            <h2 className="text-xl font-bold">4. Finalidad y base jurídica</h2>
             <p className="mt-2">
-              Los datos se tratan con la finalidad de gestionar la formación
-              práctica vial: planificación de clases, seguimiento del progreso
-              del alumno y emisión de registros oficiales de las sesiones. La
-              base jurídica es la ejecución del contrato de prestación de
-              servicios entre el Responsable y sus clientes (art. 6.1.b RGPD), y
-              el cumplimiento de obligaciones legales en materia de formación
-              (art. 6.1.c RGPD).
+              Durante la fase Beta, los datos se tratan con la única finalidad
+              de probar y evaluar el funcionamiento de la plataforma: registro
+              de clases, seguimiento del progreso del alumno y generación de
+              documentos de prueba. La base jurídica es el consentimiento de
+              los usuarios de prueba y el interés legítimo de El Desarrollador
+              en validar el sistema (art. 6.1.a y 6.1.f RGPD).
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-bold">4. Conservación de los datos</h2>
+            <h2 className="text-xl font-bold">5. Conservación de los datos</h2>
             <p className="mt-2">
               Los datos se conservan mientras mantengan relación formativa con
               la organización titular y, posteriormente, durante los plazos de
@@ -124,7 +123,7 @@ function PrivacidadPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold">5. Destinatarios y encargados</h2>
+            <h2 className="text-xl font-bold">6. Destinatarios y encargados</h2>
             <p className="mt-2">
               No se ceden datos a terceros salvo obligación legal. El
               tratamiento se apoya en proveedores tecnológicos (alojamiento,
@@ -135,7 +134,7 @@ function PrivacidadPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold">6. Derechos de los interesados</h2>
+            <h2 className="text-xl font-bold">7. Derechos de los interesados</h2>
             <p className="mt-2">
               Los alumnos cuyos datos figuran en la plataforma pueden ejercer
               sus derechos de acceso, rectificación, supresión, oposición,
@@ -147,7 +146,7 @@ function PrivacidadPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold">7. Seguridad</h2>
+            <h2 className="text-xl font-bold">8. Seguridad</h2>
             <p className="mt-2">
               La plataforma aplica medidas técnicas y organizativas apropiadas:
               acceso restringido mediante credenciales, aislamiento de datos por
@@ -157,7 +156,7 @@ function PrivacidadPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold">8. Cookies</h2>
+            <h2 className="text-xl font-bold">9. Cookies</h2>
             <p className="mt-2">
               La aplicación solo utiliza almacenamiento técnico necesario para
               mantener la sesión iniciada, conforme a la excepción del art. 22.2
