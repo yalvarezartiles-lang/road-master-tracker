@@ -55,7 +55,7 @@ function SigPad({ label, padRef }: { label: string; padRef: React.RefObject<Sign
           <Eraser className="size-5" /> Limpiar
         </Button>
       </div>
-      <div ref={boxRef} className="h-48 overflow-hidden rounded-2xl border-2 border-dashed bg-white">
+      <div ref={boxRef} className="h-48 w-full overflow-hidden rounded-2xl border-2 border-dashed bg-white">
         {width > 0 && (
           <SignatureCanvasC
             ref={padRef}

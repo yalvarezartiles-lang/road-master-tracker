@@ -232,7 +232,7 @@ export function AgendaDiaria({
         <span>–</span>
         <Input type="time" value={end} onChange={(e) => setEnd(e.target.value)} className="h-12 flex-1 rounded-xl text-base" aria-label="Nueva hora fin" />
       </div>
-      <div className="flex gap-2">
+      <div className="flex w-full flex-col gap-2 sm:flex-row">
         {officeMode && (
           <Button type="button" variant="outline" onClick={() => setFormOpen(false)} className="h-12 flex-1 rounded-xl text-base">Cancelar</Button>
         )}

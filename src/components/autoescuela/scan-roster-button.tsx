@@ -126,19 +126,18 @@ async function syncRoster(profesorId: string, fechaSel: string | null, rawClases
     const apellidos = rest.join(" ");
     const match = findBestMatch(normName(full), pool);
     if (match) {
-      if (clase.telefono && !(match.phone ?? "").trim()) {
-        await supabase.from("students").update({ phone: clase.telefono }).eq("id", match.id);
-        match.phone = clase.telefono;
-      }
+      // Alumno existente: se ignora el teléfono de la IA; la agenda usa el de la base de datos.
       entradas.push({ id: match.id, hora, duracion: clase.duracion }); found++; continue;
     }
     const seccion = secPorNombre.get(norm(full)) || seccionDefecto;
+    const numeroLimpio = clase.telefono?.replace(/\D/g, "") ?? "";
+    const telefono = /^[67]\d{8}$/.test(numeroLimpio) ? numeroLimpio : null;
     const { data: ins, error } = await supabase
       .from("students")
-      .insert({ name: first ?? full, apellidos, seccion, archivado: false, ...(clase.telefono ? { phone: clase.telefono } : {}), ...(autoescuelaId ? { autoescuela_id: autoescuelaId } : {}) })
+      .insert({ name: first ?? full, apellidos, seccion, archivado: false, ...(telefono ? { phone: telefono } : {}), ...(autoescuelaId ? { autoescuela_id: autoescuelaId } : {}) })
       .select("id").single();
     if (error || !ins) throw new Error(`No se pudo crear a ${full}`);
-    pool.push({ id: ins.id, name: first ?? full, apellidos, phone: clase.telefono ?? "", seccion, n: normName(full) });
+    pool.push({ id: ins.id, name: first ?? full, apellidos, phone: telefono ?? "", seccion, n: normName(full) });
     entradas.push({ id: ins.id, hora, duracion: clase.duracion }); created++;
   }
 

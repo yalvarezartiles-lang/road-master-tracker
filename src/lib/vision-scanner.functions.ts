@@ -6,7 +6,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 // retirado por Groq; qwen/qwen3.8-27b es el modelo con visión disponible.
 const MODEL = "qwen/qwen3.8-27b";
 const PROMPT =
-  'La imagen es un cuadrante impreso por ordenador. Prioridad 1: Nombres, exactamente como están impresos. REGLA DE SECCIÓN: Delante del nombre suele aparecer explícitamente un código numérico indicando la sección de la autoescuela (ej: "01", "02", "03", "04", etc.). Si ves cualquier número antes del nombre (ej: "03 Laura Perez"), extrae ese número en el campo seccion como string y deja el campo nombre totalmente limpio (solo "Laura Perez"). Prioridad 2: Horas (HH:MM) y teléfonos (9 dígitos o null). Devuelve ÚNICAMENTE este JSON exacto: {"clases": [{"nombre": "...", "hora": "...", "telefono": "...", "seccion": "03"}]}';
+  'La imagen es un cuadrante impreso por ordenador. Prioridad 1: Nombres, exactamente como están impresos. Prioridad 2: Sección (extrae el código numérico como "01" o "02" si está delante del nombre, en el campo seccion como string, y deja el nombre limpio: "03 Laura Perez" → nombre "Laura Perez", seccion "03"). Prioridad 3: Teléfono. REGLA ESTRICTA PARA EL TELÉFONO: Funciona como un OCR tradicional. Cópialo dígito a dígito exactamente como está impreso. NO intentes adivinar. Si un solo número está borroso, devuelve null. Extrae también la hora de cada clase (HH:MM). Devuelve ÚNICAMENTE este JSON exacto: {"clases": [{"nombre": "...", "hora": "...", "telefono": "...", "seccion": "03"}]}';
 
 export const scanRoster = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
