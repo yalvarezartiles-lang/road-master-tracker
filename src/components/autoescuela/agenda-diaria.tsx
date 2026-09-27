@@ -35,11 +35,13 @@ export function AgendaDiaria({
   title,
   officeMode = false,
   studentsVersion = 0,
+  onDayChange,
 }: {
   profesorId: string;
   title?: string;
   officeMode?: boolean;
   studentsVersion?: number;
+  onDayChange?: (fecha: string) => void;
 }) {
   const [day, setDay] = React.useState(() => new Date());
   const [slots, setSlots] = React.useState<Slot[]>([]);
@@ -52,6 +54,7 @@ export function AgendaDiaria({
   const [organizerOpen, setOrganizerOpen] = React.useState(false);
   const [completedStudentIds, setCompletedStudentIds] = React.useState<Set<string>>(new Set());
   const fecha = toISO(day);
+  React.useEffect(() => { onDayChange?.(fecha); }, [fecha, onDayChange]);
   const [canEdit, setCanEdit] = React.useState(officeMode);
 
   React.useEffect(() => {

@@ -84,6 +84,7 @@ function TeacherDashboard() {
   const [teacherName, setTeacherName] = React.useState("");
   const [schoolName, setSchoolName] = React.useState("");
   const [agendaVersion, setAgendaVersion] = React.useState(0);
+  const [agendaFecha, setAgendaFecha] = React.useState<string | null>(null);
   React.useEffect(() => {
     if (!user) return;
     void supabase
@@ -235,7 +236,7 @@ function TeacherDashboard() {
 
         {user && (
           <div className="mt-4">
-            <AgendaDiaria profesorId={user.id} title="Mi agenda" studentsVersion={agendaVersion} />
+            <AgendaDiaria profesorId={user.id} title="Mi agenda" studentsVersion={agendaVersion} onDayChange={setAgendaFecha} />
           </div>
         )}
 
@@ -297,7 +298,7 @@ function TeacherDashboard() {
 
       <div className="fixed inset-x-0 bottom-0 border-t bg-background/95 p-4">
         <div className="mx-auto flex max-w-2xl gap-2">
-          {user && <ScanRosterButton profesorId={user.id} onDone={() => setAgendaVersion((v) => v + 1)} />}
+          {user && <ScanRosterButton profesorId={user.id} fecha={agendaFecha} onDone={() => setAgendaVersion((v) => v + 1)} />}
           <Button
             onClick={() => setLessonOpen(true)}
             className="h-18 flex-1 rounded-3xl text-xl font-extrabold shadow-lg"

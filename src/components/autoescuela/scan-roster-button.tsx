@@ -46,7 +46,7 @@ const toMin = (t: string | null) => {
 type ClaseAgrupada = { nombre: string; hora: string | null; telefono: string | null; apariciones: number; duracion: number };
 
 /** Agrupa cada alumno desde su primera hora y suma 45 minutos por aparición. */
-function mergeClases(clases: { nombre: string; hora: string | null; telefono?: string | null }[]): ClaseAgrupada[] {
+function mergeClases(clases: RawClase[]): ClaseAgrupada[] {
   const map = clases.reduce<Map<string, ClaseAgrupada>>((acc, c) => {
     const key = norm(c.nombre);
     const prev = acc.get(key);
@@ -97,20 +97,26 @@ function findBestMatch(scanned: string, pool: PoolItem[]): PoolItem | null {
   return best && bestScore > 0.75 ? best : null;
 }
 
-async function syncRoster(profesorId: string, seccion: string, fechaIA: string | null, rawClases: { nombre: string; hora: string | null; telefono?: string | null }[]) {
+type RawClase = { nombre: string; hora: string | null; telefono?: string | null; seccion?: string | null };
+
+async function syncRoster(profesorId: string, fechaSel: string | null, rawClases: RawClase[]) {
+  const secPorNombre = new Map<string, string>();
+  for (const c of rawClases) if (c.seccion && !secPorNombre.has(norm(c.nombre))) secPorNombre.set(norm(c.nombre), c.seccion);
   const clases = mergeClases(rawClases);
-  const { data: p } = await supabase.from("profiles").select("autoescuela_id").eq("id", profesorId).maybeSingle();
+  const { data: p } = await supabase.from("profiles").select("autoescuela_id, seccion").eq("id", profesorId).maybeSingle();
   const autoescuelaId = p?.autoescuela_id ?? null;
   let found = 0, created = 0, sinHora = 0;
   const dobles = clases.filter((c) => c.duracion >= 90).length;
   const entradas: { id: string; hora: string | null; duracion: number }[] = [];
 
-  // Una sola consulta con todos los alumnos activos de la sección del profesor.
-  let q = supabase.from("students").select("id, name, apellidos, phone").eq("archivado", false);
+  // Todos los alumnos activos de la autoescuela (cualquier sección) para el fuzzy matching.
+  let q = supabase.from("students").select("id, name, apellidos, phone, seccion").eq("archivado", false);
   if (autoescuelaId) q = q.eq("autoescuela_id", autoescuelaId);
-  if (seccion) q = q.eq("seccion", seccion);
   const { data: todosLosAlumnos } = await q;
   const pool = (todosLosAlumnos ?? []).map((a) => ({ ...a, n: normName(`${a.name} ${a.apellidos}`) }));
+  // Sección por defecto silenciosa: la del profesor, la primera existente o "01".
+  const secciones = [...new Set((todosLosAlumnos ?? []).map((a) => a.seccion).filter(Boolean))].sort();
+  const seccionDefecto = (p?.seccion ?? "").trim() || secciones[0] || "01";
 
   for (const clase of clases) {
     const full = clase.nombre;
@@ -126,16 +132,17 @@ async function syncRoster(profesorId: string, seccion: string, fechaIA: string |
       }
       entradas.push({ id: match.id, hora, duracion: clase.duracion }); found++; continue;
     }
+    const seccion = secPorNombre.get(norm(full)) || seccionDefecto;
     const { data: ins, error } = await supabase
       .from("students")
       .insert({ name: first ?? full, apellidos, seccion, archivado: false, ...(clase.telefono ? { phone: clase.telefono } : {}), ...(autoescuelaId ? { autoescuela_id: autoescuelaId } : {}) })
       .select("id").single();
     if (error || !ins) throw new Error(`No se pudo crear a ${full}`);
-    pool.push({ id: ins.id, name: first ?? full, apellidos, phone: clase.telefono ?? "", n: normName(full) });
+    pool.push({ id: ins.id, name: first ?? full, apellidos, phone: clase.telefono ?? "", seccion, n: normName(full) });
     entradas.push({ id: ins.id, hora, duracion: clase.duracion }); created++;
   }
 
-  const fecha = fechaIA ?? toISO(new Date());
+  const fecha = fechaSel ?? toISO(new Date());
   const { data: existing } = await supabase.from("agenda_diaria").select("student_id, hora_fin")
     .eq("profesor_id", profesorId).eq("fecha", fecha).order("hora_fin");
   const already = new Set((existing ?? []).map((e) => e.student_id));
@@ -152,13 +159,11 @@ async function syncRoster(profesorId: string, seccion: string, fechaIA: string |
   return { found, created, sinHora, dobles, fecha };
 }
 
-export function ScanRosterButton({ profesorId, onDone }: { profesorId: string; onDone?: () => void }) {
+export function ScanRosterButton({ profesorId, fecha: fechaSel = null, onDone }: { profesorId: string; fecha?: string | null; onDone?: () => void }) {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [busy, setBusy] = React.useState(false);
   const [confirmOpen, setConfirmOpen] = React.useState(false);
   const scan = useServerFn(scanRoster);
-  const [seccion, setSeccion] = React.useState("");
-  React.useEffect(() => { setSeccion(localStorage.getItem("scan-seccion") ?? ""); }, []);
 
   const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -173,7 +178,7 @@ export function ScanRosterButton({ profesorId, onDone }: { profesorId: string; o
       const data = await scan({ data: { image } });
       const clases = data.clases;
       if (!clases.length) throw new Error("No se detectaron alumnos en la imagen");
-      const { found, created, sinHora, dobles, fecha } = await syncRoster(profesorId, seccion.trim(), data.fecha, clases);
+      const { found, created, sinHora, dobles, fecha } = await syncRoster(profesorId, fechaSel, clases);
       toast.success(
         `Agenda del ${fecha.split("-").reverse().join("/")} actualizada: ${found} alumno(s) existentes añadidos y ${created} alumno(s) nuevos creados.${dobles ? ` ${dobles} clase(s) doble(s) de 90 min agrupadas.` : ""}${sinHora ? ` ${sinHora} sin hora detectada (guardados a las ${DEFAULT_HORA}).` : ""}`,
         { id: loadingId },
@@ -206,24 +211,15 @@ export function ScanRosterButton({ profesorId, onDone }: { profesorId: string; o
           <AlertDialogHeader>
             <AlertDialogTitle className="text-xl">¿Quieres escanear el cuadrante desde tu cámara o galería?</AlertDialogTitle>
             <AlertDialogDescription className="text-base">
-              Selecciona una imagen y detectaremos los alumnos y las horas de sus clases para añadirlos a tu agenda del día del cuadrante.
+              Selecciona una imagen y detectaremos los alumnos y las horas de sus clases para añadirlos a tu agenda del día seleccionado.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div>
-            <label htmlFor="scan-sec" className="mb-1 block text-sm font-semibold">Sección de los alumnos *</label>
-            <input id="scan-sec" value={seccion} onChange={(e) => setSeccion(e.target.value)} maxLength={40}
-              list="scan-secciones" placeholder="Sección 1"
-              className="h-14 w-full rounded-2xl border bg-background px-4 text-base" />
-            <datalist id="scan-secciones"><option value="Sección 0" /><option value="Sección 1" /><option value="Sección 2" /><option value="Sección 3" /></datalist>
-          </div>
           <AlertDialogFooter className="flex-col gap-3 sm:flex-row">
             <AlertDialogCancel className="h-14 rounded-2xl text-base font-semibold">Cancelar</AlertDialogCancel>
             <AlertDialogAction
               className="h-14 rounded-2xl text-base font-bold"
               onClick={(ev) => {
                 ev.preventDefault();
-                if (!seccion.trim()) { toast.error("La sección de los alumnos es obligatoria"); return; }
-                localStorage.setItem("scan-seccion", seccion.trim());
                 setConfirmOpen(false);
                 inputRef.current?.click();
               }}

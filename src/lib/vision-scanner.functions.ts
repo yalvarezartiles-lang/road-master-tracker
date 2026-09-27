@@ -6,7 +6,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 // retirado por Groq; qwen/qwen3.8-27b es el modelo con visión disponible.
 const MODEL = "qwen/qwen3.8-27b";
 const PROMPT =
-  'La imagen es un cuadrante impreso por ordenador. Prioridad absoluta 1: Extrae los NOMBRES con precisión milimétrica, exactamente como están impresos, sin cambiar ni una letra. Prioridad 2: Extrae la FECHA GLOBAL a la que corresponde el cuadrante (devuélvela en formato YYYY-MM-DD). Prioridad 3: Extrae hora (HH:MM) y teléfono (elimina espacios y guiones; exactamente 9 dígitos empezando por 6 o 7, o null). Devuelve ÚNICAMENTE este JSON exacto, sin texto adicional: {"fecha": "2026-10-15", "clases": [{"nombre": "...", "hora": "...", "telefono": "..."}]}. Si no ves fecha, devuelve "fecha": null.';
+  'La imagen es un cuadrante impreso por ordenador. Prioridad 1: Nombres, exactamente como están impresos. REGLA DE SECCIÓN: Delante del nombre suele aparecer explícitamente un código numérico indicando la sección de la autoescuela (ej: "01", "02", "03", "04", etc.). Si ves cualquier número antes del nombre (ej: "03 Laura Perez"), extrae ese número en el campo seccion como string y deja el campo nombre totalmente limpio (solo "Laura Perez"). Prioridad 2: Horas (HH:MM) y teléfonos (9 dígitos o null). Devuelve ÚNICAMENTE este JSON exacto: {"clases": [{"nombre": "...", "hora": "...", "telefono": "...", "seccion": "03"}]}';
 
 export const scanRoster = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -38,23 +38,27 @@ export const scanRoster = createServerFn({ method: "POST" })
     }
     const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
     const raw = json.choices?.[0]?.message?.content ?? "";
-    let fecha: string | null = null;
     let m: RegExpMatchArray | null = null;
     try {
       const objTxt = raw.match(/\{[\s\S]*\}/)?.[0];
-      const obj = objTxt ? (JSON.parse(objTxt) as { fecha?: unknown; clases?: unknown }) : null;
-      if (obj && typeof obj.fecha === "string" && /^\d{4}-\d{2}-\d{2}$/.test(obj.fecha) && !Number.isNaN(Date.parse(obj.fecha))) fecha = obj.fecha;
+      const obj = objTxt ? (JSON.parse(objTxt) as { clases?: unknown }) : null;
       if (obj && Array.isArray(obj.clases)) m = [JSON.stringify(obj.clases)] as unknown as RegExpMatchArray;
     } catch { /* fallback al array */ }
     if (!m) m = raw.match(/\[[\s\S]*\]/);
-    let clases: { nombre: string; hora: string | null; telefono: string | null }[] = [];
+    let clases: { nombre: string; hora: string | null; telefono: string | null; seccion: string | null }[] = [];
     try {
       const arr = m ? JSON.parse(m[0]) : [];
       if (Array.isArray(arr)) {
         clases = arr
           .map((x) => {
-            const obj = (x ?? {}) as { nombre?: unknown; hora?: unknown; telefono?: unknown };
-            const nombre = typeof obj.nombre === "string" ? obj.nombre : "";
+            const obj = (x ?? {}) as { nombre?: unknown; hora?: unknown; telefono?: unknown; seccion?: unknown };
+            let nombre = typeof obj.nombre === "string" ? obj.nombre : "";
+            let seccion: string | null = null;
+            const rawSec = typeof obj.seccion === "string" || typeof obj.seccion === "number" ? String(obj.seccion).replace(/\D/g, "") : "";
+            const pre = nombre.trim().match(/^(\d{1,3})[\s.\-]+(.*)$/);
+            if (pre) { nombre = pre[2]!; }
+            const sd = rawSec || pre?.[1] || "";
+            if (sd) seccion = sd.padStart(2, "0");
             const rawHora = typeof obj.hora === "string" ? obj.hora : "";
             const hm = rawHora.match(/(\d{1,2})[:.h](\d{2})?/);
             let hora: string | null = null;
@@ -69,12 +73,12 @@ export const scanRoster = createServerFn({ method: "POST" })
             let digits = rawTel.replace(/\D/g, "");
             if (digits.length === 11 && digits.startsWith("34")) digits = digits.slice(2);
             const telefono = /^[67]\d{8}$/.test(digits) ? digits : null;
-            return { nombre: nombre.trim(), hora, telefono };
+            return { nombre: nombre.trim(), hora, telefono, seccion };
           })
-          .filter((c): c is { nombre: string; hora: string | null; telefono: string | null } => c.nombre.length > 0);
+          .filter((c): c is { nombre: string; hora: string | null; telefono: string | null; seccion: string | null } => c.nombre.length > 0);
       }
     } catch {
       clases = [];
     }
-    return { fecha, clases };
+    return { clases };
   });
