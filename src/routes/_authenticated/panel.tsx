@@ -41,6 +41,7 @@ import { OfficePanel } from "@/components/autoescuela/office-panel";
 import { AgendaDiaria } from "@/components/autoescuela/agenda-diaria";
 import { PasswordCard } from "@/components/autoescuela/password-card";
 import { ScanRosterButton } from "@/components/autoescuela/scan-roster-button";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 export const Route = createFileRoute("/_authenticated/panel")({
   head: () => ({
@@ -82,18 +83,16 @@ function TeacherDashboard() {
   const { isAdmin, user } = useCurrentUser();
   const [teacherName, setTeacherName] = React.useState("");
   const [schoolName, setSchoolName] = React.useState("");
-  const [seccion, setSeccion] = React.useState("");
   const [agendaVersion, setAgendaVersion] = React.useState(0);
   React.useEffect(() => {
     if (!user) return;
     void supabase
       .from("profiles")
-      .select("full_name, autoescuela_id, seccion")
+      .select("full_name, autoescuela_id")
       .eq("id", user.id)
       .maybeSingle()
       .then(async ({ data: p }) => {
         setTeacherName((p?.full_name ?? "").split(" ")[0] ?? "");
-        setSeccion(p?.seccion ?? "");
         if (!p?.autoescuela_id) return;
         const { data: a } = await supabase
           .from("autoescuelas")
@@ -140,7 +139,7 @@ function TeacherDashboard() {
             </h1>
             {schoolName && (
               <p className="flex items-center gap-1.5 truncate text-sm font-medium text-muted-foreground">
-                <Building2 className="size-4 shrink-0" /> {schoolName}{seccion ? ` - ${seccion}` : ""}
+                <Building2 className="size-4 shrink-0" /> {schoolName}
               </p>
             )}
           </div>
@@ -161,9 +160,14 @@ function TeacherDashboard() {
               <SheetContent side="right" className="w-full max-w-sm overflow-y-auto p-5">
                 <SheetHeader className="p-0 text-left">
                   <SheetTitle className="text-xl font-bold">Ajustes de Perfil</SheetTitle>
-                  <SheetDescription>Tus datos y seguridad</SheetDescription>
+                  <SheetDescription>Tus zonas, datos y seguridad</SheetDescription>
                 </SheetHeader>
-                <div className="mt-6 rounded-3xl border bg-card p-5">
+                <Button asChild className="mt-6 h-16 w-full rounded-2xl text-base font-bold">
+                  <Link to="/gestion" aria-label="Mis zonas y habilidades">
+                    <Settings className="size-5" /> Gestionar mis zonas y habilidades
+                  </Link>
+                </Button>
+                <div className="mt-4 rounded-3xl border bg-card p-5">
                   <div className="flex items-center gap-4">
                     <span className="flex size-16 shrink-0 items-center justify-center rounded-2xl bg-primary text-xl font-bold text-primary-foreground">
                       {initials(teacherName || "P")}
@@ -182,22 +186,18 @@ function TeacherDashboard() {
                       </dt>
                       <dd className="truncate font-semibold">{schoolName || "—"}</dd>
                     </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <dt className="flex items-center gap-2 text-muted-foreground">
-                        <Users className="size-5" /> Sección
-                      </dt>
-                      <dd className="truncate font-semibold">{seccion || "—"}</dd>
-                    </div>
                   </dl>
                 </div>
-                <div className="mt-4">
-                  <PasswordCard />
-                </div>
-                <Button asChild variant="secondary" className="mt-4 h-14 w-full rounded-2xl text-base font-semibold">
-                  <Link to="/gestion" aria-label="Mis zonas y habilidades">
-                    <Settings className="size-5" /> Mis zonas y habilidades
-                  </Link>
-                </Button>
+                <Accordion type="single" collapsible className="mt-4 rounded-3xl border bg-card px-4">
+                  <AccordionItem value="pwd" className="border-none">
+                    <AccordionTrigger className="py-4 text-base font-semibold">
+                      Opciones Avanzadas (Cambiar Contraseña)
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <PasswordCard />
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
               </SheetContent>
             </Sheet>
             <ThemeToggle />
