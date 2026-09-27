@@ -30,7 +30,7 @@ const toISO = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const addMin = (t: string, m: number) => {
   const [h, mm] = t.split(":").map(Number);
-  const tot = h! * 60 + mm! + m;
+  const tot = (h ?? 0) * 60 + (mm ?? 0) + m;
   return `${String(Math.floor(tot / 60) % 24).padStart(2, "0")}:${String(tot % 60).padStart(2, "0")}`;
 };
 const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
@@ -43,17 +43,18 @@ const toMin = (t: string | null) => {
   return (h ?? 0) * 60 + (m ?? 0);
 };
 
-type ClaseAgrupada = { nombre: string; hora: string | null; duracion: number };
+type ClaseAgrupada = { nombre: string; hora: string | null; apariciones: number; duracion: number };
 
-/** Agrupa las apariciones repetidas de un alumno en una sola clase de 90 min. */
+/** Agrupa cada alumno desde su primera hora y suma 45 minutos por aparición. */
 function mergeClases(clases: { nombre: string; hora: string | null }[]): ClaseAgrupada[] {
   const map = clases.reduce<Map<string, ClaseAgrupada>>((acc, c) => {
     const key = norm(c.nombre);
     const prev = acc.get(key);
     if (!prev) {
-      acc.set(key, { nombre: c.nombre, hora: c.hora, duracion: 45 });
+      acc.set(key, { nombre: c.nombre, hora: c.hora, apariciones: 1, duracion: 45 });
     } else {
-      prev.duracion = 90;
+      prev.apariciones += 1;
+      prev.duracion = prev.apariciones * 45;
       if (toMin(c.hora) < toMin(prev.hora)) prev.hora = c.hora;
     }
     return acc;
@@ -85,7 +86,7 @@ async function syncRoster(profesorId: string, rawClases: { nombre: string; hora:
     if (match) { entradas.push({ id: match.id, hora, duracion: clase.duracion }); found++; continue; }
     const { data: ins, error } = await supabase
       .from("students")
-      .insert({ name: first!, apellidos, seccion, archivado: false, ...(autoescuelaId ? { autoescuela_id: autoescuelaId } : {}) })
+      .insert({ name: first ?? full, apellidos, seccion, archivado: false, ...(autoescuelaId ? { autoescuela_id: autoescuelaId } : {}) })
       .select("id").single();
     if (error || !ins) throw new Error(`No se pudo crear a ${full}`);
     entradas.push({ id: ins.id, hora, duracion: clase.duracion }); created++;

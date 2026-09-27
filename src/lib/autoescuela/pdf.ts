@@ -25,7 +25,7 @@ export async function exportFichasPdf(student: Pick<Student, "id">): Promise<voi
     // 2) Clases del alumno
     const { data: lessons, error: lErr } = await supabase
       .from("lessons")
-      .select("id, number, date, hora_inicio, hora_fin, matricula, firma_alumno, firma_profesor, created_by")
+      .select("id, number, date, hora_inicio, hora_fin, matricula, firma_alumno, firma_alumno_2, firma_profesor, created_by")
       .eq("student_id", student.id)
       .order("number", { ascending: true });
     if (lErr) throw new Error(`Error leyendo clases: ${lErr.message}`);
@@ -61,23 +61,49 @@ export async function exportFichasPdf(student: Pick<Student, "id">): Promise<voi
     doc.text(`Alumno: ${st.name ?? ""} ${st.apellidos ?? ""}`.trim(), 14, 23);
     doc.text(`DNI: ${st.dni || "-"}`, 14, 30);
 
-    const sigs = lessons.map((l) => ({
-      alumno: validImage(l.firma_alumno),
-      profesor: validImage(l.firma_profesor),
-    }));
-
-    const rows = lessons.map((l, i) => {
+    const toMinutes = (value: string) => {
+      const [hours, minutes] = value.slice(0, 5).split(":").map(Number);
+      return (hours ?? 0) * 60 + (minutes ?? 0);
+    };
+    const addMinutes = (value: string, amount: number) => {
+      const total = (toMinutes(value) + amount) % 1440;
+      return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
+    };
+    type PdfRow = { cells: string[]; alumno: string | null; profesor: string | null };
+    const pdfRows: PdfRow[] = lessons.flatMap((l) => {
       const p = l.created_by ? profMap.get(l.created_by) : undefined;
       const d = l.date ? new Date(l.date) : null;
-      return [
-        d && !isNaN(d.getTime()) ? d.toLocaleDateString("es-ES") : "-",
-        l.hora_inicio && l.hora_fin ? `${l.hora_inicio} - ${l.hora_fin}` : "-",
+      const fecha = d && !isNaN(d.getTime()) ? d.toLocaleDateString("es-ES") : "-";
+      const profesor = p ? `${p.full_name ?? ""} ${p.apellidos ?? ""}\nDNI: ${p.dni || "-"}` : "-";
+      const firma1 = validImage(l.firma_alumno);
+      const firma2 = validImage(l.firma_alumno_2);
+      const firmaProfesor = validImage(l.firma_profesor);
+      const base = [
+        fecha,
+        l.hora_inicio && l.hora_fin ? `${l.hora_inicio.slice(0, 5)} - ${l.hora_fin.slice(0, 5)}` : "-",
         l.matricula || "-",
-        p ? `${p.full_name ?? ""} ${p.apellidos ?? ""}\nDNI: ${p.dni || "-"}` : "-",
-        sigs[i]?.alumno ? "" : "Pendiente",
-        sigs[i]?.profesor ? "" : "Pendiente",
+        profesor,
+      ];
+      if (!firma2 || !l.hora_inicio) {
+        return [{ cells: [...base, firma1 ? "" : "Pendiente", firmaProfesor ? "" : "Pendiente"], alumno: firma1, profesor: firmaProfesor }];
+      }
+      const inicio1 = l.hora_inicio.slice(0, 5);
+      const inicio2 = addMinutes(inicio1, 45);
+      return [
+        {
+          cells: [fecha, `${inicio1} - ${inicio2}`, l.matricula || "-", profesor, "", firmaProfesor ? "" : "Pendiente"],
+          alumno: firma1,
+          profesor: firmaProfesor,
+        },
+        {
+          cells: [fecha, `${inicio2} - ${addMinutes(inicio2, 45)}`, l.matricula || "-", profesor, "", firmaProfesor ? "" : "Pendiente"],
+          alumno: firma2,
+          profesor: firmaProfesor,
+        },
       ];
     });
+
+    const rows = pdfRows.map((row) => row.cells);
 
     autoTable(doc, {
       startY: 36,
@@ -88,8 +114,8 @@ export async function exportFichasPdf(student: Pick<Student, "id">): Promise<voi
       columnStyles: { 4: { cellWidth: 50 }, 5: { cellWidth: 50 } },
       didDrawCell: (c: any) => {
         if (c.section !== "body" || (c.column.index !== 4 && c.column.index !== 5)) return;
-        const s = sigs[c.row.index];
-        const img = c.column.index === 4 ? s?.alumno : s?.profesor;
+        const row = pdfRows[c.row.index];
+        const img = c.column.index === 4 ? row?.alumno : row?.profesor;
         if (!img) return;
         try {
           const fmt = img.startsWith("data:image/png") ? "PNG" : "JPEG";
