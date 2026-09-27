@@ -297,7 +297,7 @@ function TeacherDashboard() {
       </main>
 
       <div className="fixed inset-x-0 bottom-0 border-t bg-background/95 p-4">
-        <div className="mx-auto flex max-w-2xl gap-2">
+        <div className="mx-auto flex w-full max-w-2xl flex-col gap-2 sm:flex-row">
           {user && <ScanRosterButton profesorId={user.id} fecha={agendaFecha} onDone={() => setAgendaVersion((v) => v + 1)} />}
           <Button
             onClick={() => setLessonOpen(true)}
