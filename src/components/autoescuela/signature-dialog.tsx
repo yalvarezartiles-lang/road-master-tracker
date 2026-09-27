@@ -142,8 +142,13 @@ export function SignatureDialog({
       const row = rows?.[0];
       if (row) {
         setAgendaId(row.id);
+        const agendaStart = row.hora_inicio.slice(0, 5);
+        const agendaEnd = row.hora_fin.slice(0, 5);
+        setStart(agendaStart);
+        setEnd(agendaEnd);
         const toM = (t: string) => { const [h, m] = t.slice(0, 5).split(":").map(Number); return (h ?? 0) * 60 + (m ?? 0); };
-        const d = toM(row.hora_fin) - toM(row.hora_inicio);
+        const rawDuration = toM(row.hora_fin) - toM(row.hora_inicio);
+        const d = rawDuration > 0 ? rawDuration : rawDuration + 1440;
         if (d === 45) setDur("45");
         else if (d === 90) setDur("90");
         else if (d > 0) { setDur("custom"); setCustomMin(String(d)); }
@@ -212,7 +217,7 @@ export function SignatureDialog({
         return;
       }
       fa = alumnoRef.current.getCanvas().toDataURL("image/png");
-      if (isDoble) fa2 = alumno2Ref.current!.getCanvas().toDataURL("image/png");
+      if (isDoble && alumno2Ref.current) fa2 = alumno2Ref.current.getCanvas().toDataURL("image/png");
       fp = profRef.current.getCanvas().toDataURL("image/png");
     }
     setSaving(true);
