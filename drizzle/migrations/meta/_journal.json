@@ -127,6 +127,13 @@
       "when": 1790460456797,
       "tag": "0017_lesson_second_signature",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1790542657510,
+      "tag": "0018_revoke_anon_access",
+      "breakpoints": true
     }
   ]
 }
