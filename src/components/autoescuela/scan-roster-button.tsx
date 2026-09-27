@@ -97,11 +97,10 @@ function findBestMatch(scanned: string, pool: PoolItem[]): PoolItem | null {
   return best && bestScore > 0.75 ? best : null;
 }
 
-async function syncRoster(profesorId: string, rawClases: { nombre: string; hora: string | null; telefono?: string | null }[]) {
+async function syncRoster(profesorId: string, seccion: string, fechaIA: string | null, rawClases: { nombre: string; hora: string | null; telefono?: string | null }[]) {
   const clases = mergeClases(rawClases);
-  const { data: p } = await supabase.from("profiles").select("autoescuela_id, seccion").eq("id", profesorId).maybeSingle();
+  const { data: p } = await supabase.from("profiles").select("autoescuela_id").eq("id", profesorId).maybeSingle();
   const autoescuelaId = p?.autoescuela_id ?? null;
-  const seccion = p?.seccion ?? "";
   let found = 0, created = 0, sinHora = 0;
   const dobles = clases.filter((c) => c.duracion >= 90).length;
   const entradas: { id: string; hora: string | null; duracion: number }[] = [];
@@ -136,7 +135,7 @@ async function syncRoster(profesorId: string, rawClases: { nombre: string; hora:
     entradas.push({ id: ins.id, hora, duracion: clase.duracion }); created++;
   }
 
-  const fecha = toISO(new Date());
+  const fecha = fechaIA ?? toISO(new Date());
   const { data: existing } = await supabase.from("agenda_diaria").select("student_id, hora_fin")
     .eq("profesor_id", profesorId).eq("fecha", fecha).order("hora_fin");
   const already = new Set((existing ?? []).map((e) => e.student_id));
@@ -150,7 +149,7 @@ async function syncRoster(profesorId: string, rawClases: { nombre: string; hora:
     const { error } = await supabase.from("agenda_diaria").insert(rows);
     if (error) throw new Error("Alumnos listos, pero no tienes permiso para editar la agenda");
   }
-  return { found, created, sinHora, dobles };
+  return { found, created, sinHora, dobles, fecha };
 }
 
 export function ScanRosterButton({ profesorId, onDone }: { profesorId: string; onDone?: () => void }) {
@@ -158,6 +157,8 @@ export function ScanRosterButton({ profesorId, onDone }: { profesorId: string; o
   const [busy, setBusy] = React.useState(false);
   const [confirmOpen, setConfirmOpen] = React.useState(false);
   const scan = useServerFn(scanRoster);
+  const [seccion, setSeccion] = React.useState("");
+  React.useEffect(() => { setSeccion(localStorage.getItem("scan-seccion") ?? ""); }, []);
 
   const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -172,9 +173,9 @@ export function ScanRosterButton({ profesorId, onDone }: { profesorId: string; o
       const data = await scan({ data: { image } });
       const clases = data.clases;
       if (!clases.length) throw new Error("No se detectaron alumnos en la imagen");
-      const { found, created, sinHora, dobles } = await syncRoster(profesorId, clases);
+      const { found, created, sinHora, dobles, fecha } = await syncRoster(profesorId, seccion.trim(), data.fecha, clases);
       toast.success(
-        `Agenda actualizada: ${found} alumno(s) existentes añadidos y ${created} alumno(s) nuevos creados.${dobles ? ` ${dobles} clase(s) doble(s) de 90 min agrupadas.` : ""}${sinHora ? ` ${sinHora} sin hora detectada (guardados a las ${DEFAULT_HORA}).` : ""}`,
+        `Agenda del ${fecha.split("-").reverse().join("/")} actualizada: ${found} alumno(s) existentes añadidos y ${created} alumno(s) nuevos creados.${dobles ? ` ${dobles} clase(s) doble(s) de 90 min agrupadas.` : ""}${sinHora ? ` ${sinHora} sin hora detectada (guardados a las ${DEFAULT_HORA}).` : ""}`,
         { id: loadingId },
       );
       onDone?.();
@@ -205,15 +206,24 @@ export function ScanRosterButton({ profesorId, onDone }: { profesorId: string; o
           <AlertDialogHeader>
             <AlertDialogTitle className="text-xl">¿Quieres escanear el cuadrante desde tu cámara o galería?</AlertDialogTitle>
             <AlertDialogDescription className="text-base">
-              Selecciona una imagen y detectaremos los alumnos y las horas de sus clases para añadirlos a tu agenda de hoy.
+              Selecciona una imagen y detectaremos los alumnos y las horas de sus clases para añadirlos a tu agenda del día del cuadrante.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div>
+            <label htmlFor="scan-sec" className="mb-1 block text-sm font-semibold">Sección de los alumnos *</label>
+            <input id="scan-sec" value={seccion} onChange={(e) => setSeccion(e.target.value)} maxLength={40}
+              list="scan-secciones" placeholder="Sección 1"
+              className="h-14 w-full rounded-2xl border bg-background px-4 text-base" />
+            <datalist id="scan-secciones"><option value="Sección 0" /><option value="Sección 1" /><option value="Sección 2" /><option value="Sección 3" /></datalist>
+          </div>
           <AlertDialogFooter className="flex-col gap-3 sm:flex-row">
             <AlertDialogCancel className="h-14 rounded-2xl text-base font-semibold">Cancelar</AlertDialogCancel>
             <AlertDialogAction
               className="h-14 rounded-2xl text-base font-bold"
               onClick={(ev) => {
                 ev.preventDefault();
+                if (!seccion.trim()) { toast.error("La sección de los alumnos es obligatoria"); return; }
+                localStorage.setItem("scan-seccion", seccion.trim());
                 setConfirmOpen(false);
                 inputRef.current?.click();
               }}

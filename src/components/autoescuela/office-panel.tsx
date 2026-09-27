@@ -89,17 +89,6 @@ export function OfficePanel({ userId }: { userId: string }) {
   };
 
   const current = teachers.find((t) => t.id === selected);
-  const [secDraft, setSecDraft] = React.useState<string | null>(null);
-  React.useEffect(() => setSecDraft(null), [selected]);
-  const saveSec = async () => {
-    if (!current) return;
-    const value = (secDraft ?? current.seccion).trim();
-    if (!value) { toast.error("La sección es obligatoria"); return; }
-    const { error } = await supabase.rpc("set_profesor_seccion", { _profesor: current.id, _seccion: value });
-    if (error) { toast.error(error.message); return; }
-    setTeachers((l) => l.map((t) => (t.id === current.id ? { ...t, seccion: value } : t)));
-    toast.success("Sección guardada");
-  };
   const students = data.students;
   const studentsVersion = students.map((s) => `${s.id}${s.name}${s.apellidos}`).join("|").length + students.length;
 
@@ -135,25 +124,6 @@ export function OfficePanel({ userId }: { userId: string }) {
               <option key={t.id} value={t.id}>{[t.full_name, t.apellidos].filter(Boolean).join(" ")}</option>
             ))}
           </select>
-          {current && (
-            <div className="flex items-end gap-2">
-              <div className="min-w-0 flex-1">
-                <label htmlFor="prof-sec" className="mb-1 block text-sm font-semibold text-muted-foreground">Sección del profesor</label>
-                <input
-                  id="prof-sec"
-                  key={current.id}
-                  defaultValue={current.seccion}
-                  list="secciones-prof"
-                  maxLength={40}
-                  placeholder="Sección 1"
-                  onChange={(e) => setSecDraft(e.target.value)}
-                  className="h-12 w-full rounded-2xl border bg-background px-4 text-base"
-                />
-                <datalist id="secciones-prof"><option value="Sección 0" /><option value="Sección 1" /><option value="Sección 2" /></datalist>
-              </div>
-              <Button className="h-12 rounded-2xl px-5 font-bold" onClick={() => void saveSec()}>Guardar</Button>
-            </div>
-          )}
           {current && (
             <AgendaDiaria
               key={current.id}

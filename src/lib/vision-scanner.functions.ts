@@ -6,7 +6,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 // retirado por Groq; qwen/qwen3.8-27b es el modelo con visión disponible.
 const MODEL = "qwen/qwen3.8-27b";
 const PROMPT =
-  'La imagen es un cuadrante impreso por ordenador. Extrae los nombres, horas (HH:MM) y teléfonos. REGLAS PARA EL TELÉFONO: Elimina cualquier espacio o guion que veas impreso. El número final DEBE tener exactamente 9 dígitos y empezar por 6 o 7 (ej: 611223344). Si tras limpiar los espacios no cumple esta regla, devuelve "telefono": null. Lee el texto impreso con precisión milimétrica. Devuelve ÚNICAMENTE un array JSON válido de objetos, sin texto adicional. Formato estricto: [{"nombre": "Juan Perez", "hora": "10:30", "telefono": "611223344"}].';
+  'La imagen es un cuadrante impreso por ordenador. Prioridad absoluta 1: Extrae los NOMBRES con precisión milimétrica, exactamente como están impresos, sin cambiar ni una letra. Prioridad 2: Extrae la FECHA GLOBAL a la que corresponde el cuadrante (devuélvela en formato YYYY-MM-DD). Prioridad 3: Extrae hora (HH:MM) y teléfono (elimina espacios y guiones; exactamente 9 dígitos empezando por 6 o 7, o null). Devuelve ÚNICAMENTE este JSON exacto, sin texto adicional: {"fecha": "2026-10-15", "clases": [{"nombre": "...", "hora": "...", "telefono": "..."}]}. Si no ves fecha, devuelve "fecha": null.';
 
 export const scanRoster = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -38,7 +38,15 @@ export const scanRoster = createServerFn({ method: "POST" })
     }
     const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
     const raw = json.choices?.[0]?.message?.content ?? "";
-    const m = raw.match(/\[[\s\S]*\]/);
+    let fecha: string | null = null;
+    let m: RegExpMatchArray | null = null;
+    try {
+      const objTxt = raw.match(/\{[\s\S]*\}/)?.[0];
+      const obj = objTxt ? (JSON.parse(objTxt) as { fecha?: unknown; clases?: unknown }) : null;
+      if (obj && typeof obj.fecha === "string" && /^\d{4}-\d{2}-\d{2}$/.test(obj.fecha) && !Number.isNaN(Date.parse(obj.fecha))) fecha = obj.fecha;
+      if (obj && Array.isArray(obj.clases)) m = [JSON.stringify(obj.clases)] as unknown as RegExpMatchArray;
+    } catch { /* fallback al array */ }
+    if (!m) m = raw.match(/\[[\s\S]*\]/);
     let clases: { nombre: string; hora: string | null; telefono: string | null }[] = [];
     try {
       const arr = m ? JSON.parse(m[0]) : [];
@@ -68,5 +76,5 @@ export const scanRoster = createServerFn({ method: "POST" })
     } catch {
       clases = [];
     }
-    return { clases };
+    return { fecha, clases };
   });
