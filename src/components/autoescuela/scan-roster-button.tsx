@@ -63,6 +63,40 @@ function mergeClases(clases: { nombre: string; hora: string | null; telefono?: s
   return [...map.values()];
 }
 
+/** Minúsculas, sin tildes, sin signos y espacios simples. */
+const normName = (s: string) => norm(s).replace(/[^a-z0-9ñ\s]/g, " ").replace(/\s+/g, " ").trim();
+
+function levenshtein(a: string, b: string): number {
+  if (a === b) return 0;
+  if (!a.length) return b.length;
+  if (!b.length) return a.length;
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    for (let j = 1; j <= b.length; j++) {
+      cur[j] = Math.min(prev[j]! + 1, cur[j - 1]! + 1, prev[j - 1]! + (a[i - 1] === b[j - 1] ? 0 : 1));
+    }
+    prev = cur;
+  }
+  return prev[b.length]!;
+}
+const similarity = (a: string, b: string) => 1 - levenshtein(a, b) / Math.max(a.length, b.length, 1);
+
+type PoolItem = { id: string; name: string; apellidos: string; phone: string | null; n: string };
+/** Devuelve el alumno más parecido si supera el 75% o coinciden nombre y primer apellido. */
+function findBestMatch(scanned: string, pool: PoolItem[]): PoolItem | null {
+  const [sf, sa] = scanned.split(" ");
+  let best: PoolItem | null = null;
+  let bestScore = 0;
+  for (const a of pool) {
+    const [af, aa] = a.n.split(" ");
+    const sameKey = !!sf && !!sa && sf === af && sa === aa;
+    const score = sameKey ? 1 : similarity(scanned, a.n);
+    if (score > bestScore) { bestScore = score; best = a; }
+  }
+  return best && bestScore > 0.75 ? best : null;
+}
+
 async function syncRoster(profesorId: string, rawClases: { nombre: string; hora: string | null; telefono?: string | null }[]) {
   const clases = mergeClases(rawClases);
   const { data: p } = await supabase.from("profiles").select("autoescuela_id, seccion").eq("id", profesorId).maybeSingle();
@@ -72,21 +106,24 @@ async function syncRoster(profesorId: string, rawClases: { nombre: string; hora:
   const dobles = clases.filter((c) => c.duracion >= 90).length;
   const entradas: { id: string; hora: string | null; duracion: number }[] = [];
 
+  // Una sola consulta con todos los alumnos activos de la sección del profesor.
+  let q = supabase.from("students").select("id, name, apellidos, phone").eq("archivado", false);
+  if (autoescuelaId) q = q.eq("autoescuela_id", autoescuelaId);
+  if (seccion) q = q.eq("seccion", seccion);
+  const { data: todosLosAlumnos } = await q;
+  const pool = (todosLosAlumnos ?? []).map((a) => ({ ...a, n: normName(`${a.name} ${a.apellidos}`) }));
+
   for (const clase of clases) {
     const full = clase.nombre;
     const hora = clase.hora;
     if (!hora) sinHora++;
     const [first, ...rest] = full.trim().split(/\s+/);
     const apellidos = rest.join(" ");
-    let q = supabase.from("students").select("id, name, apellidos, phone").eq("archivado", false).ilike("name", `%${first}%`);
-    if (autoescuelaId) q = q.eq("autoescuela_id", autoescuelaId);
-    if (seccion) q = q.eq("seccion", seccion);
-    const { data: cands } = await q;
-    const match = (cands ?? []).find((c) => norm(`${c.name} ${c.apellidos}`) === norm(full))
-      ?? (cands ?? []).find((c) => norm(`${c.name} ${c.apellidos}`).includes(norm(full)) || norm(full).includes(norm(`${c.name} ${c.apellidos}`)));
+    const match = findBestMatch(normName(full), pool);
     if (match) {
       if (clase.telefono && !(match.phone ?? "").trim()) {
         await supabase.from("students").update({ phone: clase.telefono }).eq("id", match.id);
+        match.phone = clase.telefono;
       }
       entradas.push({ id: match.id, hora, duracion: clase.duracion }); found++; continue;
     }
@@ -95,6 +132,7 @@ async function syncRoster(profesorId: string, rawClases: { nombre: string; hora:
       .insert({ name: first ?? full, apellidos, seccion, archivado: false, ...(clase.telefono ? { phone: clase.telefono } : {}), ...(autoescuelaId ? { autoescuela_id: autoescuelaId } : {}) })
       .select("id").single();
     if (error || !ins) throw new Error(`No se pudo crear a ${full}`);
+    pool.push({ id: ins.id, name: first ?? full, apellidos, phone: clase.telefono ?? "", n: normName(full) });
     entradas.push({ id: ins.id, hora, duracion: clase.duracion }); created++;
   }
 
