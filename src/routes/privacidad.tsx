@@ -39,14 +39,28 @@ function PrivacidadPage() {
         </p>
 
         <div className="mt-8 space-y-8 text-base leading-relaxed">
+          <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-4">
+            <p className="font-semibold text-amber-600 dark:text-amber-400">
+              ⚠️ Aviso: proyecto en fase Beta
+            </p>
+            <p className="mt-2 text-sm leading-relaxed">
+              Esta aplicación es un prototipo independiente en fase de
+              evaluación (Beta), no comercial. Los datos alojados se tratan
+              exclusivamente para el testeo funcional de la plataforma.
+            </p>
+          </div>
+
           <section>
             <h2 className="text-xl font-bold">1. Responsable del Tratamiento</h2>
             <p className="mt-2">
-              El Responsable del Tratamiento de los datos personales registrados
-              en la plataforma es la autoescuela u organización titular de la
-              suscripción, con los datos de contacto que figuren en su contrato
-              de servicio. El proveedor tecnológico de la plataforma actúa como
-              Encargado del Tratamiento.
+              El tratamiento de los datos se realiza en el marco de un proyecto
+              independiente en fase de evaluación, gestionado por El
+              Desarrollador de la plataforma. No existe una empresa comercial
+              titular del servicio durante la fase Beta. La autoescuela u
+              organización para la que se pruebe la plataforma actúa como
+              Responsable de los datos de sus alumnos, y El Desarrollador
+              trata los datos únicamente para el testeo funcional del
+              sistema.
             </p>
           </section>
 
