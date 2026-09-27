@@ -43,17 +43,18 @@ const toMin = (t: string | null) => {
   return (h ?? 0) * 60 + (m ?? 0);
 };
 
-type ClaseAgrupada = { nombre: string; hora: string | null; apariciones: number; duracion: number };
+type ClaseAgrupada = { nombre: string; hora: string | null; telefono: string | null; apariciones: number; duracion: number };
 
 /** Agrupa cada alumno desde su primera hora y suma 45 minutos por aparición. */
-function mergeClases(clases: { nombre: string; hora: string | null }[]): ClaseAgrupada[] {
+function mergeClases(clases: { nombre: string; hora: string | null; telefono?: string | null }[]): ClaseAgrupada[] {
   const map = clases.reduce<Map<string, ClaseAgrupada>>((acc, c) => {
     const key = norm(c.nombre);
     const prev = acc.get(key);
     if (!prev) {
-      acc.set(key, { nombre: c.nombre, hora: c.hora, apariciones: 1, duracion: 45 });
+      acc.set(key, { nombre: c.nombre, hora: c.hora, telefono: c.telefono ?? null, apariciones: 1, duracion: 45 });
     } else {
       prev.apariciones += 1;
+      if (!prev.telefono && c.telefono) prev.telefono = c.telefono;
       prev.duracion = prev.apariciones * 45;
       if (toMin(c.hora) < toMin(prev.hora)) prev.hora = c.hora;
     }
@@ -62,7 +63,7 @@ function mergeClases(clases: { nombre: string; hora: string | null }[]): ClaseAg
   return [...map.values()];
 }
 
-async function syncRoster(profesorId: string, rawClases: { nombre: string; hora: string | null }[]) {
+async function syncRoster(profesorId: string, rawClases: { nombre: string; hora: string | null; telefono?: string | null }[]) {
   const clases = mergeClases(rawClases);
   const { data: p } = await supabase.from("profiles").select("autoescuela_id, seccion").eq("id", profesorId).maybeSingle();
   const autoescuelaId = p?.autoescuela_id ?? null;
@@ -77,16 +78,21 @@ async function syncRoster(profesorId: string, rawClases: { nombre: string; hora:
     if (!hora) sinHora++;
     const [first, ...rest] = full.trim().split(/\s+/);
     const apellidos = rest.join(" ");
-    let q = supabase.from("students").select("id, name, apellidos").eq("archivado", false).ilike("name", `%${first}%`);
+    let q = supabase.from("students").select("id, name, apellidos, phone").eq("archivado", false).ilike("name", `%${first}%`);
     if (autoescuelaId) q = q.eq("autoescuela_id", autoescuelaId);
     if (seccion) q = q.eq("seccion", seccion);
     const { data: cands } = await q;
     const match = (cands ?? []).find((c) => norm(`${c.name} ${c.apellidos}`) === norm(full))
       ?? (cands ?? []).find((c) => norm(`${c.name} ${c.apellidos}`).includes(norm(full)) || norm(full).includes(norm(`${c.name} ${c.apellidos}`)));
-    if (match) { entradas.push({ id: match.id, hora, duracion: clase.duracion }); found++; continue; }
+    if (match) {
+      if (clase.telefono && !(match.phone ?? "").trim()) {
+        await supabase.from("students").update({ phone: clase.telefono }).eq("id", match.id);
+      }
+      entradas.push({ id: match.id, hora, duracion: clase.duracion }); found++; continue;
+    }
     const { data: ins, error } = await supabase
       .from("students")
-      .insert({ name: first ?? full, apellidos, seccion, archivado: false, ...(autoescuelaId ? { autoescuela_id: autoescuelaId } : {}) })
+      .insert({ name: first ?? full, apellidos, seccion, archivado: false, ...(clase.telefono ? { phone: clase.telefono } : {}), ...(autoescuelaId ? { autoescuela_id: autoescuelaId } : {}) })
       .select("id").single();
     if (error || !ins) throw new Error(`No se pudo crear a ${full}`);
     entradas.push({ id: ins.id, hora, duracion: clase.duracion }); created++;
