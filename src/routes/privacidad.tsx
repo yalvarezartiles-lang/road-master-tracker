@@ -65,30 +65,37 @@ function PrivacidadPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold">2. Datos que se tratan</h2>
+            <h2 className="text-xl font-bold">2. Datos Recopilados y Tratados</h2>
             <p className="mt-2">
-              La plataforma trata las siguientes categorías de datos, facilitados
-              por los profesionales autorizados de cada organización:
+              La plataforma recopila y trata exclusivamente la siguiente
+              información, facilitada por los profesionales autorizados:
             </p>
             <ul className="mt-2 list-disc space-y-1 pl-6">
               <li>
-                Datos de los profesionales: nombre, correo electrónico y
-                contraseña de acceso (almacenada únicamente en forma cifrada).
+                <strong>De los usuarios (Profesores/Administradores):</strong>{" "}
+                correo electrónico y contraseñas (encriptadas).
               </li>
               <li>
-                Datos de los alumnos: nombre, apellidos, teléfono y sección de
-                formación.
+                <strong>De los alumnos:</strong> nombre y apellidos, número de
+                teléfono y código de sucursal/sección.
               </li>
               <li>
-                Datos de las clases: fechas, horarios, zonas, evaluaciones de
-                habilidades, observaciones y firma manuscrita del alumno como
-                acreditación de asistencia.
+                <strong>Del desarrollo de las clases:</strong> fechas, horas,
+                duración (45/90 min), firmas digitales (trazos biométricos de
+                confirmación) y estado de evaluación del alumno.
               </li>
             </ul>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-bold">3. Procesamiento de imágenes (IA)</h2>
             <p className="mt-2">
-              No se tratan categorías especiales de datos ni datos de menores, y
-              las imágenes capturadas por el escáner de cuadrantes no se
-              almacenan.
+              Las fotografías de los cuadrantes en papel subidas al sistema se
+              procesan mediante Inteligencia Artificial de forma{" "}
+              <strong>efímera</strong>, únicamente para extraer el texto
+              (nombres, horas y teléfonos). Las imágenes{" "}
+              <strong>NO se almacenan permanentemente en ninguna base de
+              datos</strong> tras la extracción.
             </p>
           </section>
 
