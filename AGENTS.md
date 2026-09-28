@@ -14,3 +14,4 @@
 - Toda la IA (Copiloto y Escáner Visual) pasa por `src/lib/gemini.server.ts`, que llama a la API REST de Google Gemini (`gemini-3.8-flash`) con `GEMINI_API_KEY` leída dentro del handler — motor único; no usar Lovable AI ni Groq.
 - El reglamento PDF del Copiloto vive en el bucket privado `documentos-legales` como `reglamento.pdf`; solo el rol `admin` puede subirlo (RLS en `storage.objects`) y el servidor lo descarga con service role.
 - Las integraciones MCP se exponen en `/mcp`, usan OAuth de Lovable Cloud y consultan datos con el token del usuario para conservar RLS.
+- El Ticket de Progreso usa una plantilla bitmap fija con capas HTML absolutas y datos efímeros — conserva la composición visual exacta sin almacenar imágenes generadas.
