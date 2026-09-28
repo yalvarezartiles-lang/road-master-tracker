@@ -10,7 +10,7 @@ export async function deliverTicket(node: HTMLElement): Promise<"copied" | "shar
     pixelRatio: 2,
     skipFonts: false,
     cacheBust: true,
-    backgroundColor: "#020817",
+    backgroundColor: "#000000",
     // El nodo está fijo e invisible (opacity-0, z negativo); en el clon se
     // restaura la opacidad para que la imagen no salga en blanco.
     style: {
@@ -19,7 +19,7 @@ export async function deliverTicket(node: HTMLElement): Promise<"copied" | "shar
       zIndex: "0",
       left: "0px",
       top: "0px",
-      backgroundColor: "#020817",
+      backgroundColor: "#000000",
     },
   }).then((blob) => {
     if (!blob) throw new Error("No se pudo generar la imagen");
