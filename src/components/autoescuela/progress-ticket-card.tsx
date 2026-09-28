@@ -105,4 +105,5 @@ export const ProgressTicketCard = React.forwardRef<
           <p className="mt-3 text-base font-medium text-gray-100">{phrase}</p>
         </div>
       </div>
-    
+      );
+});
