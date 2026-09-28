@@ -322,7 +322,7 @@ export function AgendaDiaria({
   };
 
   return (
-    <section className="py-2">
+    <section className="w-full max-w-full min-w-0 overflow-hidden py-2">
       <div className={`items-center justify-between gap-2 ${hideDateNavOnMobile ? "hidden md:flex" : "flex"}`}>
         <CalendarDays className="size-6 shrink-0 text-primary" />
         {dateNav}
@@ -349,7 +349,7 @@ export function AgendaDiaria({
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="-mx-4 mt-4 flex w-full snap-x snap-mandatory flex-row gap-6 overflow-x-auto scroll-smooth px-4 pb-4 no-scrollbar">
+      <div className="mt-4 flex w-full max-w-full min-w-0 flex-col gap-4 pb-4 md:snap-x md:snap-mandatory md:flex-row md:gap-6 md:overflow-x-auto md:scroll-smooth md:no-scrollbar">
         {loading && (
           <div className="flex w-full justify-center p-6"><Loader2 className="size-6 animate-spin" /></div>
         )}
@@ -363,10 +363,10 @@ export function AgendaDiaria({
             return (
               <div
                 key={s.id}
-                className={`flex min-w-[85%] shrink-0 snap-center flex-col gap-4 rounded-3xl border bg-card p-6 shadow-sm sm:min-w-[300px] ${s.es_examen ? "border-l-8 border-l-destructive" : ""} ${completed ? "bg-success/10 opacity-60" : ""}`}
+                className={`flex w-full max-w-full min-w-0 flex-col gap-4 rounded-3xl border bg-card p-6 shadow-sm md:w-auto md:min-w-[300px] md:shrink-0 md:snap-center ${s.es_examen ? "border-l-8 border-l-destructive" : ""} ${completed ? "bg-success/10 opacity-60" : ""}`}
               >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="flex items-center gap-2 text-2xl font-extrabold tabular-nums">
+                <div className="flex min-w-0 items-center justify-between gap-2">
+                  <span className="flex min-w-0 items-center gap-2 truncate text-2xl font-extrabold tabular-nums">
                     <Clock className="size-6 text-primary" /> {hm(s.hora_inicio)}–{hm(s.hora_fin)}
                   </span>
                   {completed && (
@@ -383,7 +383,7 @@ export function AgendaDiaria({
                     <Trash2 className="size-5" />
                   </button>
                 </div>
-                <p className="flex items-center gap-2 truncate text-lg font-bold">
+                <p className="flex min-w-0 max-w-full items-center gap-2 overflow-hidden text-lg font-bold">
                   <UserRound className="size-5 shrink-0 text-muted-foreground" /> <span className="min-w-0 truncate">{nameOf(s.student_id)}</span>
                   {s.es_examen && <span className="shrink-0 rounded-full bg-destructive/15 px-2 py-0.5 text-xs font-bold text-destructive">EXAMEN</span>}
                   {st?.seccion && <Badge className="shrink-0 text-xs" variant="outline">{shortSec(st.seccion)}</Badge>}

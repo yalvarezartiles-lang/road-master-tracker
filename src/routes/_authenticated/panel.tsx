@@ -159,10 +159,10 @@ function TeacherDashboard() {
   };
 
   return (
-    <div onScroll={handleMobileScroll} className="min-h-screen bg-background pb-32 max-md:h-dvh max-md:overflow-y-auto max-md:pb-56">
+    <div onScroll={handleMobileScroll} className="min-h-screen w-full max-w-full overflow-x-hidden bg-background pb-32 max-md:h-dvh max-md:overflow-y-auto max-md:pb-56">
       <header className={`sticky top-0 z-50 border-b border-border/60 bg-card/90 px-4 py-4 backdrop-blur-md transition-[padding] duration-200 ${headerCompact ? "max-md:py-1.5" : "max-md:py-2.5"}`}>
-        <div className="mx-auto flex max-w-2xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 md:contents">
+        <div className="mx-auto flex w-full max-w-2xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 md:contents">
           <div className="min-w-0">
             <h1 className={`truncate font-bold leading-tight tracking-tight transition-[font-size] duration-200 md:text-2xl ${headerCompact ? "text-base" : "text-lg"}`}>
               {teacherName ? `Hola, ${teacherName}` : "Panel"}
@@ -257,7 +257,7 @@ function TeacherDashboard() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-2xl px-4 py-5 max-md:px-4">
+      <main className="mx-auto w-full max-w-2xl overflow-x-hidden px-4 py-5">
         <div className="relative">
           <Search className="absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -277,7 +277,7 @@ function TeacherDashboard() {
         </Button>
 
         {user && (
-          <div className="mt-4">
+          <div className="mt-4 w-full max-w-full min-w-0">
             <AgendaDiaria profesorId={user.id} title="Mi agenda" studentsVersion={agendaVersion} onDayChange={setAgendaFecha} selectedDay={agendaDay} onSelectedDayChange={setAgendaDay} hideDateNavOnMobile />
           </div>
         )}
@@ -286,13 +286,13 @@ function TeacherDashboard() {
           Alumnos activos ({students.length})
         </h2>
 
-        <ul className="space-y-3 max-md:pb-40">
+        <ul className="w-full max-w-full space-y-3 max-md:pb-40">
           {students.map((s) => (
-            <li key={s.id} className="flex items-center gap-2">
+            <li key={s.id} className="flex w-full max-w-full min-w-0 items-center gap-2">
               <Link
                 to="/alumno/$studentId"
                 params={{ studentId: s.id }}
-                className="flex flex-1 items-center gap-4 rounded-3xl border bg-card shadow-sm hover:shadow-md transition-shadow p-4 transition active:scale-[0.99]"
+                className="flex min-w-0 flex-1 items-center gap-4 overflow-hidden rounded-3xl border bg-card p-4 shadow-sm transition hover:shadow-md active:scale-[0.99]"
               >
                 <span
                   className="flex size-16 shrink-0 items-center justify-center rounded-2xl text-xl font-bold text-white"
@@ -302,7 +302,7 @@ function TeacherDashboard() {
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-lg font-bold">{fullName(s)}</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="truncate text-sm text-muted-foreground">
                     {s.lessons.length} clases ·{" "}
                     {s.lessons[s.lessons.length - 1]?.zone ?? "Sin clases"}
                   </p>
@@ -338,8 +338,8 @@ function TeacherDashboard() {
 
       </main>
 
-      <div className="fixed inset-x-0 bottom-0 border-t bg-background/95 p-4">
-        <div className="mx-auto flex w-full max-w-2xl flex-col gap-2 sm:flex-row">
+      <div className="fixed right-4 bottom-4 left-4 z-40 max-w-full rounded-3xl border bg-background/95 p-3 shadow-lg md:inset-x-0 md:bottom-0 md:rounded-none md:border-x-0 md:border-b-0 md:p-4 md:shadow-none">
+        <div className="mx-auto flex w-full max-w-2xl min-w-0 flex-col gap-2 sm:flex-row">
           {user && <ScanRosterButton profesorId={user.id} fecha={agendaFecha} onDone={() => setAgendaVersion((v) => v + 1)} />}
           <Button
             onClick={() => setLessonOpen(true)}

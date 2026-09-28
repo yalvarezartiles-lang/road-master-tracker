@@ -22,7 +22,7 @@ function CookiesPage() {
       <header className="sticky top-0 z-40 border-b bg-card/80 px-4 py-3 backdrop-blur-md">
         <div className="mx-auto max-w-2xl">
           <Button asChild variant="ghost" className="h-12 rounded-2xl px-3 text-base">
-            <Link to="/auth" aria-label="Volver al inicio de sesión">
+            <Link to="/auth" search={{ next: undefined }} aria-label="Volver al inicio de sesión">
               <ArrowLeft className="size-5" /> Volver al Login
             </Link>
           </Button>

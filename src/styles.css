@@ -163,6 +163,13 @@
     border-color: var(--color-border);
   }
 
+  html,
+  body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
   h1, h2, h3 {
     letter-spacing: -0.025em;
   }

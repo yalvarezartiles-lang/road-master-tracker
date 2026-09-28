@@ -25,7 +25,7 @@ function PrivacidadPage() {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 border-b bg-background/95 px-4 py-3 backdrop-blur">
         <Button asChild variant="ghost" size="sm" className="-ml-2">
-          <Link to="/auth">
+          <Link to="/auth" search={{ next: undefined }}>
             <ArrowLeft className="size-4" />
             Volver al Login
           </Link>

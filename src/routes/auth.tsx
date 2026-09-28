@@ -1,5 +1,5 @@
 import * as React from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { Car, Loader2, LogIn, ShieldPlus } from "lucide-react";
 import { toast } from "sonner";
@@ -12,6 +12,9 @@ import { createFirstAdmin, getSetupStatus } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
+  validateSearch: (search: Record<string, unknown>) => ({
+    next: typeof search["next"] === "string" && search["next"].startsWith("/") && !search["next"].startsWith("//") ? search["next"] : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Iniciar sesión" },
@@ -30,7 +33,8 @@ export const Route = createFileRoute("/auth")({
 });
 
 function AuthPage() {
-  const navigate = useNavigate();
+  const { next } = Route.useSearch();
+  const destination = next ?? "/panel";
   const checkSetup = useServerFn(getSetupStatus);
   const setupAdmin = useServerFn(createFirstAdmin);
 
@@ -45,7 +49,7 @@ function AuthPage() {
     void (async () => {
       const { data } = await supabase.auth.getUser();
       if (data.user) {
-        navigate({ to: "/panel", replace: true });
+        window.location.replace(destination);
         return;
       }
       try {
@@ -56,7 +60,7 @@ function AuthPage() {
       }
       setChecking(false);
     })();
-  }, [checkSetup, navigate]);
+  }, [checkSetup, destination]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,7 +72,7 @@ function AuthPage() {
       }
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw new Error("Email o contraseña incorrectos");
-      navigate({ to: "/panel", replace: true });
+      window.location.replace(destination);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "No se pudo iniciar sesión");
     } finally {
