@@ -40,6 +40,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { OfficePanel } from "@/components/autoescuela/office-panel";
 import { AgendaDiaria } from "@/components/autoescuela/agenda-diaria";
 import { PasswordCard } from "@/components/autoescuela/password-card";
+import { ReglamentoUpload } from "@/components/autoescuela/reglamento-upload";
 import { ScanRosterButton } from "@/components/autoescuela/scan-roster-button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
