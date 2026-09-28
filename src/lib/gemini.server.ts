@@ -28,6 +28,12 @@ export async function generateGemini(opts: {
   systemInstruction?: string;
 }): Promise<string> {
   const key = process.env["GEMINI_API_KEY"];
+  // Limpieza estricta: nunca enviar el prefijo data:...;base64,
+  opts.parts = opts.parts.map((p) =>
+    "inlineData" in p
+      ? { inlineData: { mimeType: p.inlineData.mimeType, data: p.inlineData.data.replace(/^data:[^,]*,/, "").replace(/\s/g, "") } }
+      : p,
+  );
   if (!key) throw new GeminiError(500, "Falta la clave de Gemini");
 
   const body: Record<string, unknown> = {
@@ -38,7 +44,9 @@ export async function generateGemini(opts: {
     body["systemInstruction"] = { parts: [{ text: opts.systemInstruction }] };
   }
 
-  const res = await fetch(
+  let res: Response;
+  try {
+    res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`,
     {
       method: "POST",
@@ -46,11 +54,16 @@ export async function generateGemini(opts: {
       body: JSON.stringify(body),
     },
   );
+  } catch (e) {
+    throw new GeminiError(503, `Error de red con Gemini: ${e instanceof Error ? e.message : String(e)}`);
+  }
 
   if (!res.ok) {
     const detail = await res.text().catch(() => "");
     console.error("gemini error", res.status, detail.slice(0, 500));
-    throw new GeminiError(res.status, friendly(res.status));
+    let msg = detail;
+    try { msg = (JSON.parse(detail) as { error?: { message?: string } }).error?.message ?? detail; } catch { /* texto */ }
+    throw new GeminiError(res.status, `Error ${res.status}: ${(msg || friendly(res.status)).slice(0, 300)}`);
   }
 
   const json = (await res.json()) as {
