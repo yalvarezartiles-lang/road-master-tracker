@@ -351,32 +351,6 @@ export function AgendaDiaria({
             );
           })}
       </div>
-
-      {canEdit && (
-        <Dialog
-          open={organizerOpen}
-          onOpenChange={(o) => {
-            setOrganizerOpen(o);
-            if (!o) setDay(new Date());
-          }}
-        >
-          <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto rounded-3xl">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-xl"><CalendarPlus className="size-6 text-primary" /> Organizar Horario</DialogTitle>
-              <DialogDescription>Crea huecos y asigna alumnos a tus clases.</DialogDescription>
-            </DialogHeader>
-            {dateNav}
-            <div className="space-y-2 rounded-2xl bg-muted/40 p-4">
-              <p className="text-sm font-bold tracking-wide text-muted-foreground uppercase">Crear hueco</p>
-              {addForm}
-            </div>
-            <div className="space-y-2">
-              <p className="text-sm font-bold tracking-wide text-muted-foreground uppercase">Asignar alumnos y organizar</p>
-              {editList}
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
     </section>
   );
 }
