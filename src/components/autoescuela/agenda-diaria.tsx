@@ -306,12 +306,14 @@ export function AgendaDiaria({
         )}
       </div>
 
+      <div className="mt-4">{dateNav}</div>
+
       <div className="-mx-4 mt-4 flex w-full snap-x snap-mandatory flex-row gap-6 overflow-x-auto scroll-smooth px-4 pb-4 no-scrollbar">
         {loading && (
           <div className="flex w-full justify-center p-6"><Loader2 className="size-6 animate-spin" /></div>
         )}
         {!loading && cards.length === 0 && (
-          <div className="w-full rounded-3xl border border-dashed p-8 text-center text-muted-foreground">Sin clases programadas hoy.</div>
+          <div className="w-full rounded-3xl border border-dashed p-8 text-center text-muted-foreground">No hay clases programadas para este día.</div>
         )}
         {!loading &&
           cards.map((s) => {
