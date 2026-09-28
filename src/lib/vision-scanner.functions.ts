@@ -2,11 +2,12 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-// Visión directa con Groq (sin Lovable AI). llama-3.2-11b-vision-preview fue
-// retirado por Groq; qwen/qwen3.8-27b es el modelo con visión disponible.
-const MODEL = "qwen/qwen3.8-27b";
+// Visión directa con Google Gemini (API REST). Sin Lovable AI.
 const PROMPT =
-  'La imagen es un cuadrante impreso por ordenador. Prioridad 1: Nombres, exactamente como están impresos. Prioridad 2: Sección (extrae el código numérico como "01" o "02" si está delante del nombre, en el campo seccion como string, y deja el nombre limpio: "03 Laura Perez" → nombre "Laura Perez", seccion "03"). Prioridad 3: Teléfono. REGLA ESTRICTA PARA EL TELÉFONO: Funciona como un OCR tradicional. Cópialo dígito a dígito exactamente como está impreso. NO intentes adivinar. Si un solo número está borroso, devuelve null. Extrae también la hora de cada clase (HH:MM). Devuelve ÚNICAMENTE este JSON exacto: {"clases": [{"nombre": "...", "hora": "...", "telefono": "...", "seccion": "03"}]}';
+  'La imagen es un cuadrante impreso por ordenador. REGLA DE EXCLUSIÓN CRÍTICA: Ignora por completo cualquier hueco que diga "Libre", "Descanso", "Teórica", "Examen", "Desayuno", "Comida" o similares. SOLO extrae nombres propios de personas. Si no es una persona real, ignóralo. Prioridad 1: Nombres, exactamente como están impresos. Prioridad 2: Sección (extrae el código numérico como "01" o "02" si está delante del nombre, en el campo seccion como string, y deja el nombre limpio: "03 Laura Perez" → nombre "Laura Perez", seccion "03"). Prioridad 3: Teléfono. REGLA ESTRICTA PARA EL TELÉFONO: Funciona como un OCR tradicional. Cópialo dígito a dígito exactamente como está impreso. NO intentes adivinar. Si un solo número está borroso, devuelve null. Extrae también la hora de cada clase (HH:MM). Devuelve ÚNICAMENTE este JSON exacto: {"clases": [{"nombre": "...", "hora": "...", "telefono": "...", "seccion": "03"}]}';
+
+// Palabras que nunca son alumnos, por si el modelo las cuela igualmente.
+const EXCLUIDOS = /^(libre|descanso|teorica|teórica|examen|desayuno|comida|almuerzo|vacio|vacío|reservado|no\s*disponible|practica\s*libre)$/i;
 
 export const scanRoster = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -14,30 +15,18 @@ export const scanRoster = createServerFn({ method: "POST" })
     z.object({ image: z.string().startsWith("data:image/").max(15_000_000) }).parse(d),
   )
   .handler(async ({ data }) => {
-    const key = process.env["GROQ_API_KEY"];
-    if (!key) throw new Error("Falta la clave de Groq");
-    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: MODEL,
-        messages: [
-          {
-            role: "user",
-            content: [
-              { type: "text", text: PROMPT },
-              { type: "image_url", image_url: { url: data.image } },
-            ],
-          },
-        ],
-      }),
-    });
-    if (!res.ok) {
-      console.error("Groq vision", res.status, await res.text());
-      throw new Error(res.status === 429 ? "Demasiadas peticiones, espera un momento" : "No se pudo analizar la imagen");
+    const { generateGemini } = await import("@/lib/gemini.server");
+    const mimeType = data.image.slice(5, data.image.indexOf(";")) || "image/jpeg";
+    const base64 = data.image.slice(data.image.indexOf(",") + 1);
+    let raw = "";
+    try {
+      raw = await generateGemini({
+        parts: [{ inlineData: { mimeType, data: base64 } }, { text: PROMPT }],
+      });
+    } catch (err) {
+      console.error("Gemini vision", err);
+      throw new Error(err instanceof Error ? err.message : "No se pudo analizar la imagen");
     }
-    const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
-    const raw = json.choices?.[0]?.message?.content ?? "";
     let m: RegExpMatchArray | null = null;
     try {
       const objTxt = raw.match(/\{[\s\S]*\}/)?.[0];
