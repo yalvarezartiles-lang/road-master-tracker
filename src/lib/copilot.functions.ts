@@ -47,7 +47,7 @@ export const askCopilot = createServerFn({ method: "POST" })
     if (!data.message.trim()) return { ok: false as const, error: "Escribe una pregunta" };
 
     const { generateGemini, loadReglamentoBase64, GeminiError } = await import("@/lib/gemini.server");
-    const parts: { text: string }[] | ({ text: string } | { inlineData: { mimeType: string; data: string } })[] = [];
+    const parts: ({ text: string } | { inlineData: { mimeType: string; data: string } })[] = [];
 
     // Base de conocimiento: reglamento subido por el Super Admin.
     const pdf = await loadReglamentoBase64();
