@@ -25,13 +25,6 @@ function validateAccount(input: NewAccount): NewAccount {
   return { email, password, fullName, apellidos, dni, role, autoescuelaId };
 }
 
-async function countUsers() {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1 });
-  if (error) throw new Error(error.message);
-  return data.users.length;
-}
-
 async function createAccount(input: NewAccount) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin.auth.admin.createUser({
@@ -74,30 +67,6 @@ async function assertAdmin(context: { supabase: any; userId: string }) {
   if (error) throw new Error(error.message);
   if (!data) throw new Error("Solo el administrador puede hacer esto");
 }
-
-/** Public: tells the sign-in page whether the very first admin still has to be created. */
-export const getSetupStatus = createServerFn({ method: "GET" }).handler(async () => {
-  return { needsSetup: (await countUsers()) === 0 };
-});
-
-/** Public, but only works while the project has zero users. */
-export const createFirstAdmin = createServerFn({ method: "POST" })
-  .inputValidator((input: Omit<NewAccount, "role">) =>
-    validateAccount({ ...input, role: "admin" }),
-  )
-  .handler(async ({ data }) => {
-    if ((await countUsers()) > 0) throw new Error("Ya existe una cuenta de administrador");
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: a } = await supabaseAdmin.from("autoescuelas").select("id").order("created_at").limit(1).maybeSingle();
-    let autoescuelaId = a?.id ?? null;
-    if (!autoescuelaId) {
-      const { data: n, error } = await supabaseAdmin.from("autoescuelas").insert({ nombre_comercial: "Mi autoescuela" }).select("id").single();
-      if (error) throw new Error(error.message);
-      autoescuelaId = n.id;
-    }
-    await createAccount({ ...data, autoescuelaId });
-    return { ok: true };
-  });
 
 export const listTeam = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
