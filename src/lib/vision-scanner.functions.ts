@@ -21,7 +21,7 @@ export const scanRoster = createServerFn({ method: "POST" })
     if (!/^(image\/(jpeg|png|jpg|webp|heic|heif)|application\/pdf)$/.test(mimeType)) {
       throw new Error("Formato no soportado: sube una imagen o un PDF");
     }
-    const base64 = data.file.slice(data.file.indexOf(",") + 1);
+    const base64 = data.file.replace(/^data:(.*,)?/, "");
     if (!base64) throw new Error("No se pudo leer el archivo");
     let raw = "";
     try {

@@ -31,7 +31,7 @@ export async function generateGemini(opts: {
   // Limpieza estricta: nunca enviar el prefijo data:...;base64,
   opts.parts = opts.parts.map((p) =>
     "inlineData" in p
-      ? { inlineData: { mimeType: p.inlineData.mimeType, data: p.inlineData.data.replace(/^data:[^,]*,/, "").replace(/\s/g, "") } }
+      ? { inlineData: { mimeType: p.inlineData.mimeType, data: p.inlineData.data.replace(/^data:(.*,)?/, "").replace(/\s/g, "") } }
       : p,
   );
   if (!key) throw new GeminiError(500, "Falta la clave de Gemini");
@@ -69,6 +69,7 @@ export async function generateGemini(opts: {
   const json = (await res.json()) as {
     candidates?: { content?: { parts?: { text?: string }[] } }[];
   };
+  if (!json.candidates?.length) console.error("gemini sin candidatos", JSON.stringify(json).slice(0, 500));
   const parts = json.candidates?.[0]?.content?.parts ?? [];
   return parts
     .map((p) => p.text ?? "")
@@ -83,14 +84,18 @@ export async function loadReglamentoBase64(): Promise<string | null> {
     const { data, error } = await supabaseAdmin.storage
       .from("documentos-legales")
       .download("reglamento.pdf");
-    if (error || !data) return null;
+    if (error || !data) {
+      console.error("reglamento.pdf no disponible, se continúa sin PDF:", error?.message);
+      return null;
+    }
     const buf = new Uint8Array(await data.arrayBuffer());
     let bin = "";
     for (let i = 0; i < buf.length; i += 0x8000) {
       bin += String.fromCharCode(...buf.subarray(i, i + 0x8000));
     }
     return btoa(bin);
-  } catch {
+  } catch (e) {
+    console.error("Fallo al descargar reglamento.pdf, se continúa sin PDF:", e);
     return null;
   }
 }
