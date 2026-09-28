@@ -1,22 +1,18 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-// Conexión directa a Groq (API compatible con OpenAI). Sin Lovable AI.
-const SYSTEM = `Actúas como un experto estricto en el Reglamento General de Circulación de España (DGT). Según la normativa, el profesor de formación vial es el CONDUCTOR a efectos legales durante la práctica. Le aplica la prohibición total de usar dispositivos móviles, tablets o pantallas en movimiento. Estos dispositivos solo pueden usarse con el vehículo inmovilizado. No inventes normas. Responde de forma muy breve y directa.
+// Motor de IA: Google Gemini (API REST directa). Sin Lovable AI.
+const SYSTEM = `Eres un experto en el Reglamento de la DGT. Si se adjunta un PDF, léelo para basar tus respuestas. REGLA DE RESPUESTA: Haz un resumen muy claro y conversacional. NUNCA leas artículos literales. Ve directo al grano. Recuerda que el profesor es legalmente el conductor y no puede usar pantallas en movimiento: solo con el vehículo inmovilizado. No inventes normas.
 
 REGLA DE ACCIONES (ESTRICTA): Si el usuario te pide abrir, buscar o ir al perfil de un alumno específico, DEBES responder obligatoriamente SOLO con un JSON válido, sin ningún texto adicional antes ni después, con esta estructura exacta:
 {"respuesta": "Voy a abrir el perfil de [Nombre]...", "accion": "NAVIGATE_ALUMNO", "nombre_alumno": "[Nombre exacto]"}
 Si es una pregunta normal de tráfico o pedagogía, responde con texto normal (nunca JSON).`;
-// llama3-8b-8192 fue retirado por Groq; sustituto rápido disponible en la cuenta.
-const MODEL = "openai/gpt-oss-20b";
 
 type Input = { message: string; context: string };
 
 type ActionPayload = { respuesta: string; accion: string; nombre_alumno: string };
 
-// Extrae el JSON de acción de una respuesta del modelo. gpt-oss a veces lo
-// emite envuelto como llamada a herramienta ({"name","arguments"}), también
-// válido: se desenvuelve igualmente.
+// Extrae el JSON de acción de una respuesta del modelo.
 function parseAction(raw: string): ActionPayload | null {
   const m = raw.match(/\{[\s\S]*\}/);
   if (!m) return null;
@@ -49,51 +45,30 @@ export const askCopilot = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data }) => {
     if (!data.message.trim()) return { ok: false as const, error: "Escribe una pregunta" };
-    const key = process.env["GROQ_API_KEY"];
-    if (!key) return { ok: false as const, error: "Falta la clave de Groq" };
 
-    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-      body: JSON.stringify({
-        model: MODEL,
-        messages: [
-          { role: "system", content: SYSTEM },
-          {
-            role: "user",
-            content: `Contexto de la pantalla actual:\n${data.context || "(sin datos)"}\n\nPregunta del profesor:\n${data.message}`,
-          },
-        ],
-      }),
+    const { generateGemini, loadReglamentoBase64, GeminiError } = await import("@/lib/gemini.server");
+    const parts: ({ text: string } | { inlineData: { mimeType: string; data: string } })[] = [];
+
+    // Base de conocimiento: reglamento subido por el Super Admin.
+    const pdf = await loadReglamentoBase64();
+    if (pdf) parts.push({ inlineData: { mimeType: "application/pdf", data: pdf } });
+    parts.push({
+      text: `Contexto de la pantalla actual:\n${data.context || "(sin datos)"}\n\nPregunta del profesor:\n${data.message}`,
     });
 
-    if (!res.ok) {
-      const t = await res.text().catch(() => "");
-      console.error("groq error", res.status, t);
-      // gpt-oss a veces presenta el JSON de acción como llamada a herramienta y
-      // Groq lo rechaza con 400, pero incluye la generación en el cuerpo.
-      if (res.status === 400) {
-        try {
-          const body = JSON.parse(t) as { error?: { failed_generation?: string } };
-          const recovered = body.error?.failed_generation ? parseAction(body.error.failed_generation) : null;
-          if (recovered) return { ok: true as const, ...recovered };
-        } catch {
-          // cuerpo no parseable: error genérico
-        }
-      }
-      if (res.status === 429) return { ok: false as const, error: "Demasiadas preguntas seguidas. Espera un momento." };
-      if (res.status === 401) return { ok: false as const, error: "La clave de Groq no es válida." };
-      return { ok: false as const, error: "El Copiloto no está disponible ahora mismo." };
+    let out = "";
+    try {
+      out = (await generateGemini({ parts, systemInstruction: SYSTEM }))
+        .replace(/\*\*/g, "")
+        .replace(/^#+\s*/gm, "")
+        .trim();
+    } catch (err) {
+      const msg = err instanceof GeminiError ? err.message : "El Copiloto no está disponible ahora mismo.";
+      return { ok: false as const, error: msg };
     }
-    const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
-    const out = (json.choices?.[0]?.message?.content ?? "")
-      .replace(/\*\*/g, "")
-      .replace(/^#+\s*/gm, "")
-      .trim();
     if (!out) return { ok: false as const, error: "El Copiloto no ha devuelto respuesta." };
 
-    // Intercepción de acciones: JSON de navegación se devuelve estructurado;
-    // texto plano se envuelve como NONE.
+    // Intercepción de acciones: JSON de navegación estructurado; texto plano como NONE.
     const action = parseAction(out);
     if (action) return { ok: true as const, ...action };
     return { ok: true as const, respuesta: out, accion: "NONE", nombre_alumno: "" };

@@ -1,5 +1,6 @@
 import * as React from "react";
 import { UserPlus } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import {
   Dialog,
   DialogContent,
@@ -145,10 +146,15 @@ export function StudentDialog({
           <Button
             onClick={() => void submit()}
             disabled={saving}
+            aria-label={student ? "Guardar cambios del alumno" : "Guardar nuevo alumno"}
             className="h-16 w-full rounded-2xl text-lg font-bold"
           >
             {student ? "Guardar cambios" : "Guardar alumno"}
           </Button>
+          <p className="text-center text-xs text-muted-foreground">
+            Al guardar, consientes el tratamiento de datos según nuestra{" "}
+            <Link to="/privacidad" className="text-blue-500 hover:underline">Política de Privacidad</Link>.
+          </p>
         </div>
       </DialogContent>
     </Dialog>

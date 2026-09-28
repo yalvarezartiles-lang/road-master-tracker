@@ -40,6 +40,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { OfficePanel } from "@/components/autoescuela/office-panel";
 import { AgendaDiaria } from "@/components/autoescuela/agenda-diaria";
 import { PasswordCard } from "@/components/autoescuela/password-card";
+import { ReglamentoUpload } from "@/components/autoescuela/reglamento-upload";
 import { ScanRosterButton } from "@/components/autoescuela/scan-roster-button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
@@ -189,6 +190,7 @@ function TeacherDashboard() {
                     </div>
                   </dl>
                 </div>
+                {isAdmin && <ReglamentoUpload />}
                 <Accordion type="single" collapsible className="mt-4 rounded-3xl border bg-card px-4">
                   <AccordionItem value="pwd" className="border-none">
                     <AccordionTrigger className="py-4 text-base font-semibold">
