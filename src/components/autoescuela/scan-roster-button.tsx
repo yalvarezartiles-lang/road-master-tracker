@@ -3,7 +3,7 @@ import { Camera, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,7 +22,7 @@ const toBase64 = (file: File) =>
   new Promise<string>((res, rej) => {
     const r = new FileReader();
     r.onload = () => res(r.result as string);
-    r.onerror = () => rej(new Error("No se pudo leer la imagen"));
+    r.onerror = () => rej(new Error("No se pudo leer el archivo"));
     r.readAsDataURL(file);
   });
 
@@ -173,10 +173,10 @@ export function ScanRosterButton({ profesorId, onDone }: { profesorId: string; f
     setBusy(true);
     const loadingId = toast.loading("Analizando cuadrante...");
     try {
-      const image = await toBase64(file);
-      const data = await scan({ data: { image } });
+      const dataUrl = await toBase64(file);
+      const data = await scan({ data: { file: dataUrl } });
       const clases = data.clases;
-      if (!clases.length) throw new Error("No se detectaron alumnos en la imagen");
+      if (!clases.length) throw new Error("No se detectaron alumnos en el cuadrante");
       const { found, created, sinHora, dobles, fecha } = await syncRoster(profesorId, data.fecha_cuadrante ?? null, clases);
       toast.success(
         `Agenda del ${fecha.split("-").reverse().join("/")} actualizada: ${found} alumno(s) existentes añadidos y ${created} alumno(s) nuevos creados.${dobles ? ` ${dobles} clase(s) doble(s) de 90 min agrupadas.` : ""}${sinHora ? ` ${sinHora} sin hora detectada (guardados a las ${DEFAULT_HORA}).` : ""}`,
@@ -196,7 +196,7 @@ export function ScanRosterButton({ profesorId, onDone }: { profesorId: string; f
       <input
         ref={inputRef}
         type="file"
-        accept="image/jpeg, image/png, image/jpg"
+        accept="image/*, application/pdf"
         className="hidden"
         onChange={onFile}
       />
@@ -209,9 +209,6 @@ export function ScanRosterButton({ profesorId, onDone }: { profesorId: string; f
         <AlertDialogContent className="rounded-3xl">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-xl">¿Quieres escanear el cuadrante desde tu cámara o galería?</AlertDialogTitle>
-            <AlertDialogDescription className="text-base">
-              Selecciona una imagen y detectaremos los alumnos y las horas de sus clases para añadirlos a tu agenda del día seleccionado.
-            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-col gap-3 sm:flex-row">
             <AlertDialogCancel className="h-14 rounded-2xl text-base font-semibold">Cancelar</AlertDialogCancel>
@@ -223,7 +220,7 @@ export function ScanRosterButton({ profesorId, onDone }: { profesorId: string; f
                 inputRef.current?.click();
               }}
             >
-              Seleccionar Imagen
+              Sacar foto, seleccionar de galería o escoger archivo (PDF)
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -233,7 +230,6 @@ export function ScanRosterButton({ profesorId, onDone }: { profesorId: string; f
         <DialogContent className="rounded-3xl [&>button]:hidden">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2"><Loader2 className="size-6 animate-spin text-primary" /> Analizando cuadrante con IA...</DialogTitle>
-            <DialogDescription>Detectando alumnos y sus horas y actualizando tu agenda de hoy.</DialogDescription>
           </DialogHeader>
         </DialogContent>
       </Dialog>

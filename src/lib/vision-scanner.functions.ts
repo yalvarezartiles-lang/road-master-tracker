@@ -4,7 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 // Visión directa con Google Gemini (API REST). Sin Lovable AI.
 const PROMPT =
-  'La imagen es un cuadrante impreso por ordenador. INSTRUCCIÓN PRIORITARIA: Busca en la cabecera o en el texto del documento la fecha a la que corresponde este cuadrante. Devuélvela en un campo llamado fecha_cuadrante a nivel raíz del JSON en formato \'YYYY-MM-DD\'. Si no puedes determinar la fecha con un 100% de seguridad, devuelve null. REGLA DE EXCLUSIÓN CRÍTICA: Ignora por completo cualquier hueco que diga "Libre", "Descanso", "Teórica", "Examen", "Desayuno", "Comida" o similares. SOLO extrae nombres propios de personas. Si no es una persona real, ignóralo. Prioridad 1: Nombres, exactamente como están impresos. Prioridad 2: Sección (extrae el código numérico como "01" o "02" si está delante del nombre, en el campo seccion como string, y deja el nombre limpio: "03 Laura Perez" → nombre "Laura Perez", seccion "03"). Prioridad 3: Teléfono. REGLA ESTRICTA PARA EL TELÉFONO: Funciona como un OCR tradicional. Cópialo dígito a dígito exactamente como está impreso. NO intentes adivinar. Si un solo número está borroso, devuelve null. Extrae también la hora de cada clase (HH:MM). Devuelve ÚNICAMENTE este JSON exacto: {"fecha_cuadrante": "2026-09-28", "clases": [{"nombre": "...", "hora": "...", "telefono": "...", "seccion": "03"}]}';
+  'El documento (imagen o PDF) es un cuadrante impreso por ordenador. INSTRUCCIÓN PRIORITARIA: Busca en la cabecera o en el texto del documento la fecha a la que corresponde este cuadrante. Devuélvela en un campo llamado fecha_cuadrante a nivel raíz del JSON en formato \'YYYY-MM-DD\'. Si no puedes determinar la fecha con un 100% de seguridad, devuelve null. REGLA DE EXCLUSIÓN CRÍTICA: Ignora por completo cualquier hueco que diga "Libre", "Descanso", "Teórica", "Examen", "Desayuno", "Comida" o similares. SOLO extrae nombres propios de personas. Si no es una persona real, ignóralo. Prioridad 1: Nombres, exactamente como están impresos. Prioridad 2: Sección (extrae el código numérico como "01" o "02" si está delante del nombre, en el campo seccion como string, y deja el nombre limpio: "03 Laura Perez" → nombre "Laura Perez", seccion "03"). Prioridad 3: Teléfono. REGLA ESTRICTA PARA EL TELÉFONO: Funciona como un OCR tradicional. Cópialo dígito a dígito exactamente como está impreso. NO intentes adivinar. Si un solo número está borroso, devuelve null. Extrae también la hora de cada clase (HH:MM). Devuelve ÚNICAMENTE este JSON exacto: {"fecha_cuadrante": "2026-09-28", "clases": [{"nombre": "...", "hora": "...", "telefono": "...", "seccion": "03"}]}';
 
 // Palabras que nunca son alumnos, por si el modelo las cuela igualmente.
 const EXCLUIDOS = /^(libre|descanso|teorica|teórica|examen|desayuno|comida|almuerzo|vacio|vacío|reservado|no\s*disponible|practica\s*libre)$/i;
@@ -12,12 +12,17 @@ const EXCLUIDOS = /^(libre|descanso|teorica|teórica|examen|desayuno|comida|almu
 export const scanRoster = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
-    z.object({ image: z.string().startsWith("data:image/").max(15_000_000) }).parse(d),
+    z.object({ file: z.string().startsWith("data:").max(20_000_000) }).parse(d),
   )
   .handler(async ({ data }) => {
     const { generateGemini } = await import("@/lib/gemini.server");
-    const mimeType = data.image.slice(5, data.image.indexOf(";")) || "image/jpeg";
-    const base64 = data.image.slice(data.image.indexOf(",") + 1);
+    // Detección dinámica del MIME real del archivo (imagen o PDF).
+    const mimeType = data.file.slice(5, data.file.indexOf(";")) || "application/octet-stream";
+    if (!/^(image\/(jpeg|png|jpg|webp|heic|heif)|application\/pdf)$/.test(mimeType)) {
+      throw new Error("Formato no soportado: sube una imagen o un PDF");
+    }
+    const base64 = data.file.slice(data.file.indexOf(",") + 1);
+    if (!base64) throw new Error("No se pudo leer el archivo");
     let raw = "";
     try {
       raw = await generateGemini({
@@ -25,7 +30,7 @@ export const scanRoster = createServerFn({ method: "POST" })
       });
     } catch (err) {
       console.error("Gemini vision", err);
-      throw new Error(err instanceof Error ? err.message : "No se pudo analizar la imagen");
+      throw new Error(err instanceof Error ? err.message : "No se pudo analizar el cuadrante");
     }
     let m: RegExpMatchArray | null = null;
     let fecha_cuadrante: string | null = null;
