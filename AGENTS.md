@@ -8,3 +8,8 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+## Decisiones técnicas
+
+- Toda la IA (Copiloto y Escáner Visual) pasa por `src/lib/gemini.server.ts`, que llama a la API REST de Google Gemini (`gemini-3.8-flash`) con `GEMINI_API_KEY` leída dentro del handler — motor único; no usar Lovable AI ni Groq.
+- El reglamento PDF del Copiloto vive en el bucket privado `documentos-legales` como `reglamento.pdf`; solo el rol `admin` puede subirlo (RLS en `storage.objects`) y el servidor lo descarga con service role.
