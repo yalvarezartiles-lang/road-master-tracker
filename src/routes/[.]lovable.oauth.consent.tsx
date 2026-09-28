@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/.lovable/oauth/consent")({
   ssr: false,
   validateSearch: (search: Record<string, unknown>) => ({
-    authorization_id: typeof search.authorization_id === "string" ? search.authorization_id : "",
+    authorization_id: typeof search["authorization_id"] === "string" ? search["authorization_id"] : "",
   }),
   beforeLoad: async ({ search, location }) => {
     if (!search.authorization_id) throw new Error("Solicitud de autorización no válida");
@@ -17,8 +17,9 @@ export const Route = createFileRoute("/.lovable/oauth/consent")({
       throw redirect({ to: "/auth", search: { next } });
     }
   },
-  loader: async ({ search }) => {
-    const { data, error } = await supabase.auth.oauth.getAuthorizationDetails(search.authorization_id);
+  loaderDeps: ({ search }) => ({ authorization_id: search.authorization_id }),
+  loader: async ({ deps }) => {
+    const { data, error } = await supabase.auth.oauth.getAuthorizationDetails(deps.authorization_id);
     if (error) throw error;
     if (data && "redirect_url" in data) throw redirect({ href: data.redirect_url });
     return data;

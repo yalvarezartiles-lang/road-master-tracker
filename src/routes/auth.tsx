@@ -1,5 +1,5 @@
 import * as React from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { Car, Loader2, LogIn, ShieldPlus } from "lucide-react";
 import { toast } from "sonner";
@@ -13,7 +13,7 @@ import { createFirstAdmin, getSetupStatus } from "@/lib/admin.functions";
 export const Route = createFileRoute("/auth")({
   ssr: false,
   validateSearch: (search: Record<string, unknown>) => ({
-    next: typeof search.next === "string" && search.next.startsWith("/") && !search.next.startsWith("//") ? search.next : "/panel",
+    next: typeof search["next"] === "string" && search["next"].startsWith("/") && !search["next"].startsWith("//") ? search["next"] : undefined,
   }),
   head: () => ({
     meta: [
@@ -33,8 +33,8 @@ export const Route = createFileRoute("/auth")({
 });
 
 function AuthPage() {
-  const navigate = useNavigate();
   const { next } = Route.useSearch();
+  const destination = next ?? "/panel";
   const checkSetup = useServerFn(getSetupStatus);
   const setupAdmin = useServerFn(createFirstAdmin);
 
@@ -49,7 +49,7 @@ function AuthPage() {
     void (async () => {
       const { data } = await supabase.auth.getUser();
       if (data.user) {
-        window.location.replace(next);
+        window.location.replace(destination);
         return;
       }
       try {
@@ -60,7 +60,7 @@ function AuthPage() {
       }
       setChecking(false);
     })();
-  }, [checkSetup, navigate, next]);
+  }, [checkSetup, destination]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,7 +72,7 @@ function AuthPage() {
       }
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw new Error("Email o contraseña incorrectos");
-      window.location.replace(next);
+      window.location.replace(destination);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "No se pudo iniciar sesión");
     } finally {
