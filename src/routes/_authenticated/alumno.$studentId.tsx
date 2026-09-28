@@ -2,7 +2,7 @@ import * as React from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AlertTriangle, ArrowLeft, CalendarDays, Car, CheckCircle, FileDown, MapPin, Pencil, Phone, Plus } from "lucide-react";
 import { SignatureDialog } from "@/components/autoescuela/signature-dialog";
-import { exportFichasPdf } from "@/lib/autoescuela/pdf";
+import { FichaPreviewDialog } from "@/components/autoescuela/ficha-preview-dialog";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/lib/autoescuela/store";
@@ -161,19 +161,11 @@ function StudentPage() {
               variant="outline"
               disabled={exporting}
               className="h-12 rounded-2xl"
-              onClick={async () => {
-                setExporting(true);
-                try {
-                  await exportFichasPdf(student);
-                } catch (e) {
-                  toast.error(`Error al generar el PDF: ${e instanceof Error ? e.message : String(e)}`);
-                } finally {
-                  setExporting(false);
-                }
-              }}
+              onClick={() => setExporting(true)}
             >
               <FileDown className="size-5" /> Exportar Fichas (PDF)
             </Button>
+            <FichaPreviewDialog studentId={student.id} open={exporting} onOpenChange={setExporting} />
           </div>
           <ol className="space-y-3">
             {lessons.map((l) => (
