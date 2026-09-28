@@ -1,7 +1,8 @@
 import * as React from "react";
-import { CalendarDays, CheckCircle, Star, User } from "lucide-react";
+import { Check } from "lucide-react";
 import { useStore } from "@/lib/autoescuela/store";
 import { toDbLevel } from "@/lib/autoescuela/types";
+import ticketTemplate from "@/assets/progress-ticket-template.png";
 
 /** Frases motivacionales: se elige una al azar en cada evaluación. */
 const MOTIVATIONAL_PHRASES = [
@@ -15,7 +16,14 @@ const MOTIVATIONAL_PHRASES = [
   "Un paso más hacia la libertad sobre ruedas.",
 ];
 
-const MILESTONES = ["Control de embrague", "Circulación urbana", "Vías rápidas", "Conducción nocturna"];
+const MILESTONES = [
+  { label: "Control de embrague", threshold: 1 },
+  { label: "Circulación urbana", threshold: 25 },
+  { label: "Vías rápidas", threshold: 50 },
+  { label: "Conducción nocturna", threshold: 75 },
+];
+
+const PROGRESS_MARKS = [0, 25, 50, 75, 100];
 
 /**
  * Ticket de Progreso (FinalPracticeCard): SIEMPRE montado en el DOM, fuera de la
@@ -45,66 +53,74 @@ export const ProgressTicketCard = React.forwardRef<
   const lastLesson = student?.lessons[student.lessons.length - 1];
   const hora = lastLesson?.horaInicio?.slice(0, 5)
     ?? now.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
-  const fecha = now.toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" });
+  const lessonDate = lastLesson?.date ? new Date(lastLesson.date) : now;
+  const fecha = lessonDate.toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" });
 
   return (
     <div
       ref={ref}
       aria-hidden
-      style={{ fontFamily: "Geist, Inter, ui-sans-serif, system-ui, sans-serif" }}
-      className="pointer-events-none fixed top-0 left-0 z-[-50] w-[400px] overflow-hidden rounded-3xl border border-blue-900/50 bg-gray-950 p-6 text-white opacity-0 shadow-2xl"
+      className="pointer-events-none fixed top-0 left-0 z-[-50] aspect-[848/1264] w-[424px] overflow-hidden bg-ticket-canvas font-sans text-ticket-primary opacity-0"
     >
-      {/* Neón azul en las esquinas */}
-      <div className="absolute -top-16 -left-16 size-40 rounded-full bg-blue-600/40 blur-3xl" />
-      <div className="absolute -right-16 -bottom-16 size-40 rounded-full bg-blue-500/40 blur-3xl" />
+      <img src={ticketTemplate} alt="" className="absolute inset-0 size-full object-fill" />
 
-      <div className="relative space-y-5">
-        <h2 className="text-center text-2xl font-bold tracking-wide text-white uppercase">
-          {school || "Autoescuela"}
-        </h2>
+      <h2 className="absolute top-[8.2%] left-[9%] flex h-[10%] w-[82%] items-center justify-center text-center text-[28px] leading-tight font-extrabold uppercase">
+        {school || "Autoescuela"}
+      </h2>
 
-        {/* Bloque 1: progreso */}
-        <div>
-          <div className="mb-2 flex justify-between text-xs font-semibold text-blue-200">
-            {["0%", "25%", "50%", "75%", "100%"].map((m) => <span key={m}>{m}</span>)}
-          </div>
-          <div className="h-3 overflow-hidden rounded-full bg-gray-800">
-            <div className="h-full rounded-full bg-blue-500" style={{ width: `${pct}%` }} />
-          </div>
-          <div className="mt-4 grid grid-cols-2 gap-2">
-            {MILESTONES.map((m) => (
-              <div key={m} className="flex items-center gap-2 text-sm font-medium text-gray-200">
-                <CheckCircle className="size-4 flex-none text-blue-500" /> {m}
-              </div>
-            ))}
-          </div>
+      <div className="absolute top-[21.15%] left-[11.9%] h-[5.3%] w-[76.5%]">
+        <div className="absolute inset-x-0 top-0 flex -translate-y-full justify-between text-[11px] leading-none font-semibold text-ticket-secondary">
+          {PROGRESS_MARKS.map((mark) => (
+            <span key={mark} className={pct >= mark ? "text-ticket-primary" : undefined}>{mark}%</span>
+          ))}
         </div>
-
-        {/* Bloque 2: alumno */}
-        <div className="flex items-center gap-4 rounded-xl bg-gray-900 p-6">
-          <User className="size-8 flex-none text-cyan-500" />
-          <div className="min-w-0">
-            <div className="text-xs font-semibold tracking-wider text-gray-400 uppercase">Nombre del alumno/a</div>
-            <div className="text-xl font-bold break-words text-white">{studentName || "\u2014"}</div>
-          </div>
+        <div className="absolute inset-x-0 top-[15px] h-[12px] rounded-full border border-ticket-line bg-ticket-track">
+          <div
+            className="h-full min-w-[2px] rounded-full bg-ticket-fill shadow-ticket-glow"
+            style={{ width: `${pct}%` }}
+          />
         </div>
+        {PROGRESS_MARKS.map((mark) => (
+          <span
+            key={`tick-${mark}`}
+            className="absolute top-[8px] h-[6px] w-px bg-ticket-line"
+            style={{ left: `${mark}%` }}
+          />
+        ))}
+      </div>
 
-        {/* Bloque 3: clase */}
-        <div className="flex items-center gap-4 rounded-xl bg-gray-900 p-6">
-          <CalendarDays className="size-8 flex-none text-cyan-500" />
-          <div>
-            <div className="text-xs font-semibold tracking-wider text-gray-400 uppercase">Horario</div>
-            <div className="text-xl font-bold text-white">{hora}</div>
-            <div className="text-sm font-semibold text-gray-300">FECHA: {fecha}</div>
-          </div>
-        </div>
+      <div className="absolute top-[28.65%] left-[12.3%] grid w-[76%] grid-cols-4">
+        {MILESTONES.map(({ label, threshold }, index) => {
+          const reached = pct >= threshold;
+          return (
+            <div key={label} className={`flex h-[39px] items-start gap-2 px-1.5 ${index ? "border-l border-ticket-line" : ""}`}>
+              <span className={`mt-px flex size-[15px] shrink-0 items-center justify-center rounded-full border ${reached ? "border-ticket-bright text-ticket-bright shadow-ticket-icon" : "border-ticket-muted text-transparent"}`}>
+                <Check className="size-[10px] stroke-[3]" />
+              </span>
+              <span className={`text-[9px] leading-[1.35] font-semibold ${reached ? "text-ticket-primary" : "text-ticket-muted"}`}>
+                {label}
+              </span>
+            </div>
+          );
+        })}
+      </div>
 
-        {/* Bloque 4: motivacional */}
-        <div className="rounded-xl bg-gray-900 p-6 text-center">
-          <Star className="mx-auto size-7 fill-yellow-300/80 text-yellow-300" />
-          <p className="mt-3 text-base font-medium text-gray-100">{phrase}</p>
+      <div className="absolute top-[39.25%] left-[31.4%] flex h-[7.2%] w-[55%] flex-col justify-center">
+        <div className="text-[9px] leading-none font-semibold uppercase text-ticket-secondary">Nombre del alumno/a</div>
+        <div className="mt-2 line-clamp-2 text-[18px] leading-[1.08] font-bold break-words text-ticket-primary">
+          {studentName || "—"}
         </div>
       </div>
+
+      <div className="absolute top-[51.2%] left-[31.5%] flex h-[10.4%] w-[54%] flex-col justify-center">
+        <div className="text-[9px] leading-none font-semibold uppercase text-ticket-secondary">Horario</div>
+        <div className="mt-2 text-[36px] leading-none font-extrabold tabular-nums text-ticket-primary">{hora}</div>
+        <div className="mt-3 text-[10px] leading-none font-semibold uppercase text-ticket-secondary">Fecha: {fecha}</div>
+      </div>
+
+      <p className="absolute top-[72.4%] left-[17%] flex min-h-[8%] w-[66%] items-center justify-center text-center text-[14px] leading-[1.45] font-semibold text-ticket-primary">
+        {phrase}
+      </p>
     </div>
   );
 });
