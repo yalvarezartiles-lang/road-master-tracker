@@ -297,8 +297,6 @@ export function AgendaDiaria({
         {dateNav}
       </div>
 
-      <div className="mt-4">
-
       <div className="-mx-4 mt-4 flex w-full snap-x snap-mandatory flex-row gap-6 overflow-x-auto scroll-smooth px-4 pb-4 no-scrollbar">
         {loading && (
           <div className="flex w-full justify-center p-6"><Loader2 className="size-6 animate-spin" /></div>
