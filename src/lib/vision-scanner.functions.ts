@@ -73,5 +73,5 @@ export const scanRoster = createServerFn({ method: "POST" })
     } catch {
       clases = [];
     }
-    return { clases };
+    return { clases, fecha_cuadrante };
   });
