@@ -5,14 +5,22 @@ import { toBlob } from "html-to-image";
 
 /** Captura el nodo del ticket y lo copia al portapapeles; si no se puede, comparte o descarga en local. */
 export async function deliverTicket(node: HTMLElement): Promise<"copied" | "shared" | "downloaded"> {
+  await document.fonts.ready;
   const blobPromise = toBlob(node, {
     pixelRatio: 2,
-    skipFonts: true,
+    skipFonts: false,
     cacheBust: true,
-    backgroundColor: "#ffffff",
+    backgroundColor: "#020817",
     // El nodo está fijo e invisible (opacity-0, z negativo); en el clon se
     // restaura la opacidad para que la imagen no salga en blanco.
-    style: { position: "static", opacity: "1", zIndex: "0", left: "0px", top: "0px" },
+    style: {
+      position: "static",
+      opacity: "1",
+      zIndex: "0",
+      left: "0px",
+      top: "0px",
+      backgroundColor: "#020817",
+    },
   }).then((blob) => {
     if (!blob) throw new Error("No se pudo generar la imagen");
     return blob;

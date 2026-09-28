@@ -2,7 +2,7 @@ import * as React from "react";
 import { Check } from "lucide-react";
 import { useStore } from "@/lib/autoescuela/store";
 import { toDbLevel } from "@/lib/autoescuela/types";
-import ticketTemplate from "@/assets/progress-ticket-template.png";
+import ticketBackground from "@/assets/progress-ticket-background.png.asset.json";
 
 /** Frases motivacionales: se elige una al azar en cada evaluación. */
 const MOTIVATIONAL_PHRASES = [
@@ -60,21 +60,20 @@ export const ProgressTicketCard = React.forwardRef<
     <div
       ref={ref}
       aria-hidden
-      className="pointer-events-none fixed top-0 left-0 z-[-50] aspect-[2/3] w-[384px] overflow-hidden bg-ticket-canvas font-sans text-ticket-primary opacity-0"
+      className="pointer-events-none fixed top-0 left-0 z-[-50] isolate aspect-[2/3] w-[384px] overflow-hidden bg-ticket-canvas bg-cover bg-center bg-no-repeat font-sans text-ticket-primary opacity-0"
+      style={{ backgroundImage: `url(${ticketBackground.url})` }}
     >
-      <img src={ticketTemplate} alt="" className="absolute inset-0 size-full object-fill" />
-
-      <h2 className="absolute top-[8.2%] left-[9%] flex h-[10%] w-[82%] items-center justify-center text-center text-[28px] leading-tight font-extrabold uppercase">
+      <h2 className="absolute top-[7%] left-[9%] flex h-[11%] w-[82%] items-center justify-center text-center text-[28px] leading-tight font-extrabold uppercase text-ticket-primary drop-shadow-lg">
         {school || "Autoescuela"}
       </h2>
 
-      <div className="absolute top-[21.15%] left-[11.9%] h-[5.3%] w-[76.5%]">
-        <div className="absolute inset-x-0 top-0 flex -translate-y-full justify-between text-[11px] leading-none font-semibold text-ticket-secondary">
+      <div className="absolute top-[23.35%] left-[11.9%] h-[5.3%] w-[76.5%]">
+        <div className="absolute inset-x-0 top-0 flex justify-between text-[11px] leading-none font-semibold text-ticket-secondary">
           {PROGRESS_MARKS.map((mark) => (
-            <span key={mark} className={pct >= mark ? "text-ticket-primary" : undefined}>{mark}%</span>
+            <span key={mark} className={`bg-ticket-canvas px-0.5 ${pct >= mark ? "text-ticket-primary" : ""}`}>{mark}%</span>
           ))}
         </div>
-        <div className="absolute inset-x-0 top-[15px] h-[12px] rounded-full border border-ticket-line bg-ticket-track">
+        <div className="absolute inset-x-0 top-[22px] h-[12px] rounded-full border border-ticket-line bg-ticket-track">
           <div
             className="h-full min-w-[2px] rounded-full bg-ticket-fill shadow-ticket-glow"
             style={{ width: `${pct}%` }}
@@ -83,13 +82,13 @@ export const ProgressTicketCard = React.forwardRef<
         {PROGRESS_MARKS.map((mark) => (
           <span
             key={`tick-${mark}`}
-            className="absolute top-[8px] h-[6px] w-px bg-ticket-line"
+            className="absolute top-[15px] h-[6px] w-px bg-ticket-line"
             style={{ left: `${mark}%` }}
           />
         ))}
       </div>
 
-      <div className="absolute top-[28.65%] left-[12.3%] grid w-[76%] grid-cols-4">
+      <div className="absolute top-[31.7%] left-[12.3%] grid w-[76%] grid-cols-4">
         {MILESTONES.map(({ label, threshold }, index) => {
           const reached = pct >= threshold;
           return (
@@ -105,20 +104,20 @@ export const ProgressTicketCard = React.forwardRef<
         })}
       </div>
 
-      <div className="absolute top-[39.25%] left-[31.4%] flex h-[7.2%] w-[55%] flex-col justify-center">
+      <div className="absolute top-[42.4%] left-[29.4%] flex h-[7.2%] w-[58%] flex-col justify-center bg-ticket-panel px-2">
         <div className="text-[9px] leading-none font-semibold uppercase text-ticket-secondary">Nombre del alumno/a</div>
         <div className="mt-2 line-clamp-2 text-[18px] leading-[1.08] font-bold break-words text-ticket-primary">
           {studentName || "—"}
         </div>
       </div>
 
-      <div className="absolute top-[51.2%] left-[31.5%] flex h-[10.4%] w-[54%] flex-col justify-center">
+      <div className="absolute top-[55.2%] left-[29.5%] flex h-[12%] w-[58%] flex-col justify-center bg-ticket-panel px-2">
         <div className="text-[9px] leading-none font-semibold uppercase text-ticket-secondary">Horario</div>
         <div className="mt-2 text-[36px] leading-none font-extrabold tabular-nums text-ticket-primary">{hora}</div>
         <div className="mt-3 text-[10px] leading-none font-semibold uppercase text-ticket-secondary">Fecha: {fecha}</div>
       </div>
 
-      <p className="absolute top-[72.4%] left-[17%] flex min-h-[8%] w-[66%] items-center justify-center text-center text-[14px] leading-[1.45] font-semibold text-ticket-primary">
+      <p className="absolute top-[77.2%] left-[15%] flex min-h-[8%] w-[70%] items-center justify-center bg-ticket-panel px-2 text-center text-[14px] leading-[1.45] font-semibold text-ticket-primary">
         {phrase}
       </p>
     </div>
