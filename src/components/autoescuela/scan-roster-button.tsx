@@ -22,7 +22,7 @@ const toBase64 = (file: File) =>
   new Promise<string>((res, rej) => {
     const r = new FileReader();
     r.onload = () => res(r.result as string);
-    r.onerror = () => rej(new Error("No se pudo leer la imagen"));
+    r.onerror = () => rej(new Error("No se pudo leer el archivo"));
     r.readAsDataURL(file);
   });
 
@@ -196,7 +196,7 @@ export function ScanRosterButton({ profesorId, onDone }: { profesorId: string; f
       <input
         ref={inputRef}
         type="file"
-        accept="image/jpeg, image/png, image/jpg"
+        accept="image/*, application/pdf"
         className="hidden"
         onChange={onFile}
       />
@@ -209,9 +209,6 @@ export function ScanRosterButton({ profesorId, onDone }: { profesorId: string; f
         <AlertDialogContent className="rounded-3xl">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-xl">¿Quieres escanear el cuadrante desde tu cámara o galería?</AlertDialogTitle>
-            <AlertDialogDescription className="text-base">
-              Selecciona una imagen y detectaremos los alumnos y las horas de sus clases para añadirlos a tu agenda del día seleccionado.
-            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-col gap-3 sm:flex-row">
             <AlertDialogCancel className="h-14 rounded-2xl text-base font-semibold">Cancelar</AlertDialogCancel>
@@ -223,7 +220,7 @@ export function ScanRosterButton({ profesorId, onDone }: { profesorId: string; f
                 inputRef.current?.click();
               }}
             >
-              Seleccionar Imagen
+              Sacar foto, seleccionar de galería o escoger archivo (PDF)
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -233,7 +230,6 @@ export function ScanRosterButton({ profesorId, onDone }: { profesorId: string; f
         <DialogContent className="rounded-3xl [&>button]:hidden">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2"><Loader2 className="size-6 animate-spin text-primary" /> Analizando cuadrante con IA...</DialogTitle>
-            <DialogDescription>Detectando alumnos y sus horas y actualizando tu agenda de hoy.</DialogDescription>
           </DialogHeader>
         </DialogContent>
       </Dialog>
