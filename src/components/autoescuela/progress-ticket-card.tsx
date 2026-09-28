@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Check, Clock, User } from "lucide-react";
 import { useStore } from "@/lib/autoescuela/store";
-import { toDbLevel } from "@/lib/autoescuela/types";
+import { toDbLevel, type SkillLevel } from "@/lib/autoescuela/types";
 
 /** Frases motivacionales: se elige una al azar en cada evaluación. */
 const MOTIVATIONAL_PHRASES = [
@@ -17,14 +17,10 @@ const MOTIVATIONAL_PHRASES = [
   "Un paso más hacia la libertad sobre ruedas.",
 ];
 
-const MILESTONES = [
-  { label: "Control de embrague", threshold: 1 },
-  { label: "Circulación urbana", threshold: 25 },
-  { label: "Vías rápidas", threshold: 50 },
-  { label: "Conducción nocturna", threshold: 75 },
-];
-
 const PROGRESS_MARKS = [0, 25, 50, 75, 100];
+
+/** Máximo de habilidades del semáforo que se muestran en la tarjeta. */
+const MAX_ITEMS = 6;
 
 /** Bloque interior "cristal ahumado": mismo estilo para los cuatro paneles. */
 const PANEL =
