@@ -40,14 +40,26 @@ export function AgendaDiaria({
   officeMode = false,
   studentsVersion = 0,
   onDayChange,
+  selectedDay,
+  onSelectedDayChange,
+  hideDateNavOnMobile = false,
 }: {
   profesorId: string;
   title?: string;
   officeMode?: boolean;
   studentsVersion?: number;
   onDayChange?: (fecha: string) => void;
+  selectedDay?: Date;
+  onSelectedDayChange?: (day: Date) => void;
+  hideDateNavOnMobile?: boolean;
 }) {
-  const [day, setDay] = React.useState(() => new Date());
+  const [internalDay, setInternalDay] = React.useState(() => new Date());
+  const day = selectedDay ?? internalDay;
+  const setDay = React.useCallback((next: Date | ((current: Date) => Date)) => {
+    const resolved = typeof next === "function" ? next(day) : next;
+    if (onSelectedDayChange) onSelectedDayChange(resolved);
+    else setInternalDay(resolved);
+  }, [day, onSelectedDayChange]);
   const [slots, setSlots] = React.useState<Slot[]>([]);
   const [students, setStudents] = React.useState<StudentOpt[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -311,7 +323,7 @@ export function AgendaDiaria({
 
   return (
     <section className="py-2">
-      <div className="flex items-center justify-between gap-2">
+      <div className={`items-center justify-between gap-2 ${hideDateNavOnMobile ? "hidden md:flex" : "flex"}`}>
         <CalendarDays className="size-6 shrink-0 text-primary" />
         {dateNav}
       </div>

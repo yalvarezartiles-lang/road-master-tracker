@@ -1,6 +1,7 @@
 import * as React from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
+  ChevronLeft,
   ChevronRight,
   LogOut,
   Plus,
@@ -86,6 +87,9 @@ function TeacherDashboard() {
   const [schoolName, setSchoolName] = React.useState("");
   const [agendaVersion, setAgendaVersion] = React.useState(0);
   const [agendaFecha, setAgendaFecha] = React.useState<string | null>(null);
+  const [agendaDay, setAgendaDay] = React.useState(() => new Date());
+  const [headerCompact, setHeaderCompact] = React.useState(false);
+  const lastScrollTop = React.useRef(0);
   React.useEffect(() => {
     if (!user) return;
     void supabase
@@ -111,6 +115,29 @@ function TeacherDashboard() {
   const [toDelete, setToDelete] = React.useState<{ id: string; name: string } | null>(null);
   const [deleting, setDeleting] = React.useState(false);
 
+  const handleMobileScroll = (event: React.UIEvent<HTMLDivElement>) => {
+    if (window.matchMedia("(min-width: 768px)").matches) return;
+    const nextScrollTop = event.currentTarget.scrollTop;
+    const delta = nextScrollTop - lastScrollTop.current;
+    if (nextScrollTop < 24) setHeaderCompact(false);
+    else if (delta > 6) setHeaderCompact(true);
+    else if (delta < -6) setHeaderCompact(false);
+    lastScrollTop.current = nextScrollTop;
+  };
+
+  const shiftAgendaDay = (amount: number) => {
+    setAgendaDay((current) => new Date(current.getFullYear(), current.getMonth(), current.getDate() + amount));
+  };
+
+  const agendaDayLabel = (() => {
+    const today = new Date();
+    const isToday = agendaDay.getFullYear() === today.getFullYear()
+      && agendaDay.getMonth() === today.getMonth()
+      && agendaDay.getDate() === today.getDate();
+    const formatted = agendaDay.toLocaleDateString("es-ES", { day: "numeric", month: "long" });
+    return isToday ? `Hoy, ${formatted}` : agendaDay.toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "long" }).replace(".", "");
+  })();
+
   const fullName = (s: { name: string; apellidos: string }) =>
     [s.name, s.apellidos].filter(Boolean).join(" ");
   const students = data.students.filter((s) =>
@@ -132,31 +159,32 @@ function TeacherDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-32 max-md:pb-56">
-      <header className="sticky top-0 z-50 border-b border-border/60 bg-card/80 backdrop-blur-md px-4 py-4 max-md:py-3">
-        <div className="mx-auto flex max-w-2xl flex-col gap-2 max-md:gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+    <div onScroll={handleMobileScroll} className="min-h-screen bg-background pb-32 max-md:h-dvh max-md:overflow-y-auto max-md:pb-56">
+      <header className={`sticky top-0 z-50 border-b border-border/60 bg-card/90 px-4 py-4 backdrop-blur-md transition-[padding] duration-200 max-md:${headerCompact ? "py-1.5" : "py-2.5"}`}>
+        <div className="mx-auto flex max-w-2xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 md:contents">
           <div className="min-w-0">
-            <h1 className="truncate text-2xl leading-tight font-bold tracking-tight max-md:text-xl">
+            <h1 className={`truncate font-bold leading-tight tracking-tight transition-[font-size] duration-200 md:text-2xl ${headerCompact ? "text-base" : "text-lg"}`}>
               {teacherName ? `Hola, ${teacherName}` : "Panel"}
             </h1>
             {schoolName && (
-              <p className="flex items-center gap-1.5 truncate text-sm font-medium text-muted-foreground">
+              <p className={`items-center gap-1.5 truncate text-sm font-medium text-muted-foreground md:flex ${headerCompact ? "hidden" : "flex"}`}>
                 <Building2 className="size-4 shrink-0" /> {schoolName}
               </p>
             )}
           </div>
-          <div className="flex shrink-0 items-center gap-1 max-md:justify-end max-md:border-t max-md:border-border/40 max-md:pt-2">
+          <div className="flex shrink-0 items-center gap-0.5 md:gap-1">
             {isAdmin && (
-              <Button asChild variant="ghost" size="icon" className="size-12 rounded-2xl">
+              <Button asChild variant="ghost" size="icon" className="size-9 rounded-xl md:size-12 md:rounded-2xl">
                 <Link to="/admin" aria-label="Administración">
-                  <Shield className="size-6" />
+                  <Shield className="size-5 md:size-6" />
                 </Link>
               </Button>
             )}
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="size-12 rounded-2xl" aria-label="Ajustes de perfil">
-                  <Settings className="size-6" />
+                <Button variant="ghost" size="icon" className="size-9 rounded-xl md:size-12 md:rounded-2xl" aria-label="Ajustes de perfil">
+                  <Settings className="size-5 md:size-6" />
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-full max-w-sm overflow-y-auto p-5">
@@ -203,15 +231,27 @@ function TeacherDashboard() {
                 </Accordion>
               </SheetContent>
             </Sheet>
-            <ThemeToggle />
+            <span className="[&_button]:size-9 [&_button]:rounded-xl [&_svg]:size-5 md:[&_button]:size-12 md:[&_button]:rounded-2xl md:[&_svg]:size-6"><ThemeToggle /></span>
             <Button
               variant="ghost"
               size="icon"
-              className="size-12 rounded-2xl"
+              className="size-9 rounded-xl md:size-12 md:rounded-2xl"
               aria-label="Cerrar sesión"
               onClick={() => void signOut()}
             >
-              <LogOut className="size-6" />
+              <LogOut className="size-5 md:size-6" />
+            </Button>
+          </div>
+          </div>
+          <div className={`grid grid-cols-[2rem_minmax(0,1fr)_2rem] items-center overflow-hidden rounded-full border bg-background/80 transition-[height,opacity] duration-200 md:hidden ${headerCompact ? "h-8" : "h-10"}`}>
+            <Button variant="ghost" size="icon" className="size-8 rounded-full" onClick={() => shiftAgendaDay(-1)} aria-label="Día anterior">
+              <ChevronLeft className="size-4" />
+            </Button>
+            <Button variant="ghost" className="h-8 min-w-0 truncate rounded-full px-1 text-sm font-semibold capitalize" onClick={() => setAgendaDay(new Date())} aria-label="Fecha seleccionada, volver a hoy">
+              {agendaDayLabel}
+            </Button>
+            <Button variant="ghost" size="icon" className="size-8 rounded-full" onClick={() => shiftAgendaDay(1)} aria-label="Día siguiente">
+              <ChevronRight className="size-4" />
             </Button>
           </div>
         </div>
@@ -238,7 +278,7 @@ function TeacherDashboard() {
 
         {user && (
           <div className="mt-4">
-            <AgendaDiaria profesorId={user.id} title="Mi agenda" studentsVersion={agendaVersion} onDayChange={setAgendaFecha} />
+            <AgendaDiaria profesorId={user.id} title="Mi agenda" studentsVersion={agendaVersion} onDayChange={setAgendaFecha} selectedDay={agendaDay} onSelectedDayChange={setAgendaDay} hideDateNavOnMobile />
           </div>
         )}
 
@@ -246,7 +286,7 @@ function TeacherDashboard() {
           Alumnos activos ({students.length})
         </h2>
 
-        <ul className="space-y-3">
+        <ul className="space-y-3 max-md:pb-40">
           {students.map((s) => (
             <li key={s.id} className="flex items-center gap-2">
               <Link
