@@ -93,6 +93,17 @@ export async function generateGemini(opts: {
   throw lastError ?? new GeminiError(503, "El servicio de IA no está disponible ahora mismo.");
 }
 
+/** Conversión nativa (Web APIs, sin Buffer de Node). */
+export function arrayBufferToBase64(buffer: ArrayBuffer) {
+  let binary = "";
+  const bytes = new Uint8Array(buffer);
+  const len = bytes.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
 /** Descarga el reglamento PDF del Super Admin (si existe) en Base64. */
 export async function loadReglamentoBase64(): Promise<string | null> {
   try {
@@ -104,12 +115,7 @@ export async function loadReglamentoBase64(): Promise<string | null> {
       console.error("reglamento.pdf no disponible, se continúa sin PDF:", error?.message);
       return null;
     }
-    const buf = new Uint8Array(await data.arrayBuffer());
-    let bin = "";
-    for (let i = 0; i < buf.length; i += 0x8000) {
-      bin += String.fromCharCode(...buf.subarray(i, i + 0x8000));
-    }
-    return btoa(bin);
+    return arrayBufferToBase64(await data.arrayBuffer());
   } catch (e) {
     console.error("Fallo al descargar reglamento.pdf, se continúa sin PDF:", e);
     return null;
