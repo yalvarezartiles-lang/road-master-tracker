@@ -47,37 +47,50 @@ export async function generateGemini(opts: {
     body["systemInstruction"] = { parts: [{ text: opts.systemInstruction }] };
   }
 
-  let res: Response;
-  try {
-    res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    },
-  );
-  } catch (e) {
-    throw new GeminiError(503, `Error de red con Gemini: ${e instanceof Error ? e.message : String(e)}`);
-  }
+  // Anti-503: la demanda alta de Google es pasajera; reintentamos con espera.
+  let lastError: GeminiError | null = null;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    let res: Response;
+    try {
+      res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        },
+      );
+    } catch (e) {
+      throw new GeminiError(503, `Error de red con Gemini: ${e instanceof Error ? e.message : String(e)}`);
+    }
 
-  if (!res.ok) {
-    const detail = await res.text().catch(() => "");
-    console.error("gemini error", res.status, detail.slice(0, 500));
-    let msg = detail;
-    try { msg = (JSON.parse(detail) as { error?: { message?: string } }).error?.message ?? detail; } catch { /* texto */ }
-    throw new GeminiError(res.status, `Error ${res.status}: ${(msg || friendly(res.status)).slice(0, 300)}`);
-  }
+    if (!res.ok) {
+      const detail = await res.text().catch(() => "");
+      console.error("gemini error", res.status, detail.slice(0, 500));
+      let msg = detail;
+      try { msg = (JSON.parse(detail) as { error?: { message?: string } }).error?.message ?? detail; } catch { /* texto */ }
+      lastError = new GeminiError(res.status, `Error ${res.status}: ${(msg || friendly(res.status)).slice(0, 300)}`);
+      // Solo se reintenta ante saturación o límite de ritmo; el resto de errores se muestran tal cual.
+      if (res.status === 503 || res.status === 429) {
+        if (attempt < MAX_ATTEMPTS) {
+          await sleep(1200 * attempt);
+          continue;
+        }
+      }
+      throw lastError;
+    }
 
-  const json = (await res.json()) as {
-    candidates?: { content?: { parts?: { text?: string }[] } }[];
-  };
-  if (!json.candidates?.length) console.error("gemini sin candidatos", JSON.stringify(json).slice(0, 500));
-  const parts = json.candidates?.[0]?.content?.parts ?? [];
-  return parts
-    .map((p) => p.text ?? "")
-    .join("")
-    .trim();
+    const json = (await res.json()) as {
+      candidates?: { content?: { parts?: { text?: string }[] } }[];
+    };
+    if (!json.candidates?.length) console.error("gemini sin candidatos", JSON.stringify(json).slice(0, 500));
+    const parts = json.candidates?.[0]?.content?.parts ?? [];
+    return parts
+      .map((p) => p.text ?? "")
+      .join("")
+      .trim();
+  }
+  throw lastError ?? new GeminiError(503, "El servicio de IA no está disponible ahora mismo.");
 }
 
 /** Descarga el reglamento PDF del Super Admin (si existe) en Base64. */
