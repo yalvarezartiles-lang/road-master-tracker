@@ -4,7 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 // Visión directa con Google Gemini (API REST). Sin Lovable AI.
 const PROMPT =
-  'La imagen es un cuadrante impreso por ordenador. REGLA DE EXCLUSIÓN CRÍTICA: Ignora por completo cualquier hueco que diga "Libre", "Descanso", "Teórica", "Examen", "Desayuno", "Comida" o similares. SOLO extrae nombres propios de personas. Si no es una persona real, ignóralo. Prioridad 1: Nombres, exactamente como están impresos. Prioridad 2: Sección (extrae el código numérico como "01" o "02" si está delante del nombre, en el campo seccion como string, y deja el nombre limpio: "03 Laura Perez" → nombre "Laura Perez", seccion "03"). Prioridad 3: Teléfono. REGLA ESTRICTA PARA EL TELÉFONO: Funciona como un OCR tradicional. Cópialo dígito a dígito exactamente como está impreso. NO intentes adivinar. Si un solo número está borroso, devuelve null. Extrae también la hora de cada clase (HH:MM). Devuelve ÚNICAMENTE este JSON exacto: {"clases": [{"nombre": "...", "hora": "...", "telefono": "...", "seccion": "03"}]}';
+  'La imagen es un cuadrante impreso por ordenador. INSTRUCCIÓN PRIORITARIA: Busca en la cabecera o en el texto del documento la fecha a la que corresponde este cuadrante. Devuélvela en un campo llamado fecha_cuadrante a nivel raíz del JSON en formato \'YYYY-MM-DD\'. Si no puedes determinar la fecha con un 100% de seguridad, devuelve null. REGLA DE EXCLUSIÓN CRÍTICA: Ignora por completo cualquier hueco que diga "Libre", "Descanso", "Teórica", "Examen", "Desayuno", "Comida" o similares. SOLO extrae nombres propios de personas. Si no es una persona real, ignóralo. Prioridad 1: Nombres, exactamente como están impresos. Prioridad 2: Sección (extrae el código numérico como "01" o "02" si está delante del nombre, en el campo seccion como string, y deja el nombre limpio: "03 Laura Perez" → nombre "Laura Perez", seccion "03"). Prioridad 3: Teléfono. REGLA ESTRICTA PARA EL TELÉFONO: Funciona como un OCR tradicional. Cópialo dígito a dígito exactamente como está impreso. NO intentes adivinar. Si un solo número está borroso, devuelve null. Extrae también la hora de cada clase (HH:MM). Devuelve ÚNICAMENTE este JSON exacto: {"fecha_cuadrante": "2026-09-28", "clases": [{"nombre": "...", "hora": "...", "telefono": "...", "seccion": "03"}]}';
 
 // Palabras que nunca son alumnos, por si el modelo las cuela igualmente.
 const EXCLUIDOS = /^(libre|descanso|teorica|teórica|examen|desayuno|comida|almuerzo|vacio|vacío|reservado|no\s*disponible|practica\s*libre)$/i;
@@ -28,10 +28,13 @@ export const scanRoster = createServerFn({ method: "POST" })
       throw new Error(err instanceof Error ? err.message : "No se pudo analizar la imagen");
     }
     let m: RegExpMatchArray | null = null;
+    let fecha_cuadrante: string | null = null;
     try {
       const objTxt = raw.match(/\{[\s\S]*\}/)?.[0];
-      const obj = objTxt ? (JSON.parse(objTxt) as { clases?: unknown }) : null;
+      const obj = objTxt ? (JSON.parse(objTxt) as { clases?: unknown; fecha_cuadrante?: unknown }) : null;
       if (obj && Array.isArray(obj.clases)) m = [JSON.stringify(obj.clases)] as unknown as RegExpMatchArray;
+      const f = typeof obj?.fecha_cuadrante === "string" ? obj.fecha_cuadrante.trim() : "";
+      if (/^\d{4}-\d{2}-\d{2}$/.test(f) && !Number.isNaN(new Date(`${f}T12:00:00`).getTime())) fecha_cuadrante = f;
     } catch { /* fallback al array */ }
     if (!m) m = raw.match(/\[[\s\S]*\]/);
     let clases: { nombre: string; hora: string | null; telefono: string | null; seccion: string | null }[] = [];

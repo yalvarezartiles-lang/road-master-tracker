@@ -99,7 +99,7 @@ function findBestMatch(scanned: string, pool: PoolItem[]): PoolItem | null {
 
 type RawClase = { nombre: string; hora: string | null; telefono?: string | null; seccion?: string | null };
 
-async function syncRoster(profesorId: string, fechaSel: string | null, rawClases: RawClase[]) {
+async function syncRoster(profesorId: string, fechaDoc: string | null, rawClases: RawClase[]) {
   const secPorNombre = new Map<string, string>();
   for (const c of rawClases) if (c.seccion && !secPorNombre.has(norm(c.nombre))) secPorNombre.set(norm(c.nombre), c.seccion);
   const clases = mergeClases(rawClases);
@@ -141,7 +141,7 @@ async function syncRoster(profesorId: string, fechaSel: string | null, rawClases
     entradas.push({ id: ins.id, hora, duracion: clase.duracion }); created++;
   }
 
-  const fecha = fechaSel ?? toISO(new Date());
+  const fecha = fechaDoc ?? toISO(new Date());
   const { data: existing } = await supabase.from("agenda_diaria").select("student_id, hora_fin")
     .eq("profesor_id", profesorId).eq("fecha", fecha).order("hora_fin");
   const already = new Set((existing ?? []).map((e) => e.student_id));
@@ -158,7 +158,7 @@ async function syncRoster(profesorId: string, fechaSel: string | null, rawClases
   return { found, created, sinHora, dobles, fecha };
 }
 
-export function ScanRosterButton({ profesorId, fecha: fechaSel = null, onDone }: { profesorId: string; fecha?: string | null; onDone?: () => void }) {
+export function ScanRosterButton({ profesorId, onDone }: { profesorId: string; fecha?: string | null; onDone?: () => void }) {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [busy, setBusy] = React.useState(false);
   const [confirmOpen, setConfirmOpen] = React.useState(false);
@@ -177,7 +177,7 @@ export function ScanRosterButton({ profesorId, fecha: fechaSel = null, onDone }:
       const data = await scan({ data: { image } });
       const clases = data.clases;
       if (!clases.length) throw new Error("No se detectaron alumnos en la imagen");
-      const { found, created, sinHora, dobles, fecha } = await syncRoster(profesorId, fechaSel, clases);
+      const { found, created, sinHora, dobles, fecha } = await syncRoster(profesorId, data.fecha_cuadrante ?? null, clases);
       toast.success(
         `Agenda del ${fecha.split("-").reverse().join("/")} actualizada: ${found} alumno(s) existentes añadidos y ${created} alumno(s) nuevos creados.${dobles ? ` ${dobles} clase(s) doble(s) de 90 min agrupadas.` : ""}${sinHora ? ` ${sinHora} sin hora detectada (guardados a las ${DEFAULT_HORA}).` : ""}`,
         { id: loadingId },
