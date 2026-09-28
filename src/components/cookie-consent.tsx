@@ -43,14 +43,14 @@ export function CookieConsent() {
         <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
           <Button
             variant="outline"
-            aria-label="Aceptar solo las cookies necesarias"
+            aria-label="Solo Necesarias: aceptar solo cookies necesarias"
             className="h-12 rounded-2xl px-6 text-base font-bold"
             onClick={() => decide(false)}
           >
             Solo Necesarias
           </Button>
           <Button
-            aria-label="Aceptar todas las cookies"
+            aria-label="Aceptar Todas las cookies"
             className="h-12 rounded-2xl px-6 text-base font-bold"
             onClick={() => decide(true)}
           >
