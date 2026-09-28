@@ -1,7 +1,11 @@
 import { Badge } from "@/components/ui/badge";
 import * as React from "react";
 import { Link } from "@tanstack/react-router";
-import { CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Clock, Loader2, MessageCircle, Plus, RotateCcw, UserRound, X } from "lucide-react";
+import { CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Clock, Loader2, MessageCircle, Plus, RotateCcw, Trash2, UserRound, X } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -52,6 +56,7 @@ export function AgendaDiaria({
   const [newStudent, setNewStudent] = React.useState("");
   const [formOpen, setFormOpen] = React.useState(false);
   const [completedStudentIds, setCompletedStudentIds] = React.useState<Set<string>>(new Set());
+  const [confirm, setConfirm] = React.useState<string | null>(null);
   const fecha = toISO(day);
   React.useEffect(() => { onDayChange?.(fecha); }, [fecha, onDayChange]);
   const [canEdit, setCanEdit] = React.useState(officeMode);
@@ -291,12 +296,46 @@ export function AgendaDiaria({
 
   const cards = slots.filter((s) => s.student_id && s.estado !== "cancelada");
 
+  const runConfirm = async () => {
+    if (!confirm) return;
+    const q = supabase.from("agenda_diaria").delete().eq("profesor_id", profesorId);
+    const { error } = confirm === "day" ? await q.eq("fecha", fecha) : await q.eq("id", confirm);
+    setConfirm(null);
+    if (error) {
+      toast.error(`No se pudo borrar: ${error.message}`);
+      return;
+    }
+    toast.success(confirm === "day" ? "Cuadrante vaciado" : "Clase borrada");
+    void load();
+  };
+
   return (
     <section className="py-2">
       <div className="flex items-center justify-between gap-2">
         <CalendarDays className="size-6 shrink-0 text-primary" />
         {dateNav}
       </div>
+      {!loading && slots.length > 0 && (
+        <div className="mt-1 text-right">
+          <button type="button" onClick={() => setConfirm("day")} className="text-xs text-muted-foreground underline-offset-2 hover:text-destructive hover:underline">
+            Vaciar cuadrante
+          </button>
+        </div>
+      )}
+      <AlertDialog open={!!confirm} onOpenChange={(o) => !o && setConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{confirm === "day" ? "¿Vaciar el cuadrante de este día?" : "¿Borrar esta clase?"}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirm === "day" ? "Se borrarán todas las clases de la agenda de este día." : "La clase se quitará de la agenda."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={runConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Borrar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <div className="-mx-4 mt-4 flex w-full snap-x snap-mandatory flex-row gap-6 overflow-x-auto scroll-smooth px-4 pb-4 no-scrollbar">
         {loading && (
@@ -323,6 +362,14 @@ export function AgendaDiaria({
                       <CheckCircle2 className="size-4" /> Realizada
                     </span>
                   )}
+                  <button
+                    type="button"
+                    onClick={() => setConfirm(s.id)}
+                    aria-label={`Borrar clase de ${nameOf(s.student_id)}`}
+                    className="-mr-2 -mt-2 flex size-10 shrink-0 items-center justify-center rounded-full text-muted-foreground/50 transition hover:text-destructive"
+                  >
+                    <Trash2 className="size-5" />
+                  </button>
                 </div>
                 <p className="flex items-center gap-2 truncate text-lg font-bold">
                   <UserRound className="size-5 shrink-0 text-muted-foreground" /> <span className="min-w-0 truncate">{nameOf(s.student_id)}</span>
