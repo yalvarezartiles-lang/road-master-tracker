@@ -1,9 +1,9 @@
 // ============= Full file contents =============
 
 import * as React from "react";
-import { Check, Clock, User } from "lucide-react";
+import { Clock, User } from "lucide-react";
 import { useStore } from "@/lib/autoescuela/store";
-import { toDbLevel, type SkillLevel } from "@/lib/autoescuela/types";
+import { toDbLevel } from "@/lib/autoescuela/types";
 
 /** Frases motivacionales: se elige una al azar en cada evaluación. */
 const MOTIVATIONAL_PHRASES = [
@@ -18,9 +18,6 @@ const MOTIVATIONAL_PHRASES = [
 ];
 
 const PROGRESS_MARKS = [0, 25, 50, 75, 100];
-
-/** Máximo de habilidades del semáforo que se muestran en la tarjeta. */
-const MAX_ITEMS = 6;
 
 /** Bloque interior "cristal ahumado": mismo estilo para los cuatro paneles. */
 const PANEL =
@@ -52,16 +49,6 @@ export const ProgressTicketCard = React.forwardRef<
     [greens.join("|"), pct, studentId],
   );
 
-  // Habilidades evaluadas en el semáforo: se priorizan las dominadas y en
-  // progreso, con un máximo de MAX_ITEMS para que la tarjeta no se desborde.
-  const evaluated = React.useMemo(() => {
-    if (!student) return [];
-    const rank = (l: SkillLevel) => (l === "verde" ? 0 : l === "amarillo" ? 1 : 2);
-    return data.skills
-      .map((k) => ({ name: k.name, level: student.skills[k.id] ?? "rojo" }))
-      .sort((a, b) => rank(a.level) - rank(b.level))
-      .slice(0, MAX_ITEMS);
-  }, [student, data.skills]);
 
   const now = new Date();
   const lastLesson = student?.lessons[student.lessons.length - 1];
@@ -94,22 +81,6 @@ export const ProgressTicketCard = React.forwardRef<
             className="h-full min-w-[2px] rounded-full bg-zinc-200"
             style={{ width: `${pct}%` }}
           />
-        </div>
-        <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-          {evaluated.map(({ name, level }) => {
-            const achieved = level === "verde";
-            return (
-              <div key={name} className="flex items-center gap-2">
-                <Check
-                  className={`size-3.5 shrink-0 ${achieved ? "text-zinc-300" : "text-zinc-600"}`}
-                  strokeWidth={3}
-                />
-                <span className={`break-words ${achieved ? "text-zinc-200" : "text-zinc-600"}`}>
-                  {name}
-                </span>
-              </div>
-            );
-          })}
         </div>
       </div>
 
