@@ -1,12 +1,11 @@
 import { Badge } from "@/components/ui/badge";
 import * as React from "react";
 import { Link } from "@tanstack/react-router";
-import { CalendarDays, CalendarPlus, CheckCircle2, ChevronLeft, ChevronRight, Clock, Loader2, MessageCircle, Plus, RotateCcw, UserRound, X } from "lucide-react";
+import { CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Clock, Loader2, MessageCircle, Plus, RotateCcw, UserRound, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface Slot {
   id: string;
@@ -51,7 +50,6 @@ export function AgendaDiaria({
   const [end, setEnd] = React.useState("09:45");
   const [newStudent, setNewStudent] = React.useState("");
   const [formOpen, setFormOpen] = React.useState(false);
-  const [organizerOpen, setOrganizerOpen] = React.useState(false);
   const [completedStudentIds, setCompletedStudentIds] = React.useState<Set<string>>(new Set());
   const fecha = toISO(day);
   React.useEffect(() => { onDayChange?.(fecha); }, [fecha, onDayChange]);
@@ -150,32 +148,30 @@ export function AgendaDiaria({
 
   const isToday = fecha === toISO(new Date());
   const dayLabel = (() => {
-    const s = day.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" });
-    return s.replace(/(^|\s)\S/g, (c) => c.toUpperCase()).replace(" De ", " ");
+    if (isToday) {
+      const d = day.toLocaleDateString("es-ES", { day: "numeric", month: "long" });
+      return `Hoy, ${d}`;
+    }
+    const s = day.toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "long" });
+    return s.replace(".", "").replace(/(^|\s)\S/g, (c) => c.toUpperCase()).replace(" De ", " ");
   })();
   const dateNav = (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        <Button variant="outline" size="icon" className="size-12 shrink-0 rounded-2xl" onClick={() => shift(-1)} aria-label="Día anterior">
-          <ChevronLeft className="size-6" />
-        </Button>
-        <p className="flex-1 text-center text-lg font-bold" aria-live="polite">{dayLabel}</p>
-        <Button variant="outline" size="icon" className="size-12 shrink-0 rounded-2xl" onClick={() => shift(1)} aria-label="Día siguiente">
-          <ChevronRight className="size-6" />
-        </Button>
-      </div>
-      <div className="flex items-center gap-2">
-        <Button variant={isToday ? "secondary" : "default"} className="h-12 rounded-2xl px-5 font-bold" onClick={() => setDay(new Date())} disabled={isToday}>
-          Hoy
-        </Button>
-        <Input
-          type="date"
-          value={fecha}
-          aria-label="Elegir fecha"
-          onChange={(e) => e.target.value && setDay(new Date(`${e.target.value}T12:00:00`))}
-          className="h-12 flex-1 rounded-2xl text-center text-base"
-        />
-      </div>
+    <div className="flex items-center justify-between gap-2">
+      <Button variant="outline" size="icon" className="size-12 shrink-0 rounded-full" onClick={() => shift(-1)} aria-label="Día anterior">
+        <ChevronLeft className="size-6" />
+      </Button>
+      <button
+        type="button"
+        onClick={() => !isToday && setDay(new Date())}
+        className="min-w-0 flex-1 truncate text-center text-lg font-bold"
+        aria-live="polite"
+        aria-label={isToday ? "Fecha seleccionada" : "Fecha seleccionada, pulsa para volver a hoy"}
+      >
+        {dayLabel}
+      </button>
+      <Button variant="outline" size="icon" className="size-12 shrink-0 rounded-full" onClick={() => shift(1)} aria-label="Día siguiente">
+        <ChevronRight className="size-6" />
+      </Button>
     </div>
   );
 
@@ -296,17 +292,12 @@ export function AgendaDiaria({
 
   return (
     <section className="py-2">
-      <div className="flex items-center gap-2">
-        <CalendarDays className="size-6 text-primary" />
-        <h2 className="flex-1 text-lg font-bold">{title ?? "Agenda diaria"}</h2>
-        {canEdit && (
-          <Button variant="outline" onClick={() => setOrganizerOpen(true)} className="h-12 rounded-2xl font-semibold">
-            <CalendarPlus className="size-5" /> Organizar Horario
-          </Button>
-        )}
+      <div className="flex items-center justify-between gap-2">
+        <CalendarDays className="size-6 shrink-0 text-primary" />
+        {dateNav}
       </div>
 
-      <div className="mt-4">{dateNav}</div>
+      <div className="mt-4">
 
       <div className="-mx-4 mt-4 flex w-full snap-x snap-mandatory flex-row gap-6 overflow-x-auto scroll-smooth px-4 pb-4 no-scrollbar">
         {loading && (
