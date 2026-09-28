@@ -4,7 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 // Visión directa con Google Gemini (API REST). Sin Lovable AI.
 const PROMPT =
-  'El documento (imagen o PDF) es un cuadrante impreso por ordenador. INSTRUCCIÓN PRIORITARIA: Busca en la cabecera o en el texto del documento la fecha a la que corresponde este cuadrante. Devuélvela en un campo llamado fecha_cuadrante a nivel raíz del JSON en formato \'YYYY-MM-DD\'. Si no puedes determinar la fecha con un 100% de seguridad, devuelve null. REGLA DE EXCLUSIÓN CRÍTICA: Ignora por completo cualquier hueco que diga "Libre", "Descanso", "Teórica", "Examen", "Desayuno", "Comida" o similares. SOLO extrae nombres propios de personas. Si no es una persona real, ignóralo. Prioridad 1: Nombres, exactamente como están impresos. Prioridad 2: Sección (extrae el código numérico como "01" o "02" si está delante del nombre, en el campo seccion como string, y deja el nombre limpio: "03 Laura Perez" → nombre "Laura Perez", seccion "03"). Prioridad 3: Teléfono. REGLA ESTRICTA PARA EL TELÉFONO: Funciona como un OCR tradicional. Cópialo dígito a dígito exactamente como está impreso. NO intentes adivinar. Si un solo número está borroso, devuelve null. Extrae también la hora de cada clase (HH:MM). Devuelve ÚNICAMENTE este JSON exacto: {"fecha_cuadrante": "2026-09-28", "clases": [{"nombre": "...", "hora": "...", "telefono": "...", "seccion": "03"}]}';
+  'El documento (imagen o PDF) es un cuadrante impreso por ordenador. INSTRUCCIÓN PRIORITARIA: Busca en la cabecera o en el texto del documento la fecha a la que corresponde este cuadrante. Devuélvela en un campo llamado fecha_cuadrante a nivel raíz del JSON en formato \'YYYY-MM-DD\'. Si no puedes determinar la fecha con un 100% de seguridad, devuelve null. REGLA DE EXCLUSIÓN CRÍTICA: Ignora por completo cualquier hueco que diga "Libre", "Descanso", "Teórica", "TEÓRICO: CLASE TEORICA", "Desayuno", "Comida" o similares. REGLA DE EXAMEN: En el documento puede aparecer la palabra "EXAMEN" o "EX". NO crees un alumno llamado "Examen". Sin embargo, los nombres propios reales que aparezcan INMEDIATAMENTE DEBAJO del bloque "EXAMEN" son alumnos que se examinan: extráelos con es_examen: true. Para el resto de alumnos en bloques regulares usa es_examen: false. SOLO extrae nombres propios de personas. Si no es una persona real, ignóralo. Prioridad 1: Nombres, exactamente como están impresos. Prioridad 2: Sección (extrae el código numérico como "01" o "02" si está delante del nombre, en el campo seccion como string, y deja el nombre limpio: "03 Laura Perez" → nombre "Laura Perez", seccion "03"). Prioridad 3: Teléfono. REGLA ESTRICTA PARA EL TELÉFONO: Funciona como un OCR tradicional. Cópialo dígito a dígito exactamente como está impreso. NO intentes adivinar. Si un solo número está borroso, devuelve null. Extrae también la hora de cada clase (HH:MM). Devuelve ÚNICAMENTE este JSON exacto: {"fecha_cuadrante": "2026-09-28", "clases": [{"nombre": "...", "hora": "...", "telefono": "...", "seccion": "03", "es_examen": false}]}';
 
 // Palabras que nunca son alumnos, por si el modelo las cuela igualmente.
 const EXCLUIDOS = /^(libre|descanso|teorica|teórica|examen|desayuno|comida|almuerzo|vacio|vacío|reservado|no\s*disponible|practica\s*libre)$/i;
@@ -42,13 +42,13 @@ export const scanRoster = createServerFn({ method: "POST" })
       if (/^\d{4}-\d{2}-\d{2}$/.test(f) && !Number.isNaN(new Date(`${f}T12:00:00`).getTime())) fecha_cuadrante = f;
     } catch { /* fallback al array */ }
     if (!m) m = raw.match(/\[[\s\S]*\]/);
-    let clases: { nombre: string; hora: string | null; telefono: string | null; seccion: string | null }[] = [];
+    let clases: { nombre: string; hora: string | null; telefono: string | null; seccion: string | null; es_examen: boolean }[] = [];
     try {
       const arr = m ? JSON.parse(m[0]) : [];
       if (Array.isArray(arr)) {
         clases = arr
           .map((x) => {
-            const obj = (x ?? {}) as { nombre?: unknown; hora?: unknown; telefono?: unknown; seccion?: unknown };
+            const obj = (x ?? {}) as { nombre?: unknown; hora?: unknown; telefono?: unknown; seccion?: unknown; es_examen?: unknown };
             let nombre = typeof obj.nombre === "string" ? obj.nombre : "";
             let seccion: string | null = null;
             const rawSec = typeof obj.seccion === "string" || typeof obj.seccion === "number" ? String(obj.seccion).replace(/\D/g, "") : "";
@@ -70,9 +70,9 @@ export const scanRoster = createServerFn({ method: "POST" })
             let digits = rawTel.replace(/\D/g, "");
             if (digits.length === 11 && digits.startsWith("34")) digits = digits.slice(2);
             const telefono = /^[67]\d{8}$/.test(digits) ? digits : null;
-            return { nombre: nombre.trim(), hora, telefono, seccion };
+            return { nombre: nombre.trim(), hora, telefono, seccion, es_examen: obj.es_examen === true || obj.es_examen === "true" };
           })
-          .filter((c): c is { nombre: string; hora: string | null; telefono: string | null; seccion: string | null } =>
+          .filter((c): c is { nombre: string; hora: string | null; telefono: string | null; seccion: string | null; es_examen: boolean } =>
             c.nombre.length > 0 && !EXCLUIDOS.test(c.nombre.trim()));
       }
     } catch {
