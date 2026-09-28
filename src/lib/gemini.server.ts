@@ -1,8 +1,8 @@
 // Conexión directa a la API REST de Google Gemini. Sin Lovable AI.
 // Motor de IA único y exclusivo de la plataforma.
-// gemini-1.5-flash ya no está disponible en la API; gemini-2.5-flash es su
-// sustituto estable con soporte de imagen y PDF.
-export const GEMINI_MODEL = "gemini-2.5-flash";
+// gemini-1.5-flash y gemini-2.5-flash ya no se sirven a cuentas nuevas; la API
+// indica gemini-3.8-flash como sustituto (soporta imagen y PDF).
+export const GEMINI_MODEL = "gemini-3.8-flash";
 
 export type GeminiPart =
   | { text: string }
