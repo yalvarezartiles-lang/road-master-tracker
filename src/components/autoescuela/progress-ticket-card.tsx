@@ -95,16 +95,18 @@ export const ProgressTicketCard = React.forwardRef<
             style={{ width: `${pct}%` }}
           />
         </div>
-        <div className="mt-4 grid grid-cols-2 gap-2 text-xs text-zinc-400">
-          {MILESTONES.map(({ label, threshold }) => {
-            const reached = pct >= threshold;
+        <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+          {evaluated.map(({ name, level }) => {
+            const achieved = level === "verde";
             return (
-              <div key={label} className="flex items-center gap-2">
+              <div key={name} className="flex items-center gap-2">
                 <Check
-                  className={`size-3.5 shrink-0 ${reached ? "text-zinc-300" : "text-zinc-700"}`}
+                  className={`size-3.5 shrink-0 ${achieved ? "text-zinc-300" : "text-zinc-600"}`}
                   strokeWidth={3}
                 />
-                <span className={reached ? "text-zinc-300" : undefined}>{label}</span>
+                <span className={`break-words ${achieved ? "text-zinc-200" : "text-zinc-600"}`}>
+                  {name}
+                </span>
               </div>
             );
           })}
