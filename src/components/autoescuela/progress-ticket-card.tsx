@@ -67,6 +67,8 @@ export const ProgressTicketCard = React.forwardRef<
         {school || "Autoescuela"}
       </h2>
 
+      <div className="absolute top-[22.1%] left-[10.1%] h-[14.6%] w-[79.8%] bg-ticket-panel" />
+
       <div className="absolute top-[23.35%] left-[11.9%] h-[5.3%] w-[76.5%]">
         <div className="absolute inset-x-0 top-0 flex justify-between text-[11px] leading-none font-semibold text-ticket-secondary">
           {PROGRESS_MARKS.map((mark) => (
