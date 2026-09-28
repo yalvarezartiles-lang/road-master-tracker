@@ -60,7 +60,7 @@ export const ProgressTicketCard = React.forwardRef<
     <div
       ref={ref}
       aria-hidden
-      className="pointer-events-none fixed top-0 left-0 z-[-50] aspect-[848/1264] w-[424px] overflow-hidden bg-ticket-canvas font-sans text-ticket-primary opacity-0"
+      className="pointer-events-none fixed top-0 left-0 z-[-50] aspect-[2/3] w-[384px] overflow-hidden bg-ticket-canvas font-sans text-ticket-primary opacity-0"
     >
       <img src={ticketTemplate} alt="" className="absolute inset-0 size-full object-fill" />
 
