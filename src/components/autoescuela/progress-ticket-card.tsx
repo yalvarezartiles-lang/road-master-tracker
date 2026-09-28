@@ -1,12 +1,25 @@
 import * as React from "react";
-import { cn } from "@/lib/utils";
+import { CalendarDays, CheckCircle, Star, User } from "lucide-react";
 import { useStore } from "@/lib/autoescuela/store";
 import { toDbLevel } from "@/lib/autoescuela/types";
 
+/** Frases motivacionales: se elige una al azar en cada evaluación. */
+const MOTIVATIONAL_PHRASES = [
+  "Cada kilómetro te acerca a tu carnet. ¡Sigue así!",
+  "La seguridad al volante se construye clase a clase.",
+  "Hoy has conducido mejor que ayer. ¡Enhorabuena!",
+  "La confianza llega con la práctica. ¡Vas por buen camino!",
+  "Paciencia, atención y constancia: la fórmula del aprobado.",
+  "Gran clase. El examen está cada vez más cerca.",
+  "Conducir bien es cuestión de actitud. ¡Y tú la tienes!",
+  "Un paso más hacia la libertad sobre ruedas.",
+];
+
+const MILESTONES = ["Control de embrague", "Circulación urbana", "Vías rápidas", "Conducción nocturna"];
+
 /**
- * Ticket de Progreso: SIEMPRE montado en el DOM, fuera de la vista, para que
- * html-to-image pueda capturarlo (nunca display:none ni montaje condicional).
- * 100% efímero: nunca se envía al servidor.
+ * Ticket de Progreso (FinalPracticeCard): SIEMPRE montado en el DOM, fuera de la
+ * vista, para que html-to-image pueda capturarlo. 100% efímero.
  */
 export const ProgressTicketCard = React.forwardRef<
   HTMLDivElement,
@@ -15,78 +28,81 @@ export const ProgressTicketCard = React.forwardRef<
   const { data } = useStore();
   const student = data.students.find((s) => s.id === studentId);
 
-  // Misma lógica y estado reactivo que la barra de progreso del perfil del
-  // alumno (SkillProgressBanner): rojo=0, amarillo=1, verde=2.
   const total = data.skills.length;
   const points = student
     ? data.skills.reduce((acc, k) => acc + toDbLevel(student.skills[k.id] ?? "rojo"), 0)
     : 0;
   const pct = total ? Math.round((points / (total * 2)) * 100) : 0;
-  const apto = total > 0 && points === total * 2;
 
-  const date = new Date().toLocaleDateString("es-ES", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+  // Nueva frase cada vez que cambia la evaluación (verdes / progreso).
+  const phrase = React.useMemo(
+    () => MOTIVATIONAL_PHRASES[Math.floor(Math.random() * MOTIVATIONAL_PHRASES.length)]!,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [greens.join("|"), pct, studentId],
+  );
+
+  const now = new Date();
+  const lastLesson = student?.lessons[student.lessons.length - 1];
+  const hora = lastLesson?.horaInicio?.slice(0, 5)
+    ?? now.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+  const fecha = now.toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" });
 
   return (
     <div
       ref={ref}
       aria-hidden
-      className="fixed top-0 left-0 w-[400px] h-fit min-h-[600px] bg-white opacity-0 pointer-events-none z-[-50] overflow-hidden p-6 rounded-3xl shadow-xl"
+      style={{ fontFamily: "Geist, Inter, ui-sans-serif, system-ui, sans-serif" }}
+      className="pointer-events-none fixed top-0 left-0 z-[-50] w-[400px] overflow-hidden rounded-3xl border border-blue-900/50 bg-gray-950 p-6 text-white opacity-0 shadow-2xl"
     >
-      <div className="flex items-center justify-between">
-        <div className="text-[13px] font-bold uppercase tracking-[0.18em] text-slate-500">
+      {/* Neón azul en las esquinas */}
+      <div className="absolute -top-16 -left-16 size-40 rounded-full bg-blue-600/40 blur-3xl" />
+      <div className="absolute -right-16 -bottom-16 size-40 rounded-full bg-blue-500/40 blur-3xl" />
+
+      <div className="relative space-y-5">
+        <h2 className="text-center text-2xl font-bold tracking-wide text-white uppercase">
           {school || "Autoescuela"}
-        </div>
-        <div className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-600">Ticket de progreso</div>
-      </div>
-      <div className="mt-5 text-3xl font-extrabold leading-tight tracking-tight text-slate-900">
-        {studentName || "\u2014"}
-      </div>
-      <div className="mt-1 text-[15px] capitalize text-slate-500">{date}</div>
+        </h2>
 
-      {/* Barra de progreso clonada del perfil del alumno */}
-      <div className="mt-5">
-        <div className="flex items-center justify-between text-sm font-extrabold">
-          <span className={apto ? "text-green-600" : "text-slate-900"}>
-            {apto ? "\u00A1Apto para Examen Oficial!" : "Progreso general"}
-          </span>
-          <span className="tabular-nums text-slate-500">{pct}%</span>
+        {/* Bloque 1: progreso */}
+        <div>
+          <div className="mb-2 flex justify-between text-xs font-semibold text-blue-200">
+            {["0%", "25%", "50%", "75%", "100%"].map((m) => <span key={m}>{m}</span>)}
+          </div>
+          <div className="h-3 overflow-hidden rounded-full bg-gray-800">
+            <div className="h-full rounded-full bg-blue-500" style={{ width: `${pct}%` }} />
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            {MILESTONES.map((m) => (
+              <div key={m} className="flex items-center gap-2 text-sm font-medium text-gray-200">
+                <CheckCircle className="size-4 flex-none text-blue-500" /> {m}
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="mt-2 h-3 overflow-hidden rounded-full bg-slate-100">
-          <div
-            className={cn("h-full rounded-full transition-all", apto ? "bg-green-500" : "bg-blue-500")}
-            style={{ width: `${pct}%` }}
-          />
-        </div>
-      </div>
 
-      <div className="mt-5 text-[15px] font-bold text-slate-900">
-        Habilidades dominadas {"\u00B7"} <span className="text-green-600">{greens.length}</span>
+        {/* Bloque 2: alumno */}
+        <div className="flex items-center gap-4 rounded-xl bg-gray-900 p-6">
+          <User className="size-8 flex-none text-cyan-500" />
+          <div className="min-w-0">
+            <div className="text-xs font-semibold tracking-wider text-gray-400 uppercase">Nombre del alumno/a</div>
+            <div className="text-xl font-bold break-words text-white">{studentName || "\u2014"}</div>
+          </div>
+        </div>
+
+        {/* Bloque 3: clase */}
+        <div className="flex items-center gap-4 rounded-xl bg-gray-900 p-6">
+          <CalendarDays className="size-8 flex-none text-cyan-500" />
+          <div>
+            <div className="text-xs font-semibold tracking-wider text-gray-400 uppercase">Horario</div>
+            <div className="text-xl font-bold text-white">{hora}</div>
+            <div className="text-sm font-semibold text-gray-300">FECHA: {fecha}</div>
+          </div>
+        </div>
+
+        {/* Bloque 4: motivacional */}
+        <div className="rounded-xl bg-gray-900 p-6 text-center">
+          <Star className="mx-auto size-7 fill-yellow-300/80 text-yellow-300" />
+          <p className="mt-3 text-base font-medium text-gray-100">{phrase}</p>
+        </div>
       </div>
-      {greens.length ? (
-        <div className="grid grid-cols-2 gap-3 mt-6">
-          {greens.map((g) => (
-            <div
-              key={g}
-              className="flex items-center gap-2 rounded-2xl border border-green-100 bg-green-50 px-3 py-2.5 text-[15px] font-semibold leading-snug text-slate-900"
-            >
-              <span className="flex size-5 flex-none items-center justify-center rounded-full bg-green-500 text-xs text-white">
-                {"\u2713"}
-              </span>
-              <span>{g}</span>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="text-base text-slate-500">
-          {"Seguimos trabajando para conseguir tus primeros verdes \u{1F4AA}"}
-        </div>
-      )}
-      <div className="mt-6 text-center text-sm text-slate-500">{"\u00A1Sigue as\u00ED! \u{1F697}"}</div>
-    </div>
-  );
-});
+    
