@@ -1,5 +1,6 @@
 import * as React from "react";
 import { UserPlus } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import {
   Dialog,
   DialogContent,
