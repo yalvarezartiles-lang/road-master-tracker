@@ -22,11 +22,14 @@ function friendly(status: number): string {
   return "El servicio de IA no está disponible ahora mismo.";
 }
 
-/** Llama a Gemini y devuelve el texto plano generado. */
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** Llama a Gemini y devuelve el texto plano generado. Reintenta ante 503/429 pasajeros. */
 export async function generateGemini(opts: {
   parts: GeminiPart[];
   systemInstruction?: string;
 }): Promise<string> {
+  const MAX_ATTEMPTS = 3;
   const key = process.env["GEMINI_API_KEY"];
   // Limpieza estricta: nunca enviar el prefijo data:...;base64,
   opts.parts = opts.parts.map((p) =>
