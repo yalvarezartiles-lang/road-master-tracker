@@ -50,7 +50,8 @@ export const askCopilot = createServerFn({ method: "POST" })
     const parts: ({ text: string } | { inlineData: { mimeType: string; data: string } })[] = [];
 
     // Base de conocimiento: reglamento subido por el Super Admin.
-    const pdf = await loadReglamentoBase64();
+    let pdf: string | null = null;
+    try { pdf = await loadReglamentoBase64(); } catch (e) { console.error("PDF opcional omitido", e); }
     if (pdf) parts.push({ inlineData: { mimeType: "application/pdf", data: pdf } });
     parts.push({
       text: `Contexto de la pantalla actual:\n${data.context || "(sin datos)"}\n\nPregunta del profesor:\n${data.message}`,
@@ -63,6 +64,7 @@ export const askCopilot = createServerFn({ method: "POST" })
         .replace(/^#+\s*/gm, "")
         .trim();
     } catch (err) {
+      console.error("askCopilot error", err);
       const msg = err instanceof GeminiError ? err.message : `Error: ${err instanceof Error ? err.message : String(err)}`;
       return { ok: false as const, error: msg };
     }
