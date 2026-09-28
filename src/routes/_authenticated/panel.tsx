@@ -160,7 +160,7 @@ function TeacherDashboard() {
 
   return (
     <div onScroll={handleMobileScroll} className="min-h-screen bg-background pb-32 max-md:h-dvh max-md:overflow-y-auto max-md:pb-56">
-      <header className={`sticky top-0 z-50 border-b border-border/60 bg-card/90 px-4 py-4 backdrop-blur-md transition-[padding] duration-200 max-md:${headerCompact ? "py-1.5" : "py-2.5"}`}>
+      <header className={`sticky top-0 z-50 border-b border-border/60 bg-card/90 px-4 py-4 backdrop-blur-md transition-[padding] duration-200 ${headerCompact ? "max-md:py-1.5" : "max-md:py-2.5"}`}>
         <div className="mx-auto flex max-w-2xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 md:contents">
           <div className="min-w-0">
