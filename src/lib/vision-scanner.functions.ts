@@ -64,7 +64,8 @@ export const scanRoster = createServerFn({ method: "POST" })
             const telefono = /^[67]\d{8}$/.test(digits) ? digits : null;
             return { nombre: nombre.trim(), hora, telefono, seccion };
           })
-          .filter((c): c is { nombre: string; hora: string | null; telefono: string | null; seccion: string | null } => c.nombre.length > 0);
+          .filter((c): c is { nombre: string; hora: string | null; telefono: string | null; seccion: string | null } =>
+            c.nombre.length > 0 && !EXCLUIDOS.test(c.nombre.trim()));
       }
     } catch {
       clases = [];
