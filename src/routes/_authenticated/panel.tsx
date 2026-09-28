@@ -189,6 +189,7 @@ function TeacherDashboard() {
                     </div>
                   </dl>
                 </div>
+                {isAdmin && <ReglamentoUpload />}
                 <Accordion type="single" collapsible className="mt-4 rounded-3xl border bg-card px-4">
                   <AccordionItem value="pwd" className="border-none">
                     <AccordionTrigger className="py-4 text-base font-semibold">
