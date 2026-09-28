@@ -208,8 +208,8 @@ export function GlobalCopilot() {
       }
 
       setTimeout(() => speak(idx, res.respuesta), 0);
-    } catch {
-      toast.error("No se pudo contactar con el Copiloto");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "No se pudo contactar con el Copiloto");
     } finally {
       setThinking(false);
     }

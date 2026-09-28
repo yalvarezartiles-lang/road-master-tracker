@@ -63,7 +63,7 @@ export const askCopilot = createServerFn({ method: "POST" })
         .replace(/^#+\s*/gm, "")
         .trim();
     } catch (err) {
-      const msg = err instanceof GeminiError ? err.message : "El Copiloto no está disponible ahora mismo.";
+      const msg = err instanceof GeminiError ? err.message : `Error: ${err instanceof Error ? err.message : String(err)}`;
       return { ok: false as const, error: msg };
     }
     if (!out) return { ok: false as const, error: "El Copiloto no ha devuelto respuesta." };
