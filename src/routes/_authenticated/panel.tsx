@@ -132,11 +132,11 @@ function TeacherDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-32">
-      <header className="sticky top-0 z-50 border-b border-border/60 bg-card/80 backdrop-blur-md px-4 py-4">
-        <div className="mx-auto flex max-w-2xl items-center justify-between gap-3">
+    <div className="min-h-screen bg-background pb-32 max-md:pb-56">
+      <header className="sticky top-0 z-50 border-b border-border/60 bg-card/80 backdrop-blur-md px-4 py-4 max-md:py-3">
+        <div className="mx-auto flex max-w-2xl flex-col gap-2 max-md:gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
           <div className="min-w-0">
-            <h1 className="truncate text-2xl leading-tight font-bold tracking-tight">
+            <h1 className="truncate text-2xl leading-tight font-bold tracking-tight max-md:text-xl">
               {teacherName ? `Hola, ${teacherName}` : "Panel"}
             </h1>
             {schoolName && (
@@ -145,7 +145,7 @@ function TeacherDashboard() {
               </p>
             )}
           </div>
-          <div className="flex shrink-0 items-center gap-1">
+          <div className="flex shrink-0 items-center gap-1 max-md:justify-end max-md:border-t max-md:border-border/40 max-md:pt-2">
             {isAdmin && (
               <Button asChild variant="ghost" size="icon" className="size-12 rounded-2xl">
                 <Link to="/admin" aria-label="Administración">
@@ -217,7 +217,7 @@ function TeacherDashboard() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-2xl px-4 py-5">
+      <main className="mx-auto max-w-2xl px-4 py-5 max-md:px-4">
         <div className="relative">
           <Search className="absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted-foreground" />
           <Input
