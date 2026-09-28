@@ -173,10 +173,10 @@ export function ScanRosterButton({ profesorId, onDone }: { profesorId: string; f
     setBusy(true);
     const loadingId = toast.loading("Analizando cuadrante...");
     try {
-      const image = await toBase64(file);
-      const data = await scan({ data: { image } });
+      const dataUrl = await toBase64(file);
+      const data = await scan({ data: { file: dataUrl } });
       const clases = data.clases;
-      if (!clases.length) throw new Error("No se detectaron alumnos en la imagen");
+      if (!clases.length) throw new Error("No se detectaron alumnos en el cuadrante");
       const { found, created, sinHora, dobles, fecha } = await syncRoster(profesorId, data.fecha_cuadrante ?? null, clases);
       toast.success(
         `Agenda del ${fecha.split("-").reverse().join("/")} actualizada: ${found} alumno(s) existentes añadidos y ${created} alumno(s) nuevos creados.${dobles ? ` ${dobles} clase(s) doble(s) de 90 min agrupadas.` : ""}${sinHora ? ` ${sinHora} sin hora detectada (guardados a las ${DEFAULT_HORA}).` : ""}`,

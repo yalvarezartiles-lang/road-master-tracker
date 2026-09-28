@@ -30,7 +30,7 @@ export const scanRoster = createServerFn({ method: "POST" })
       });
     } catch (err) {
       console.error("Gemini vision", err);
-      throw new Error(err instanceof Error ? err.message : "No se pudo analizar la imagen");
+      throw new Error(err instanceof Error ? err.message : "No se pudo analizar el cuadrante");
     }
     let m: RegExpMatchArray | null = null;
     let fecha_cuadrante: string | null = null;
