@@ -1,14 +1,13 @@
 import * as React from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Car, Loader2, LogIn, ShieldPlus } from "lucide-react";
+import { Car, Loader2, LogIn } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { supabase } from "@/integrations/supabase/client";
-import { createFirstAdmin, getSetupStatus } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -35,13 +34,8 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const { next } = Route.useSearch();
   const destination = next ?? "/panel";
-  const checkSetup = useServerFn(getSetupStatus);
-  const setupAdmin = useServerFn(createFirstAdmin);
-
-  const [needsSetup, setNeedsSetup] = React.useState(false);
   const [checking, setChecking] = React.useState(true);
   const [busy, setBusy] = React.useState(false);
-  const [fullName, setFullName] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
 
@@ -52,24 +46,14 @@ function AuthPage() {
         window.location.replace(destination);
         return;
       }
-      try {
-        const status = await checkSetup({});
-        setNeedsSetup(status.needsSetup);
-      } catch {
-        /* ignore */
-      }
       setChecking(false);
     })();
-  }, [checkSetup, destination]);
+  }, [destination]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
     try {
-      if (needsSetup) {
-        await setupAdmin({ data: { email, password, fullName } });
-        toast.success("Cuenta de administrador creada");
-      }
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw new Error("Email o contraseña incorrectos");
       window.location.replace(destination);
@@ -92,28 +76,10 @@ function AuthPage() {
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 pb-16">
         <h1 className="text-3xl font-extrabold">Bienvenido</h1>
         <p className="mt-2 text-base text-muted-foreground">
-          {checking
-            ? "Comprobando acceso…"
-            : needsSetup
-              ? "Crea la cuenta de administrador para empezar."
-              : "Acceso exclusivo para el equipo."}
+          {checking ? "Comprobando acceso…" : "Acceso exclusivo para el equipo."}
         </p>
 
         <form onSubmit={onSubmit} className="mt-8 space-y-4">
-          {needsSetup && (
-            <div className="space-y-2">
-              <Label htmlFor="fullName" className="text-base">
-                Tu nombre
-              </Label>
-              <Input
-                id="fullName"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                required
-                className="h-14 rounded-2xl text-base"
-              />
-            </div>
-          )}
           <div className="space-y-2">
             <Label htmlFor="email" className="text-base">
               Email
@@ -135,7 +101,7 @@ function AuthPage() {
             <Input
               id="password"
               type="password"
-              autoComplete={needsSetup ? "new-password" : "current-password"}
+              autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -150,12 +116,10 @@ function AuthPage() {
           >
             {busy ? (
               <Loader2 className="size-6 animate-spin" />
-            ) : needsSetup ? (
-              <ShieldPlus className="size-6" />
             ) : (
               <LogIn className="size-6" />
             )}
-            {needsSetup ? "Crear administrador" : "Entrar"}
+            Entrar
           </Button>
           <p className="text-center text-xs leading-relaxed text-muted-foreground">
             Al iniciar sesión, confirmas que actúas en nombre del Responsable del Tratamiento y aceptas nuestros{" "}
@@ -165,7 +129,7 @@ function AuthPage() {
           </p>
         </form>
 
-        {!needsSetup && !checking && (
+        {!checking && (
           <p className="mt-6 text-center text-sm text-muted-foreground">
             El registro está cerrado. Solo el administrador puede crear cuentas.
           </p>
