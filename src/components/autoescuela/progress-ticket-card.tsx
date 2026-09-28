@@ -52,6 +52,17 @@ export const ProgressTicketCard = React.forwardRef<
     [greens.join("|"), pct, studentId],
   );
 
+  // Habilidades evaluadas en el semáforo: se priorizan las dominadas y en
+  // progreso, con un máximo de MAX_ITEMS para que la tarjeta no se desborde.
+  const evaluated = React.useMemo(() => {
+    if (!student) return [];
+    const rank = (l: SkillLevel) => (l === "verde" ? 0 : l === "amarillo" ? 1 : 2);
+    return data.skills
+      .map((k) => ({ name: k.name, level: student.skills[k.id] ?? "rojo" }))
+      .sort((a, b) => rank(a.level) - rank(b.level))
+      .slice(0, MAX_ITEMS);
+  }, [student, data.skills]);
+
   const now = new Date();
   const lastLesson = student?.lessons[student.lessons.length - 1];
   const hora = lastLesson?.horaInicio?.slice(0, 5)
