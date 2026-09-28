@@ -202,7 +202,7 @@ export function ScanRosterButton({ profesorId, onDone }: { profesorId: string; f
         onChange={onFile}
       />
       <Button variant="outline" onClick={() => setConfirmOpen(true)} disabled={busy}
-        className="h-18 shrink-0 rounded-3xl border-2 border-primary px-4 text-base font-bold text-primary">
+        className="h-18 w-full max-w-full min-w-0 rounded-3xl border-2 border-primary px-4 text-base font-bold text-primary sm:w-auto sm:shrink-0">
         <Camera className="size-6" /> Escanear Cuadrante 📸
       </Button>
 
