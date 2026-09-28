@@ -148,20 +148,34 @@ export function AgendaDiaria({
   const isCompleted = (s: Slot) =>
     s.estado === "completada" || (!!s.student_id && completedStudentIds.has(s.student_id));
 
+  const isToday = fecha === toISO(new Date());
+  const dayLabel = (() => {
+    const s = day.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" });
+    return s.replace(/(^|\s)\S/g, (c) => c.toUpperCase()).replace(" De ", " ");
+  })();
   const dateNav = (
-    <div className="flex items-center gap-2">
-      <Button variant="outline" size="icon" className="size-12 rounded-2xl" onClick={() => shift(-1)} aria-label="Día anterior">
-        <ChevronLeft className="size-6" />
-      </Button>
-      <Input
-        type="date"
-        value={fecha}
-        onChange={(e) => e.target.value && setDay(new Date(`${e.target.value}T12:00:00`))}
-        className="h-12 flex-1 rounded-2xl text-center text-base"
-      />
-      <Button variant="outline" size="icon" className="size-12 rounded-2xl" onClick={() => shift(1)} aria-label="Día siguiente">
-        <ChevronRight className="size-6" />
-      </Button>
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <Button variant="outline" size="icon" className="size-12 shrink-0 rounded-2xl" onClick={() => shift(-1)} aria-label="Día anterior">
+          <ChevronLeft className="size-6" />
+        </Button>
+        <p className="flex-1 text-center text-lg font-bold" aria-live="polite">{dayLabel}</p>
+        <Button variant="outline" size="icon" className="size-12 shrink-0 rounded-2xl" onClick={() => shift(1)} aria-label="Día siguiente">
+          <ChevronRight className="size-6" />
+        </Button>
+      </div>
+      <div className="flex items-center gap-2">
+        <Button variant={isToday ? "secondary" : "default"} className="h-12 rounded-2xl px-5 font-bold" onClick={() => setDay(new Date())} disabled={isToday}>
+          Hoy
+        </Button>
+        <Input
+          type="date"
+          value={fecha}
+          aria-label="Elegir fecha"
+          onChange={(e) => e.target.value && setDay(new Date(`${e.target.value}T12:00:00`))}
+          className="h-12 flex-1 rounded-2xl text-center text-base"
+        />
+      </div>
     </div>
   );
 
