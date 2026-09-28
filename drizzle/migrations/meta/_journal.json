@@ -134,6 +134,13 @@
       "when": 1790542657510,
       "tag": "0018_revoke_anon_access",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1790594293819,
+      "tag": "0019_documentos_legales_policies",
+      "breakpoints": true
     }
   ]
 }
