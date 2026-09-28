@@ -14,6 +14,7 @@ interface Slot {
   hora_fin: string;
   estado: string;
   student_id: string | null;
+  es_examen?: boolean;
 }
 const shortSec = (x: string) => x.replace(/^secci[oó]n\s*/i, "Sec. ");
 
@@ -73,7 +74,7 @@ export function AgendaDiaria({
     const [a, s, l] = await Promise.all([
       supabase
         .from("agenda_diaria")
-        .select("id, fecha, hora_inicio, hora_fin, estado, student_id")
+        .select("id, fecha, hora_inicio, hora_fin, estado, student_id, es_examen")
         .eq("profesor_id", profesorId)
         .eq("fecha", fecha)
         .order("hora_inicio"),
@@ -311,7 +312,7 @@ export function AgendaDiaria({
             return (
               <div
                 key={s.id}
-                className={`flex min-w-[85%] shrink-0 snap-center flex-col gap-4 rounded-3xl border bg-card p-6 shadow-sm sm:min-w-[300px] ${completed ? "bg-success/10 opacity-60" : ""}`}
+                className={`flex min-w-[85%] shrink-0 snap-center flex-col gap-4 rounded-3xl border bg-card p-6 shadow-sm sm:min-w-[300px] ${s.es_examen ? "border-l-8 border-l-destructive" : ""} ${completed ? "bg-success/10 opacity-60" : ""}`}
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="flex items-center gap-2 text-2xl font-extrabold tabular-nums">
@@ -325,6 +326,7 @@ export function AgendaDiaria({
                 </div>
                 <p className="flex items-center gap-2 truncate text-lg font-bold">
                   <UserRound className="size-5 shrink-0 text-muted-foreground" /> <span className="min-w-0 truncate">{nameOf(s.student_id)}</span>
+                  {s.es_examen && <span className="shrink-0 rounded-full bg-destructive/15 px-2 py-0.5 text-xs font-bold text-destructive">EXAMEN</span>}
                   {st?.seccion && <Badge className="shrink-0 text-xs" variant="outline">{shortSec(st.seccion)}</Badge>}
                 </p>
                 <div className="mt-auto flex gap-3">

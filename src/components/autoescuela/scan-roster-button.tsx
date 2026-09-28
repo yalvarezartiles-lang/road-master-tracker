@@ -43,7 +43,7 @@ const toMin = (t: string | null) => {
   return (h ?? 0) * 60 + (m ?? 0);
 };
 
-type ClaseAgrupada = { nombre: string; hora: string | null; telefono: string | null; apariciones: number; duracion: number };
+type ClaseAgrupada = { nombre: string; hora: string | null; telefono: string | null; apariciones: number; duracion: number; es_examen: boolean };
 
 /** Agrupa cada alumno desde su primera hora y suma 45 minutos por aparición. */
 function mergeClases(clases: RawClase[]): ClaseAgrupada[] {
@@ -51,9 +51,10 @@ function mergeClases(clases: RawClase[]): ClaseAgrupada[] {
     const key = norm(c.nombre);
     const prev = acc.get(key);
     if (!prev) {
-      acc.set(key, { nombre: c.nombre, hora: c.hora, telefono: c.telefono ?? null, apariciones: 1, duracion: 45 });
+      acc.set(key, { nombre: c.nombre, hora: c.hora, telefono: c.telefono ?? null, apariciones: 1, duracion: 45, es_examen: !!c.es_examen });
     } else {
       prev.apariciones += 1;
+      if (c.es_examen) prev.es_examen = true;
       if (!prev.telefono && c.telefono) prev.telefono = c.telefono;
       prev.duracion = prev.apariciones * 45;
       if (toMin(c.hora) < toMin(prev.hora)) prev.hora = c.hora;
@@ -97,7 +98,7 @@ function findBestMatch(scanned: string, pool: PoolItem[]): PoolItem | null {
   return best && bestScore > 0.75 ? best : null;
 }
 
-type RawClase = { nombre: string; hora: string | null; telefono?: string | null; seccion?: string | null };
+type RawClase = { nombre: string; hora: string | null; telefono?: string | null; seccion?: string | null; es_examen?: boolean };
 
 async function syncRoster(profesorId: string, fechaDoc: string | null, rawClases: RawClase[]) {
   const secPorNombre = new Map<string, string>();
@@ -107,7 +108,7 @@ async function syncRoster(profesorId: string, fechaDoc: string | null, rawClases
   const autoescuelaId = p?.autoescuela_id ?? null;
   let found = 0, created = 0, sinHora = 0;
   const dobles = clases.filter((c) => c.duracion >= 90).length;
-  const entradas: { id: string; hora: string | null; duracion: number }[] = [];
+  const entradas: { id: string; hora: string | null; duracion: number; es_examen: boolean }[] = [];
 
   // Todos los alumnos activos de la autoescuela (cualquier sección) para el fuzzy matching.
   let q = supabase.from("students").select("id, name, apellidos, phone, seccion").eq("archivado", false);
@@ -127,7 +128,7 @@ async function syncRoster(profesorId: string, fechaDoc: string | null, rawClases
     const match = findBestMatch(normName(full), pool);
     if (match) {
       // Alumno existente: se ignora el teléfono de la IA; la agenda usa el de la base de datos.
-      entradas.push({ id: match.id, hora, duracion: clase.duracion }); found++; continue;
+      entradas.push({ id: match.id, hora, duracion: clase.duracion, es_examen: clase.es_examen }); found++; continue;
     }
     const seccion = secPorNombre.get(norm(full)) || seccionDefecto;
     const numeroLimpio = clase.telefono?.replace(/\D/g, "") ?? "";
@@ -138,7 +139,7 @@ async function syncRoster(profesorId: string, fechaDoc: string | null, rawClases
       .select("id").single();
     if (error || !ins) throw new Error(`No se pudo crear a ${full}`);
     pool.push({ id: ins.id, name: first ?? full, apellidos, phone: telefono ?? "", seccion, n: normName(full) });
-    entradas.push({ id: ins.id, hora, duracion: clase.duracion }); created++;
+    entradas.push({ id: ins.id, hora, duracion: clase.duracion, es_examen: clase.es_examen }); created++;
   }
 
   const fecha = fechaDoc ?? toISO(new Date());
@@ -149,7 +150,7 @@ async function syncRoster(profesorId: string, fechaDoc: string | null, rawClases
     .filter((e) => !already.has(e.id))
     .map((e) => {
       const hora_inicio = e.hora ?? DEFAULT_HORA;
-      return { profesor_id: profesorId, fecha, hora_inicio, hora_fin: addMin(hora_inicio, e.duracion), student_id: e.id };
+      return { profesor_id: profesorId, fecha, hora_inicio, hora_fin: addMin(hora_inicio, e.duracion), student_id: e.id, es_examen: e.es_examen };
     });
   if (rows.length) {
     const { error } = await supabase.from("agenda_diaria").insert(rows);

@@ -19,6 +19,7 @@ export type Database = {
           autoescuela_id: string
           created_at: string
           created_by: string | null
+          es_examen: boolean
           estado: string
           fecha: string
           hora_fin: string
@@ -32,6 +33,7 @@ export type Database = {
           autoescuela_id?: string
           created_at?: string
           created_by?: string | null
+          es_examen?: boolean
           estado?: string
           fecha: string
           hora_fin: string
@@ -45,6 +47,7 @@ export type Database = {
           autoescuela_id?: string
           created_at?: string
           created_by?: string | null
+          es_examen?: boolean
           estado?: string
           fecha?: string
           hora_fin?: string

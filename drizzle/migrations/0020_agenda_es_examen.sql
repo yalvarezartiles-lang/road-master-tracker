@@ -1,0 +1,1 @@
+ALTER TABLE public.agenda_diaria ADD COLUMN IF NOT EXISTS es_examen boolean NOT NULL DEFAULT false;
