@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import * as React from "react";
-import { Archive, LogOut, Pencil, Undo2, UserPlus } from "lucide-react";
+import { Archive, LogOut, Pencil, Search, SearchX, Undo2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useSignOut } from "@/lib/auth";
 import { useStore } from "@/lib/autoescuela/store";
+import { normalize } from "@/lib/autoescuela/normalize";
 import type { Student } from "@/lib/autoescuela/types";
 import { AgendaDiaria } from "./agenda-diaria";
 import { StudentDialog } from "./student-dialog";
