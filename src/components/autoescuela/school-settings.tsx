@@ -8,6 +8,7 @@ import { LOGO_BUCKET, loadLogoDataUrl, useSchool } from "@/lib/autoescuela/schoo
 import { updateAutoescuelaBranding } from "@/lib/admin.functions";
 
 const MAX_LOGO = 2 * 1024 * 1024;
+const ROLE_LABELS = ["Principal", "Secundario", "Fondo"];
 
 const toHex = (r: number, g: number, b: number) =>
   `#${[r, g, b].map((v) => Math.round(v).toString(16).padStart(2, "0")).join("")}`;
@@ -92,6 +93,24 @@ export function SchoolSettings({ school, onSaved }: Props) {
   const [palette, setPalette] = React.useState<string[]>(initial);
   const color = palette[0] ?? "";
   const [busy, setBusy] = React.useState(false);
+  const [dragIndex, setDragIndex] = React.useState<number | null>(null);
+
+  const reorder = async (from: number, to: number) => {
+    if (from === to) return;
+    const next = [...palette];
+    [next[from], next[to]] = [next[to]!, next[from]!];
+    setPalette(next);
+    try {
+      await saveBranding({
+        data: { id: school.id, logoUrl: school.logo_url ?? null, primaryColor: next[0] ?? null, secondaryColor: next[1] ?? null, accentColor: next[2] ?? null },
+      });
+      onSaved?.();
+      if (brand.schoolId === school.id) await brand.refresh();
+    } catch (err) {
+      setPalette(palette);
+      toast.error(err instanceof Error ? err.message : "No se pudo guardar el orden");
+    }
+  };
 
   React.useEffect(() => {
     setPalette([school.primary_color, school.secondary_color, school.accent_color].filter(Boolean) as string[]);
@@ -159,14 +178,29 @@ export function SchoolSettings({ school, onSaved }: Props) {
         <input type="file" accept="image/*" className="sr-only" disabled={busy} onChange={(e) => void onLogo(e.target.files?.[0])} />
       </label>
       {palette.length > 0 && (
-        <span className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span className="flex -space-x-2">
-            {palette.map((c) => (
-              <span key={c} className="size-7 rounded-full border-2 border-card" style={{ backgroundColor: c }} />
-            ))}
-          </span>
-          Paleta automática
-        </span>
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          {palette.map((c, i) => (
+            <button
+              key={`${c}-${i}`}
+              type="button"
+              draggable={!busy}
+              disabled={busy}
+              onDragStart={(e) => { setDragIndex(i); e.dataTransfer.effectAllowed = "move"; }}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => { e.preventDefault(); if (dragIndex !== null) void reorder(dragIndex, i); setDragIndex(null); }}
+              onClick={() => {
+                // Móvil: toca un círculo y luego otro para intercambiarlos.
+                if (dragIndex === null) setDragIndex(i);
+                else { void reorder(dragIndex, i); setDragIndex(null); }
+              }}
+              className={`flex cursor-grab flex-col items-center gap-1 active:cursor-grabbing ${dragIndex === i ? "opacity-60" : ""}`}
+              aria-label={`${ROLE_LABELS[i]}: ${c}. Arrastra o toca para reordenar`}
+            >
+              <span className={`size-10 rounded-full border-2 ${dragIndex === i ? "border-foreground" : "border-card"} shadow`} style={{ backgroundColor: c }} />
+              <span className="text-[10px] font-medium">{ROLE_LABELS[i]}</span>
+            </button>
+          ))}
+        </div>
       )}
       {(preview || color) && (
         <Button variant="ghost" size="icon" aria-label="Quitar marca" disabled={busy} onClick={() => void onRemove()}>
