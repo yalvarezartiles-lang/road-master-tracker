@@ -376,7 +376,7 @@ export function Whiteboard({
                 else setArmed((current) => (current === kind ? null : kind));
               }}
               aria-pressed={armed === kind}
-              className={cn("flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl p-1 lg:h-24 lg:w-full lg:p-2"
+              className={cn("flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl p-1 lg:h-24 lg:w-full lg:p-2", armed === kind && "border-primary ring-2 ring-primary")}
               aria-label={`Añadir ${label}`}
             >
               <span className="flex h-16 w-16 items-center justify-center lg:h-20 lg:w-20">
@@ -500,4 +500,6 @@ export function Whiteboard({
 
     </div>
   );
+
+  return mobileFull && typeof document !== "undefined" ? createPortal(content, document.body) : content;
 }
