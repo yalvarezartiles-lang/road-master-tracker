@@ -93,12 +93,17 @@ export function SchoolSettings({ school, onSaved }: Props) {
   const [palette, setPalette] = React.useState<string[]>(initial);
   const color = palette[0] ?? "";
   const [busy, setBusy] = React.useState(false);
-  const [dragIndex, setDragIndex] = React.useState<number | null>(null);
+  const [draggedIndex, setDraggedIndex] = React.useState<number | null>(null);
 
-  const reorder = async (from: number, to: number) => {
-    if (from === to) return;
+  /** Extrae el color de `draggedIndex` y lo inserta en `targetIndex` (splice), desplazando el resto. */
+  const handleDrop = async (targetIndex: number) => {
+    if (draggedIndex === null) return;
+    const from = draggedIndex;
+    setDraggedIndex(null);
+    if (from === targetIndex) return;
     const next = [...palette];
-    [next[from], next[to]] = [next[to]!, next[from]!];
+    const [moved] = next.splice(from, 1);
+    next.splice(targetIndex, 0, moved!);
     setPalette(next);
     try {
       await saveBranding({
