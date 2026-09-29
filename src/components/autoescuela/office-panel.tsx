@@ -159,9 +159,27 @@ export function OfficePanel({ userId }: { userId: string }) {
           >
             <UserPlus className="size-6" /> Matricular Nuevo Alumno
           </Button>
+          <div className="relative mt-3">
+            <Search className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Buscar alumno…"
+              className="h-14 w-full rounded-2xl border bg-background px-4 pl-12 text-base outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
           <ul className="mt-3 divide-y">
-            {students.length === 0 && <li className="py-4 text-center text-muted-foreground">Aún no hay alumnos.</li>}
-            {students.map((s) => (
+            {filteredStudents.length === 0 && (
+              <li className="py-4 text-center text-muted-foreground">
+                {students.length === 0
+                  ? "Aún no hay alumnos."
+                  : searchTerm
+                    ? "No se encontraron alumnos con ese nombre"
+                    : undefined}
+              </li>
+            )}
+            {filteredStudents.map((s) => (
               <li key={s.id} className="flex items-center gap-2 py-2">
                 <div className="min-w-0 flex-1">
                   <p className="flex items-center gap-2 font-semibold"><span className="truncate">{[s.name, s.apellidos].filter(Boolean).join(" ")}</span><Badge variant="outline" className="shrink-0 text-xs">{s.seccion || "Sin sección"}</Badge></p>
