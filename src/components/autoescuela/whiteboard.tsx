@@ -1,4 +1,5 @@
 import * as React from "react";
+import { createPortal } from "react-dom";
 import {
   CheckCircle,
   Eraser,
@@ -8,6 +9,7 @@ import {
   RotateCw,
   Save,
   Trash2,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -164,6 +166,37 @@ export function Whiteboard({
   const [elements, setElements] = React.useState<BoardElement[]>([]);
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = React.useState(false);
+  const [mobileFull, setMobileFull] = React.useState(false);
+  const [armed, setArmed] = React.useState<ElementKind | null>(null);
+  const lastPointerType = React.useRef<string>("mouse");
+  const snapshot = React.useRef<string | null>(null);
+
+  // Pantalla completa móvil: bloquea el scroll de la página mientras se dibuja.
+  React.useEffect(() => {
+    if (!mobileFull) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, [mobileFull]);
+
+  // Al cambiar de contenedor el lienzo se vuelve a montar: restauramos el dibujo en memoria.
+  React.useLayoutEffect(() => {
+    const data = snapshot.current;
+    const ctx = ref.current?.getContext("2d");
+    if (!ctx) return;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, BOARD_WIDTH, BOARD_HEIGHT);
+    if (!data) return;
+    const img = new Image();
+    img.onload = () => ctx.drawImage(img, 0, 0);
+    img.src = data;
+    snapshot.current = null;
+  }, [mobileFull]);
+
+  const setMobileFullSafe = (value: boolean) => {
+    snapshot.current = ref.current?.toDataURL("image/png") ?? null;
+    setMobileFull(value);
+  };
 
   const markDirty = () => {
     setDirty(true);
@@ -190,6 +223,10 @@ export function Whiteboard({
   }, []);
 
   const toggleFullscreen = async () => {
+    if (window.matchMedia("(max-width: 767px)").matches) {
+      setMobileFullSafe(!mobileFull);
+      return;
+    }
     const container = fullscreenRef.current;
     if (!container) return;
 
@@ -231,6 +268,13 @@ export function Whiteboard({
   };
 
   const down = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    if (armed) {
+      // Tap to place: coloca el elemento seleccionado en el punto tocado.
+      const point = boardPosition(event.clientX, event.clientY);
+      if (point) addElement(armed, point);
+      setArmed(null);
+      return;
+    }
     setSelectedId(null);
     event.currentTarget.setPointerCapture(event.pointerId);
     drawing.current = true;
@@ -292,14 +336,31 @@ export function Whiteboard({
     setSelectedId(null);
   };
 
-  return (
+  const content = (
     <div
       ref={fullscreenRef}
       className={cn(
         "w-full space-y-3 bg-background",
         isFullscreen && "h-dvh overflow-y-auto p-3 sm:p-4",
+        mobileFull && "pointer-events-auto fixed inset-0 z-[100] h-[100dvh] w-full overflow-y-auto p-3 pt-16",
       )}
     >
+      {mobileFull && (
+        <Button
+          type="button"
+          variant="outline"
+          className="absolute right-3 top-3 h-12 rounded-2xl"
+          onClick={() => setMobileFullSafe(false)}
+          aria-label="Cerrar pantalla completa"
+        >
+          <X className="size-5" /> Cerrar
+        </Button>
+      )}
+      {armed && (
+        <p className="rounded-2xl bg-primary/10 px-4 py-2 text-sm font-semibold text-primary">
+          Toca la pizarra para colocar el elemento
+        </p>
+      )}
       <div className="grid gap-3 lg:grid-cols-[auto_minmax(0,1fr)]">
         <div className="flex min-w-0 gap-2 overflow-x-auto pb-1 lg:w-28 lg:flex-col lg:overflow-visible" aria-label="Elementos de tráfico">
           {ELEMENTS.map(({ kind, label }) => (
@@ -309,8 +370,13 @@ export function Whiteboard({
               variant="outline"
               draggable
               onDragStart={(event) => event.dataTransfer.setData("application/x-board-element", kind)}
-              onClick={() => addElement(kind)}
-              className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl p-1 lg:h-24 lg:w-full lg:p-2"
+              onPointerDown={(event) => { lastPointerType.current = event.pointerType; }}
+              onClick={() => {
+                if (lastPointerType.current === "mouse") addElement(kind);
+                else setArmed((current) => (current === kind ? null : kind));
+              }}
+              aria-pressed={armed === kind}
+              className={cn("flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl p-1 lg:h-24 lg:w-full lg:p-2"
               aria-label={`Añadir ${label}`}
             >
               <span className="flex h-16 w-16 items-center justify-center lg:h-20 lg:w-20">

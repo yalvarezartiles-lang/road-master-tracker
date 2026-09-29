@@ -29,6 +29,7 @@ import { Whiteboard } from "./whiteboard";
 import { Input } from "@/components/ui/input";
 import { SignatureDialog } from "./signature-dialog";
 import { TodayClassesSheet } from "./today-classes-sheet";
+import { enqueuePending } from "@/lib/autoescuela/offline-queue";
 
 function Chip({
   active,
@@ -131,8 +132,15 @@ export function LessonDialog({
       toast.error("Selecciona un alumno");
       return;
     }
+    const input = { date: new Date().toISOString(), zone, topics, notes, notasProfesor: notasProfesor.trim(), matricula: matricula.trim().toUpperCase() };
+    if (!navigator.onLine) {
+      enqueuePending({ studentId: selected, input });
+      toast.success("Guardado localmente (Sin conexión)");
+      onOpenChange(false);
+      return;
+    }
     try {
-      const id = await addLesson(selected, { date: new Date().toISOString(), zone, topics, notes, notasProfesor: notasProfesor.trim(), matricula: matricula.trim().toUpperCase() });
+      const id = await addLesson(selected, input);
       toast.success(`Clase ${nextNumber} registrada`);
       onOpenChange(false);
       setSignLessonId(id);
