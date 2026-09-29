@@ -10,6 +10,7 @@ import { SkillSemaphore, SkillProgressBanner } from "@/components/autoescuela/sk
 import { LessonDialog } from "@/components/autoescuela/lesson-dialog";
 import { StudentDialog } from "@/components/autoescuela/student-dialog";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { NetworkIndicator } from "@/components/autoescuela/network-indicator";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/alumno/$studentId")({
@@ -81,6 +82,7 @@ function StudentPage() {
             <ArrowLeft className="size-6" />
           </Link>
           <div className="flex items-center gap-2">
+            <NetworkIndicator />
             <ThemeToggle />
           </div>
         </div>

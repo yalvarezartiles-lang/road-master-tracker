@@ -223,7 +223,7 @@ export function SignatureDialog({
     setSaving(true);
     // Ticket de progreso efímero: se captura del nodo siempre montado fuera de pantalla.
     const ticket =
-      !pending && student && ticketRef.current
+      student && ticketRef.current
         ? deliverTicket(ticketRef.current).catch(() => null)
         : null;
     try {

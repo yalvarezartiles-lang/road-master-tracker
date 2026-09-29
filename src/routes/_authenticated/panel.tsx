@@ -35,6 +35,7 @@ import { useStore } from "@/lib/autoescuela/store";
 import { LessonDialog } from "@/components/autoescuela/lesson-dialog";
 import { StudentDialog } from "@/components/autoescuela/student-dialog";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { NetworkIndicator } from "@/components/autoescuela/network-indicator";
 import { levelClasses } from "@/components/autoescuela/skill-traffic-light";
 import { useCurrentUser, useSignOut } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -231,6 +232,7 @@ function TeacherDashboard() {
                 </Accordion>
               </SheetContent>
             </Sheet>
+            <NetworkIndicator />
             <span className="[&_button]:size-9 [&_button]:rounded-xl [&_svg]:size-5 md:[&_button]:size-12 md:[&_button]:rounded-2xl md:[&_svg]:size-6"><ThemeToggle /></span>
             <Button
               variant="ghost"
