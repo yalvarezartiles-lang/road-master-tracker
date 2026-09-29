@@ -1,5 +1,6 @@
 import * as React from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { readableForeground, readableMuted } from "@/lib/autoescuela/contrast";
 
 export interface SchoolBranding {
   schoolId: string;
@@ -124,7 +125,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
     set("--card", "white");
     set("--card-foreground", dark);
     set("--primary", p);
-    set("--primary-foreground", `oklch(from ${p} calc(l > 0.68 ? 0.2 : 0.99) 0 0)`);
+    set("--primary-foreground", readableForeground(p));
     set("--secondary", "white");
     set("--secondary-foreground", "oklch(0.37 0.013 285.805)");
     set("--muted", "oklch(0.967 0.001 286.375)");
