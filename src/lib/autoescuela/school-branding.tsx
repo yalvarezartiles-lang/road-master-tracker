@@ -1,9 +1,25 @@
 import * as React from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface SchoolBranding {
+  schoolId: string;
   schoolName: string;
-  schoolLogo: string; // data URL (base64) o URL
+  schoolLogo: string; // data URL derivada del fichero guardado
   primaryColor: string; // HEX
+}
+
+export const LOGO_BUCKET = "school-logos";
+
+/** Descarga un logo del almacén privado y lo convierte en data URL (sin problemas de CORS al exportar la tarjeta). */
+export async function loadLogoDataUrl(path: string): Promise<string> {
+  const { data, error } = await supabase.storage.from(LOGO_BUCKET).download(path);
+  if (error || !data) return "";
+  return await new Promise<string>((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => resolve("");
+    reader.readAsDataURL(data);
+  });
 }
 
 export function SchoolLogo({ className = "h-10 max-w-24" }: { className?: string }) {
@@ -13,28 +29,69 @@ export function SchoolLogo({ className = "h-10 max-w-24" }: { className?: string
 }
 
 interface BrandingValue extends SchoolBranding {
-  setBranding: (patch: Partial<SchoolBranding>) => void;
-  reset: () => void;
+  loading: boolean;
+  refresh: () => Promise<void>;
 }
 
-const KEY = "school_branding";
-const DEFAULTS: SchoolBranding = { schoolName: "", schoolLogo: "", primaryColor: "" };
+const DEFAULTS: SchoolBranding = { schoolId: "", schoolName: "", schoolLogo: "", primaryColor: "" };
 
 const SchoolContext: React.Context<BrandingValue | null> =
   ((globalThis as any).__schoolBrandingContext ??= React.createContext<BrandingValue | null>(null));
 
 export function SchoolProvider({ children }: { children: React.ReactNode }) {
   const [branding, setState] = React.useState<SchoolBranding>(DEFAULTS);
+  const [loading, setLoading] = React.useState(true);
 
-  // Se lee tras montar para evitar desajustes de hidratación.
-  React.useEffect(() => {
+  const refresh = React.useCallback(async () => {
+    setLoading(true);
     try {
-      const raw = localStorage.getItem(KEY);
-      if (raw) setState({ ...DEFAULTS, ...JSON.parse(raw) });
-    } catch {}
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user) {
+        setState(DEFAULTS);
+        return;
+      }
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("autoescuela_id")
+        .eq("id", auth.user.id)
+        .maybeSingle();
+      const schoolId = profile?.autoescuela_id ?? "";
+      if (!schoolId) {
+        setState(DEFAULTS);
+        return;
+      }
+      const { data: school } = await supabase
+        .from("autoescuelas")
+        .select("id, nombre_comercial, logo_url, primary_color")
+        .eq("id", schoolId)
+        .maybeSingle();
+      if (!school) {
+        setState(DEFAULTS);
+        return;
+      }
+      const schoolLogo = school.logo_url ? await loadLogoDataUrl(school.logo_url) : "";
+      setState({
+        schoolId: school.id,
+        schoolName: school.nombre_comercial ?? "",
+        schoolLogo,
+        primaryColor: school.primary_color ?? "",
+      });
+    } catch {
+      setState(DEFAULTS);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  // El color extraído del logo genera una interfaz pastel con contraste oscuro.
+  React.useEffect(() => {
+    void refresh();
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") void refresh();
+    });
+    return () => sub.subscription.unsubscribe();
+  }, [refresh]);
+
+  // El color de la autoescuela genera una interfaz pastel con contraste oscuro.
   React.useEffect(() => {
     const root = document.documentElement;
     if (branding.primaryColor) {
@@ -58,24 +115,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
     }
   }, [branding.primaryColor]);
 
-  const setBranding = React.useCallback((patch: Partial<SchoolBranding>) => {
-    setState((prev) => {
-      const next = { ...prev, ...patch };
-      try {
-        localStorage.setItem(KEY, JSON.stringify(next));
-      } catch {
-        throw new Error("No se pudo guardar (¿logo demasiado grande?)");
-      }
-      return next;
-    });
-  }, []);
-
-  const reset = React.useCallback(() => {
-    localStorage.removeItem(KEY);
-    setState(DEFAULTS);
-  }, []);
-
-  const value = React.useMemo(() => ({ ...branding, setBranding, reset }), [branding, setBranding, reset]);
+  const value = React.useMemo(() => ({ ...branding, loading, refresh }), [branding, loading, refresh]);
   return <SchoolContext.Provider value={value}>{children}</SchoolContext.Provider>;
 }
 

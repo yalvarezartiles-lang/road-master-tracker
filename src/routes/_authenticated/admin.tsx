@@ -63,7 +63,7 @@ function AdminPage() {
   const { isAdmin, isOffice, loading: loadingUser } = useCurrentUser();
   const fetchSchools = useServerFn(listAutoescuelas);
   const addSchool = useServerFn(createAutoescuela);
-  const [schools, setSchools] = React.useState<{ id: string; nombre_comercial: string }[]>([]);
+  const [schools, setSchools] = React.useState<{ id: string; nombre_comercial: string; logo_url: string | null; primary_color: string | null }[]>([]);
   const [schoolId, setSchoolId] = React.useState("");
   const [newSchool, setNewSchool] = React.useState("");
   const fetchTeam = useServerFn(listTeam);
@@ -203,14 +203,15 @@ function AdminPage() {
           </div>
         </div>
 
-        {isAdmin && <SchoolSettings />}
 
         {isAdmin && (
           <section className="rounded-3xl border bg-card shadow-sm hover:shadow-md transition-shadow p-5">
             <h2 className="text-lg font-bold">Autoescuelas ({schools.length})</h2>
+            <p className="text-sm text-muted-foreground">Sube el logo de cada autoescuela: el color se extrae solo y tiñe la app de su equipo.</p>
             <ul className="mt-3 divide-y text-base">
               {schools.map((a) => (
-                <li key={a.id} className="flex items-center gap-2 py-2">
+                <li key={a.id} className="py-3">
+                  <div className="flex items-center gap-2">
                   {editingSchool?.id === a.id ? (
                     <>
                       <Input
@@ -251,6 +252,8 @@ function AdminPage() {
                       </Button>
                     </>
                   )}
+                  </div>
+                  <SchoolSettings school={a} onSaved={() => void load()} />
                 </li>
               ))}
             </ul>

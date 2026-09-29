@@ -155,6 +155,13 @@
       "when": 1790610375003,
       "tag": "0021_tighten_skills_and_legal_documents_access",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1790697335707,
+      "tag": "0022_school_branding_multitenant",
+      "breakpoints": true
     }
   ]
 }

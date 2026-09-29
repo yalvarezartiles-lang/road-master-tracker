@@ -150,9 +150,28 @@ export const listAutoescuelas = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await getCaller(context);
-    const { data, error } = await context.supabase.from("autoescuelas").select("id, nombre_comercial").order("nombre_comercial");
+    const { data, error } = await context.supabase.from("autoescuelas").select("id, nombre_comercial, logo_url, primary_color").order("nombre_comercial");
     if (error) throw new Error(error.message);
-    return (data ?? []) as { id: string; nombre_comercial: string }[];
+    return (data ?? []) as { id: string; nombre_comercial: string; logo_url: string | null; primary_color: string | null }[];
+  });
+
+/** Super admin: guarda el logo y el color corporativo de una autoescuela. */
+export const updateAutoescuelaBranding = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { id: string; logoUrl: string | null; primaryColor: string | null }) => ({
+    id: String(input.id),
+    logoUrl: input.logoUrl ? String(input.logoUrl) : null,
+    primaryColor: input.primaryColor ? String(input.primaryColor) : null,
+  }))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("autoescuelas")
+      .update({ logo_url: data.logoUrl, primary_color: data.primaryColor })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
 
 export const createAutoescuela = createServerFn({ method: "POST" })
