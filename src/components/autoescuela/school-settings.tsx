@@ -242,7 +242,8 @@ export function SchoolSettings({ school, onSaved }: Props) {
                   if (draggedIndex === null) setDraggedIndex(i);
                   else void handleDrop(i);
                 }}
-                className={`flex h-10 w-6 cursor-grab items-center justify-center rounded-md active:cursor-grabbing ${draggedIndex === i ? "bg-muted text-foreground" : ""}`}
+                onTouchStart={() => { if (draggedIndex === null) setDraggedIndex(i); }}
+                className={`flex h-10 w-6 cursor-grab touch-none select-none items-center justify-center rounded-md active:cursor-grabbing ${draggedIndex === i ? "bg-muted text-foreground" : ""}`}
                 aria-label={`Mover ${ROLE_LABELS[i]}`}
               >
                 <GripVertical className="size-4" />
