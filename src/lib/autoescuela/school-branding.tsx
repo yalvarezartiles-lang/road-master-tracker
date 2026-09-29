@@ -1,5 +1,6 @@
 import * as React from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { readableForeground, readableMuted } from "@/lib/autoescuela/contrast";
 
 export interface SchoolBranding {
   schoolId: string;
@@ -89,10 +90,15 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
 
   React.useEffect(() => {
     void refresh();
+    // Seguridad: la marca nunca bloquea la app más de 8 s.
+    const safety = setTimeout(() => setLoading(false), 8000);
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") void refresh();
     });
-    return () => sub.subscription.unsubscribe();
+    return () => {
+      clearTimeout(safety);
+      sub.subscription.unsubscribe();
+    };
   }, [refresh]);
 
   // Roles por posición: 0 = principal, 1 = secundario, 2 = fondo real de la app (lo controla el admin).
@@ -111,13 +117,15 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
     set("--color-background", bg);
     // Fondo general: el tercer color tal cual lo elige el administrador.
     set("--background", bg);
-    set("--foreground", `oklch(from ${bg} calc(l > 0.6 ? 0.22 : 0.98) 0 0)`);
-    set("--muted-foreground", `oklch(from ${bg} calc(l > 0.6 ? 0.45 : 0.82) 0.01 h)`);
+    // Contraste calculado en JS: las expresiones oklch(from ...) con ternarios no
+    // funcionan en Safari iOS y dejaban la app sin colores legibles.
+    set("--foreground", readableForeground(bg));
+    set("--muted-foreground", readableMuted(bg));
     // Tarjetas y bloques de datos siempre blancos para máxima legibilidad.
     set("--card", "white");
     set("--card-foreground", dark);
     set("--primary", p);
-    set("--primary-foreground", `oklch(from ${p} calc(l > 0.68 ? 0.2 : 0.99) 0 0)`);
+    set("--primary-foreground", readableForeground(p));
     set("--secondary", "white");
     set("--secondary-foreground", "oklch(0.37 0.013 285.805)");
     set("--muted", "oklch(0.967 0.001 286.375)");

@@ -63,6 +63,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = React.useState(true);
 
   const refresh = React.useCallback(async () => {
+    try {
     const { data: session } = await supabase.auth.getSession();
     if (!session.session) {
       setLoading(false);
@@ -115,16 +116,29 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       zones: (zonesRes.data ?? []).map((z: any) => ({ id: z.id, name: z.nombre_zona })),
       skills: (skillsRes.data ?? []).map((k: any) => ({ id: k.id, name: k.name, block: k.block })) as SkillItem[],
     });
-    setLoading(false);
-    setHydrated(true);
+    } catch (err) {
+      // Error de red o de base de datos: se muestran los datos disponibles en lugar de cargar sin fin.
+      console.error("StoreProvider.refresh", err);
+    } finally {
+      setLoading(false);
+      setHydrated(true);
+    }
   }, []);
 
   React.useEffect(() => {
     void refresh();
+    // Seguridad: nunca más de 10 s en estado de carga (redes móviles inestables).
+    const safety = setTimeout(() => {
+      setLoading(false);
+      setHydrated(true);
+    }, 10000);
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_IN" || event === "SIGNED_OUT") void refresh();
     });
-    return () => sub.subscription.unsubscribe();
+    return () => {
+      clearTimeout(safety);
+      sub.subscription.unsubscribe();
+    };
   }, [refresh]);
 
   const value = React.useMemo<StoreValue>(
