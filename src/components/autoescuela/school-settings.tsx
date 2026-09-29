@@ -134,23 +134,29 @@ export function SchoolSettings({ school, onSaved }: Props) {
     const next = [...palette];
     next[index] = value;
     setPalette(next);
-    if (brand.schoolId === school.id && index === 0) {
-      document.documentElement.style.setProperty("--primary", value);
-      document.documentElement.style.setProperty("--ring", value);
+    if (brand.schoolId === school.id) {
+      const root = document.documentElement;
+      if (index === 0) {
+        root.style.setProperty("--color-primary", value);
+        root.style.setProperty("--primary", value);
+        root.style.setProperty("--ring", value);
+      }
+      if (index === 1) {
+        root.style.setProperty("--color-secondary", value);
+        root.style.setProperty("--brand-secondary", value);
+      }
+      if (index === 2) {
+        root.style.setProperty("--color-background", value);
+        root.style.setProperty("--background", value);
+        root.style.setProperty("--foreground", `oklch(from ${value} calc(l > 0.6 ? 0.22 : 0.98) 0 0)`);
+      }
     }
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => void persist(next, prev), 600);
   };
 
-  const addColor = () => {
-    if (palette.length >= 3) return;
-    const next = [...palette, palette[0] ?? "#71717a"];
-    setPalette(next);
-    void persist(next, palette);
-  };
-
   React.useEffect(() => {
-    setPalette([school.primary_color, school.secondary_color, school.accent_color].filter(Boolean) as string[]);
+    setPalette(toTriplet([school.primary_color, school.secondary_color, school.accent_color]));
     if (!school.logo_url) return void setPreview("");
     let alive = true;
     void loadLogoDataUrl(school.logo_url).then((url) => {
