@@ -300,11 +300,10 @@ function TeacherDashboard() {
               <Link
                 to="/alumno/$studentId"
                 params={{ studentId: s.id }}
-                className="flex min-w-0 flex-1 items-center gap-4 overflow-hidden rounded-3xl border bg-card p-4 shadow-sm transition hover:shadow-md active:scale-[0.99]"
+                className="flex min-w-0 flex-1 items-center gap-4 overflow-hidden rounded-2xl border bg-card p-4 shadow-sm transition hover:shadow-md active:scale-[0.99]"
               >
                 <span
-                  className="flex size-16 shrink-0 items-center justify-center rounded-2xl text-xl font-bold text-white"
-                  style={{ backgroundColor: s.avatarColor }}
+                  className="flex size-16 shrink-0 items-center justify-center rounded-2xl bg-foreground text-xl font-bold text-background"
                 >
                   {initials(s.name)}
                 </span>
