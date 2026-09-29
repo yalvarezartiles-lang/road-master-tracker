@@ -24,10 +24,10 @@ export async function loadLogoDataUrl(path: string): Promise<string> {
   });
 }
 
-export function SchoolLogo({ className = "h-10 md:h-14 lg:h-16 max-w-40 md:max-w-56" }: { className?: string }) {
+export function SchoolLogo({ className = "h-12 sm:h-14 md:h-16 lg:h-20 xl:h-24 max-w-44 md:max-w-64 lg:max-w-80" }: { className?: string }) {
   const { schoolLogo, schoolName } = useSchool();
   if (!schoolLogo) return null;
-  return <img src={schoolLogo} alt={schoolName ? `Logo de ${schoolName}` : "Logo de la autoescuela"} className={`w-auto shrink-0 object-contain ${className}`} />;
+  return <img src={schoolLogo} alt={schoolName ? `Logo de ${schoolName}` : "Logo de la autoescuela"} className={`w-auto shrink-0 object-contain transition-all duration-300 ${className}`} />;
 }
 
 interface BrandingValue extends SchoolBranding {

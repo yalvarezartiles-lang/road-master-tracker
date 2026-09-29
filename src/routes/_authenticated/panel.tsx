@@ -165,10 +165,10 @@ function TeacherDashboard() {
   return (
     <div onScroll={handleMobileScroll} className="min-h-screen w-full max-w-full overflow-x-hidden bg-background pb-32 max-md:h-dvh max-md:overflow-y-auto max-md:pb-56">
       <header className={`sticky top-0 z-50 border-b border-border/60 bg-card/90 px-4 py-4 backdrop-blur-md transition-[padding] duration-200 ${headerCompact ? "max-md:py-1.5" : "max-md:py-2.5"}`}>
-        <div className="mx-auto flex w-full max-w-2xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+        <div className="mx-auto flex w-full max-w-2xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4 lg:max-w-5xl">
           <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 md:contents">
           <div className="flex min-w-0 items-center gap-3">
-            <SchoolLogo className={`max-w-40 transition-all md:h-14 md:max-w-56 lg:h-16 ${headerCompact ? "h-8" : "h-10"}`} />
+            <SchoolLogo className={`max-w-44 sm:h-14 md:h-16 md:max-w-64 lg:h-20 lg:max-w-80 xl:h-24 ${headerCompact ? "h-9" : "h-12"}`} />
             <div className="min-w-0">
             <h1 className={`truncate font-bold leading-tight tracking-tight transition-[font-size] duration-200 md:text-2xl ${headerCompact ? "text-base" : "text-lg"}`}>
               {teacherName ? `Hola, ${teacherName}` : "Panel"}
