@@ -94,8 +94,7 @@ export function SchoolSettings({ school, onSaved }: Props) {
   const saveBranding = useServerFn(updateAutoescuelaBranding);
   const brand = useSchool();
   const [preview, setPreview] = React.useState("");
-  const initial = [school.primary_color, school.secondary_color, school.accent_color].filter(Boolean) as string[];
-  const [palette, setPalette] = React.useState<string[]>(initial);
+  const [palette, setPalette] = React.useState<string[]>(toTriplet([school.primary_color, school.secondary_color, school.accent_color]));
   const color = palette[0] ?? "";
   const [busy, setBusy] = React.useState(false);
   const [draggedIndex, setDraggedIndex] = React.useState<number | null>(null);
