@@ -168,12 +168,12 @@ function TeacherDashboard() {
         <div className="mx-auto flex w-full max-w-2xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
           <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 md:contents">
           <div className="flex min-w-0 items-center gap-3">
-            <SchoolLogo className={`max-w-24 transition-all md:h-12 ${headerCompact ? "h-8" : "h-10"}`} />
+            <SchoolLogo className={`max-w-40 transition-all md:h-14 md:max-w-56 lg:h-16 ${headerCompact ? "h-8" : "h-10"}`} />
             <div className="min-w-0">
             <h1 className={`truncate font-bold leading-tight tracking-tight transition-[font-size] duration-200 md:text-2xl ${headerCompact ? "text-base" : "text-lg"}`}>
               {teacherName ? `Hola, ${teacherName}` : "Panel"}
             </h1>
-            {(brand.schoolName || schoolName) && (
+            {!brand.schoolLogo && (brand.schoolName || schoolName) && (
               <p className={`items-center gap-1.5 truncate text-sm font-medium text-primary md:flex ${headerCompact ? "hidden" : "flex"}`}>
                 <Building2 className="size-4 shrink-0" /> {brand.schoolName || schoolName}
               </p>

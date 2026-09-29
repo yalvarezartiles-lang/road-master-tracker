@@ -179,3 +179,13 @@
     color: var(--color-foreground);
   }
 }
+
+/* Paleta de marca: secundario y acento (sobrescritos por la autoescuela). */
+:root {
+  --brand-secondary: var(--warning);
+  --brand-accent: var(--success);
+}
+@theme inline {
+  --color-brand-secondary: var(--brand-secondary);
+  --color-brand-accent: var(--brand-accent);
+}

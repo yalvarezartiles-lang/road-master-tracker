@@ -150,25 +150,30 @@ export const listAutoescuelas = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await getCaller(context);
-    const { data, error } = await context.supabase.from("autoescuelas").select("id, nombre_comercial, logo_url, primary_color").order("nombre_comercial");
+    const { data, error } = await context.supabase.from("autoescuelas").select("id, nombre_comercial, logo_url, primary_color, secondary_color, accent_color").order("nombre_comercial");
     if (error) throw new Error(error.message);
-    return (data ?? []) as { id: string; nombre_comercial: string; logo_url: string | null; primary_color: string | null }[];
+    return (data ?? []) as { id: string; nombre_comercial: string; logo_url: string | null; primary_color: string | null; secondary_color: string | null; accent_color: string | null }[];
   });
 
-/** Super admin: guarda el logo y el color corporativo de una autoescuela. */
+/** Super admin: guarda el logo y la paleta corporativa de una autoescuela. */
 export const updateAutoescuelaBranding = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { id: string; logoUrl: string | null; primaryColor: string | null }) => ({
-    id: String(input.id),
-    logoUrl: input.logoUrl ? String(input.logoUrl) : null,
-    primaryColor: input.primaryColor ? String(input.primaryColor) : null,
-  }))
+  .inputValidator((input: { id: string; logoUrl: string | null; primaryColor: string | null; secondaryColor?: string | null; accentColor?: string | null }) => {
+    const hex = (v?: string | null) => (v && /^#[0-9a-f]{6}$/i.test(v) ? v : null);
+    return {
+      id: String(input.id),
+      logoUrl: input.logoUrl ? String(input.logoUrl) : null,
+      primaryColor: hex(input.primaryColor),
+      secondaryColor: hex(input.secondaryColor),
+      accentColor: hex(input.accentColor),
+    };
+  })
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin
       .from("autoescuelas")
-      .update({ logo_url: data.logoUrl, primary_color: data.primaryColor })
+      .update({ logo_url: data.logoUrl, primary_color: data.primaryColor, secondary_color: data.secondaryColor, accent_color: data.accentColor })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };

@@ -1,0 +1,1 @@
+ALTER TABLE public.autoescuelas ADD COLUMN IF NOT EXISTS secondary_color text, ADD COLUMN IF NOT EXISTS accent_color text;

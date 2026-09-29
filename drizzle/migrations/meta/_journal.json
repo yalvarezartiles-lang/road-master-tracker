@@ -162,6 +162,13 @@
       "when": 1790697335707,
       "tag": "0022_school_branding_multitenant",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1790699494717,
+      "tag": "0023_school_palette_colors",
+      "breakpoints": true
     }
   ]
 }

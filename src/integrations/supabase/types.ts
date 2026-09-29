@@ -76,25 +76,31 @@ export type Database = {
       }
       autoescuelas: {
         Row: {
+          accent_color: string | null
           created_at: string
           id: string
           logo_url: string | null
           nombre_comercial: string
           primary_color: string | null
+          secondary_color: string | null
         }
         Insert: {
+          accent_color?: string | null
           created_at?: string
           id?: string
           logo_url?: string | null
           nombre_comercial: string
           primary_color?: string | null
+          secondary_color?: string | null
         }
         Update: {
+          accent_color?: string | null
           created_at?: string
           id?: string
           logo_url?: string | null
           nombre_comercial?: string
           primary_color?: string | null
+          secondary_color?: string | null
         }
         Relationships: []
       }
