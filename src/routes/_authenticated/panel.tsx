@@ -267,7 +267,7 @@ function TeacherDashboard() {
 
       <main className="mx-auto w-full max-w-2xl overflow-x-hidden px-4 py-5">
         <div className="relative">
-          <Search className="absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted-foreground" />
+          <Search className="absolute top-1/2 left-4 size-5 -translate-y-1/2 text-[var(--brand-secondary,var(--muted-foreground))]" />
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -302,9 +302,7 @@ function TeacherDashboard() {
                 params={{ studentId: s.id }}
                 className="flex min-w-0 flex-1 items-center gap-4 overflow-hidden rounded-2xl border bg-card p-4 shadow-sm transition hover:shadow-md active:scale-[0.99]"
               >
-                <span
-                  className="flex size-16 shrink-0 items-center justify-center rounded-2xl bg-foreground text-xl font-bold text-background"
-                >
+                <span className="flex size-16 shrink-0 items-center justify-center rounded-2xl bg-primary/12 text-xl font-bold text-primary">
                   {initials(s.name)}
                 </span>
                 <div className="min-w-0 flex-1">
