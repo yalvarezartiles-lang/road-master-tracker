@@ -334,7 +334,14 @@ function TeacherDashboard() {
           ))}
           {students.length === 0 && (
             <li className="rounded-3xl border border-dashed p-8 text-center text-muted-foreground">
-              {loading ? "Cargando alumnos…" : "No hay alumnos con ese nombre."}
+              {loading ? (
+                "Cargando alumnos…"
+              ) : (
+                <>
+                  <Search className="mx-auto mb-2 size-8 opacity-40" />
+                  <p>No se encontraron alumnos con ese nombre</p>
+                </>
+              )}
             </li>
           )}
         </ul>
