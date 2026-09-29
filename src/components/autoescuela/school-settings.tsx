@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { LOGO_BUCKET, loadLogoDataUrl, useSchool } from "@/lib/autoescuela/school-branding";
 import { updateAutoescuelaBranding } from "@/lib/admin.functions";
+import { readableForeground, readableMuted } from "@/lib/autoescuela/contrast";
 
 const MAX_LOGO = 2 * 1024 * 1024;
 const ROLE_LABELS = ["Principal", "Secundario", "Fondo"];
@@ -148,7 +149,8 @@ export function SchoolSettings({ school, onSaved }: Props) {
       if (index === 2) {
         root.style.setProperty("--color-background", value);
         root.style.setProperty("--background", value);
-        root.style.setProperty("--foreground", `oklch(from ${value} calc(l > 0.6 ? 0.22 : 0.98) 0 0)`);
+        root.style.setProperty("--foreground", readableForeground(value));
+        root.style.setProperty("--muted-foreground", readableMuted(value));
       }
     }
     if (saveTimer.current) clearTimeout(saveTimer.current);
