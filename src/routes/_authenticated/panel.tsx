@@ -165,29 +165,26 @@ function TeacherDashboard() {
   return (
     <div onScroll={handleMobileScroll} className="min-h-screen w-full max-w-full overflow-x-hidden bg-background pb-32 max-md:h-dvh max-md:overflow-y-auto max-md:pb-56">
       <header
-        style={{ backgroundColor: "var(--color-primary)" }}
-        className={`sticky top-0 z-50 border-b border-white/20 px-4 py-4 transition-[padding] duration-200 ${headerCompact ? "max-md:py-1.5" : "max-md:py-2.5"}`}
+        className={`sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur px-4 py-4 transition-[padding] duration-200 ${headerCompact ? "max-md:py-1.5" : "max-md:py-2.5"}`}
       >
         <div className="mx-auto flex w-full max-w-2xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 md:contents">
           <div className="flex min-w-0 items-center gap-3">
             {brand.schoolLogo && (
-              <span className="shrink-0 rounded-lg bg-white p-1.5 shadow-sm">
-                <SchoolLogo className={`max-w-44 sm:h-14 md:h-16 md:max-w-64 lg:h-20 lg:max-w-80 xl:h-24 ${headerCompact ? "h-9" : "h-12"}`} />
-              </span>
+              <SchoolLogo className={`max-w-44 sm:h-14 md:h-16 md:max-w-64 lg:h-20 lg:max-w-80 xl:h-24 ${headerCompact ? "h-9" : "h-12"}`} />
             )}
             <div className="min-w-0">
-            <h1 className={`truncate font-bold leading-tight tracking-tight text-white transition-[font-size] duration-200 md:text-2xl ${headerCompact ? "text-base" : "text-lg"}`}>
+            <h1 className={`truncate font-bold leading-tight tracking-tight text-foreground transition-[font-size] duration-200 md:text-2xl ${headerCompact ? "text-base" : "text-lg"}`}>
               {teacherName ? `Hola, ${teacherName}` : "Panel"}
             </h1>
             {!brand.schoolLogo && (brand.schoolName || schoolName) && (
-              <p className={`items-center gap-1.5 truncate text-sm font-medium text-white/85 md:flex ${headerCompact ? "hidden" : "flex"}`}>
+              <p className={`items-center gap-1.5 truncate text-sm font-medium text-muted-foreground md:flex ${headerCompact ? "hidden" : "flex"}`}>
                 <Building2 className="size-4 shrink-0" /> {brand.schoolName || schoolName}
               </p>
             )}
             </div>
           </div>
-          <div className="flex shrink-0 items-center gap-0.5 text-white [&_button]:text-white [&_button:hover]:bg-white/15 md:gap-1">
+          <div className="flex shrink-0 items-center gap-0.5 text-foreground [&_button]:text-foreground [&_button:hover]:bg-foreground/10 md:gap-1">
             {isAdmin && (
               <Button asChild variant="ghost" size="icon" className="size-9 rounded-xl md:size-12 md:rounded-2xl">
                 <Link to="/admin" aria-label="Administración">
