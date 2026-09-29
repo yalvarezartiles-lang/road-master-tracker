@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import * as React from "react";
-import { Archive, LogOut, Pencil, Undo2, UserPlus } from "lucide-react";
+import { Archive, LogOut, Pencil, Search, SearchX, Undo2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useSignOut } from "@/lib/auth";
 import { useStore } from "@/lib/autoescuela/store";
+import { normalize } from "@/lib/autoescuela/normalize";
 import type { Student } from "@/lib/autoescuela/types";
 import { AgendaDiaria } from "./agenda-diaria";
 import { StudentDialog } from "./student-dialog";
@@ -90,6 +91,16 @@ export function OfficePanel({ userId }: { userId: string }) {
 
   const current = teachers.find((t) => t.id === selected);
   const students = data.students;
+  const [searchTerm, setSearchTerm] = React.useState("");
+  const [archivedTerm, setArchivedTerm] = React.useState("");
+  const fullName = (s: { name: string; apellidos: string }) =>
+    [s.name, s.apellidos].filter(Boolean).join(" ");
+  const filteredStudents = students.filter((s) =>
+    normalize(fullName(s)).includes(normalize(searchTerm)),
+  );
+  const filteredArchived = archived.filter((a) =>
+    normalize(fullName(a)).includes(normalize(archivedTerm)),
+  );
   const studentsVersion = students.map((s) => `${s.id}${s.name}${s.apellidos}`).join("|").length + students.length;
 
   return (
@@ -148,9 +159,27 @@ export function OfficePanel({ userId }: { userId: string }) {
           >
             <UserPlus className="size-6" /> Matricular Nuevo Alumno
           </Button>
+          <div className="relative mt-3">
+            <Search className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Buscar alumno…"
+              className="h-14 w-full rounded-2xl border bg-background px-4 pl-12 text-base outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
           <ul className="mt-3 divide-y">
-            {students.length === 0 && <li className="py-4 text-center text-muted-foreground">Aún no hay alumnos.</li>}
-            {students.map((s) => (
+            {filteredStudents.length === 0 && (
+              <li className="py-4 text-center text-muted-foreground">
+                {students.length === 0
+                  ? "Aún no hay alumnos."
+                  : searchTerm
+                    ? "No se encontraron alumnos con ese nombre"
+                    : undefined}
+              </li>
+            )}
+            {filteredStudents.map((s) => (
               <li key={s.id} className="flex items-center gap-2 py-2">
                 <div className="min-w-0 flex-1">
                   <p className="flex items-center gap-2 font-semibold"><span className="truncate">{[s.name, s.apellidos].filter(Boolean).join(" ")}</span><Badge variant="outline" className="shrink-0 text-xs">{s.seccion || "Sin sección"}</Badge></p>
@@ -184,9 +213,30 @@ export function OfficePanel({ userId }: { userId: string }) {
 
         <section className="rounded-3xl border bg-card shadow-sm hover:shadow-md transition-shadow p-4">
           <h2 className="text-lg font-bold">Alumnos archivados ({archived.length})</h2>
+          <div className="relative mt-3">
+            <Search className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              value={archivedTerm}
+              onChange={(e) => setArchivedTerm(e.target.value)}
+              placeholder="Buscar alumno archivado…"
+              className="h-14 w-full rounded-2xl border bg-background px-4 pl-12 text-base outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
           <ul className="mt-3 divide-y">
-            {archived.length === 0 && <li className="py-4 text-center text-muted-foreground">No hay alumnos archivados.</li>}
-            {archived.map((a) => (
+            {filteredArchived.length === 0 && (
+              <li className="py-4 text-center text-muted-foreground">
+                {archived.length === 0 ? (
+                  "No hay alumnos archivados."
+                ) : (
+                  <>
+                    <SearchX className="mx-auto mb-2 size-8 opacity-40" />
+                    <p>No se encontraron alumnos con ese nombre</p>
+                  </>
+                )}
+              </li>
+            )}
+            {filteredArchived.map((a) => (
               <li key={a.id} className="flex items-center gap-2 py-3">
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-semibold">{[a.name, a.apellidos].filter(Boolean).join(" ")}</p>

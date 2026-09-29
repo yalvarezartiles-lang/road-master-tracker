@@ -38,6 +38,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { NetworkIndicator } from "@/components/autoescuela/network-indicator";
 import { levelClasses } from "@/components/autoescuela/skill-traffic-light";
 import { useCurrentUser, useSignOut } from "@/lib/auth";
+import { normalize } from "@/lib/autoescuela/normalize";
 import { supabase } from "@/integrations/supabase/client";
 import { OfficePanel } from "@/components/autoescuela/office-panel";
 import { AgendaDiaria } from "@/components/autoescuela/agenda-diaria";
@@ -142,7 +143,7 @@ function TeacherDashboard() {
   const fullName = (s: { name: string; apellidos: string }) =>
     [s.name, s.apellidos].filter(Boolean).join(" ");
   const students = data.students.filter((s) =>
-    fullName(s).toLowerCase().includes(query.trim().toLowerCase()),
+    normalize(fullName(s)).includes(normalize(query)),
   );
 
   const confirmDelete = async () => {
@@ -333,7 +334,14 @@ function TeacherDashboard() {
           ))}
           {students.length === 0 && (
             <li className="rounded-3xl border border-dashed p-8 text-center text-muted-foreground">
-              {loading ? "Cargando alumnos…" : "No hay alumnos con ese nombre."}
+              {loading ? (
+                "Cargando alumnos…"
+              ) : (
+                <>
+                  <Search className="mx-auto mb-2 size-8 opacity-40" />
+                  <p>No se encontraron alumnos con ese nombre</p>
+                </>
+              )}
             </li>
           )}
         </ul>
