@@ -108,7 +108,7 @@ function StudentPage() {
               variant="outline"
               size="icon"
               onClick={() => setEditOpen(true)}
-              className="size-12 shrink-0 rounded-2xl"
+              className="size-12 shrink-0 rounded-2xl border-[var(--brand-secondary,var(--border))] bg-card text-[var(--brand-secondary,var(--foreground))]"
               aria-label="Editar alumno"
             >
               <Pencil className="size-5" />
@@ -116,10 +116,10 @@ function StudentPage() {
           </div>
           <div className="mt-3 grid gap-2 text-base text-muted-foreground">
             <p className="flex items-center gap-2">
-              <Phone className="size-5" /> {student.phone || "Sin teléfono"}
+              <Phone className="size-5 text-[var(--brand-secondary,var(--muted-foreground))]" /> {student.phone || "Sin teléfono"}
             </p>
             <p className="flex items-center gap-2">
-              <CalendarDays className="size-5" /> Inicio:{" "}
+              <CalendarDays className="size-5 text-[var(--brand-secondary,var(--muted-foreground))]" /> Inicio:{" "}
               {new Date(student.startDate).toLocaleDateString("es-ES")}
             </p>
           </div>

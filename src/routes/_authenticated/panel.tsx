@@ -206,7 +206,7 @@ function TeacherDashboard() {
                 </Button>
                 <div className="mt-4 rounded-3xl border bg-card p-5">
                   <div className="flex items-center gap-4">
-                    <span className="flex size-16 shrink-0 items-center justify-center rounded-2xl bg-primary text-xl font-bold text-primary-foreground">
+                    <span className="flex size-16 shrink-0 items-center justify-center rounded-2xl bg-primary/12 text-xl font-bold text-primary">
                       {initials(teacherName || "P")}
                     </span>
                     <div className="min-w-0">
