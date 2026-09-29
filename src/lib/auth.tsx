@@ -12,24 +12,34 @@ export function useCurrentUser() {
     let active = true;
 
     const load = async () => {
-      const { data } = await supabase.auth.getUser();
-      if (!active) return;
-      setUser(data.user ?? null);
-      if (data.user) {
-        const { data: roles } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", data.user.id);
+      try {
+        const { data } = await supabase.auth.getUser();
         if (!active) return;
-        const list = (roles ?? []).map((r: any) => r.role);
-        setRole(list.includes("admin") ? "admin" : list.includes("admin_oficina") ? "admin_oficina" : list.length ? "profesor" : null);
-      } else {
-        setRole(null);
+        setUser(data.user ?? null);
+        if (data.user) {
+          const { data: roles } = await supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", data.user.id);
+          if (!active) return;
+          const list = (roles ?? []).map((r: any) => r.role);
+          setRole(list.includes("admin") ? "admin" : list.includes("admin_oficina") ? "admin_oficina" : list.length ? "profesor" : null);
+        } else {
+          setRole(null);
+        }
+      } catch (err) {
+        // Sin conexión o error de red: no bloqueamos la interfaz.
+        console.error("useCurrentUser", err);
+      } finally {
+        if (active) setLoading(false);
       }
-      setLoading(false);
     };
 
     void load();
+    // Red móvil lenta: como máximo 8 s en estado de carga.
+    const safety = setTimeout(() => {
+      if (active) setLoading(false);
+    }, 8000);
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
         void load();
