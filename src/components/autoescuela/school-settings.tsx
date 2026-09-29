@@ -9,6 +9,11 @@ import { updateAutoescuelaBranding } from "@/lib/admin.functions";
 
 const MAX_LOGO = 2 * 1024 * 1024;
 const ROLE_LABELS = ["Principal", "Secundario", "Fondo"];
+const FALLBACK = ["#71717a", "#a1a1aa", "#fafafa"];
+
+/** Siempre 3 posiciones editables: principal, secundario y fondo. */
+const toTriplet = (colors: (string | null | undefined)[]) =>
+  [0, 1, 2].map((i) => colors[i] || FALLBACK[i]!) as string[];
 
 const toHex = (r: number, g: number, b: number) =>
   `#${[r, g, b].map((v) => Math.round(v).toString(16).padStart(2, "0")).join("")}`;
