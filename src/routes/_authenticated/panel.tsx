@@ -9,7 +9,7 @@ import {
   Settings,
   Shield,
   Archive,
-  UserPlus, Building2, Users } from "lucide-react";
+  UserPlus, Building2, Users, Loader2 } from "lucide-react";
 import {
   Sheet,
   SheetContent,
