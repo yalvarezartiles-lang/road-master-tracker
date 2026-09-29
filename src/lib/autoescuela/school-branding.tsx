@@ -6,6 +6,8 @@ export interface SchoolBranding {
   schoolName: string;
   schoolLogo: string; // data URL derivada del fichero guardado
   primaryColor: string; // HEX
+  secondaryColor: string; // HEX
+  accentColor: string; // HEX
 }
 
 export const LOGO_BUCKET = "school-logos";
@@ -22,10 +24,10 @@ export async function loadLogoDataUrl(path: string): Promise<string> {
   });
 }
 
-export function SchoolLogo({ className = "h-10 max-w-24" }: { className?: string }) {
+export function SchoolLogo({ className = "h-10 md:h-14 lg:h-16 max-w-40 md:max-w-56" }: { className?: string }) {
   const { schoolLogo, schoolName } = useSchool();
   if (!schoolLogo) return null;
-  return <img src={schoolLogo} alt={schoolName ? `Logo de ${schoolName}` : "Logo de la autoescuela"} className={`shrink-0 object-contain ${className}`} />;
+  return <img src={schoolLogo} alt={schoolName ? `Logo de ${schoolName}` : "Logo de la autoescuela"} className={`w-auto shrink-0 object-contain ${className}`} />;
 }
 
 interface BrandingValue extends SchoolBranding {
@@ -33,7 +35,7 @@ interface BrandingValue extends SchoolBranding {
   refresh: () => Promise<void>;
 }
 
-const DEFAULTS: SchoolBranding = { schoolId: "", schoolName: "", schoolLogo: "", primaryColor: "" };
+const DEFAULTS: SchoolBranding = { schoolId: "", schoolName: "", schoolLogo: "", primaryColor: "", secondaryColor: "", accentColor: "" };
 
 const SchoolContext: React.Context<BrandingValue | null> =
   ((globalThis as any).__schoolBrandingContext ??= React.createContext<BrandingValue | null>(null));
@@ -62,7 +64,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
       }
       const { data: school } = await supabase
         .from("autoescuelas")
-        .select("id, nombre_comercial, logo_url, primary_color")
+        .select("id, nombre_comercial, logo_url, primary_color, secondary_color, accent_color")
         .eq("id", schoolId)
         .maybeSingle();
       if (!school) {
@@ -75,6 +77,8 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
         schoolName: school.nombre_comercial ?? "",
         schoolLogo,
         primaryColor: school.primary_color ?? "",
+        secondaryColor: school.secondary_color ?? "",
+        accentColor: school.accent_color ?? "",
       });
     } catch {
       setState(DEFAULTS);
@@ -91,29 +95,36 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
     return () => sub.subscription.unsubscribe();
   }, [refresh]);
 
-  // El color de la autoescuela genera una interfaz pastel con contraste oscuro.
+  // Fondo casi neutro (3%); principal para acciones; secundario y acento para estados y detalles.
   React.useEffect(() => {
     const root = document.documentElement;
-    if (branding.primaryColor) {
-      const color = branding.primaryColor;
-      root.style.setProperty("--background", `color-mix(in srgb, ${color} 10%, white)`);
-      root.style.setProperty("--card", `color-mix(in srgb, ${color} 5%, white)`);
-      root.style.setProperty("--card-foreground", "oklch(0.278 0.033 256.848)");
-      root.style.setProperty("--foreground", "oklch(0.278 0.033 256.848)");
-      root.style.setProperty("--primary", `color-mix(in srgb, ${color} 68%, white)`);
-      root.style.setProperty("--primary-foreground", "oklch(0.21 0.034 264.665)");
-      root.style.setProperty("--secondary", `color-mix(in srgb, ${color} 20%, white)`);
-      root.style.setProperty("--secondary-foreground", "oklch(0.278 0.033 256.848)");
-      root.style.setProperty("--muted", `color-mix(in srgb, ${color} 13%, white)`);
-      root.style.setProperty("--accent", `color-mix(in srgb, ${color} 24%, white)`);
-      root.style.setProperty("--accent-foreground", "oklch(0.278 0.033 256.848)");
-      root.style.setProperty("--border", `color-mix(in srgb, ${color} 30%, white)`);
-      root.style.setProperty("--input", `color-mix(in srgb, ${color} 28%, white)`);
-      root.style.setProperty("--ring", `color-mix(in srgb, ${color} 72%, white)`);
-    } else {
-      ["--background", "--card", "--card-foreground", "--foreground", "--primary", "--primary-foreground", "--secondary", "--secondary-foreground", "--muted", "--accent", "--accent-foreground", "--border", "--input", "--ring"].forEach((property) => root.style.removeProperty(property));
-    }
-  }, [branding.primaryColor]);
+    const props = ["--background", "--card", "--card-foreground", "--foreground", "--primary", "--primary-foreground", "--secondary", "--secondary-foreground", "--muted", "--accent", "--accent-foreground", "--border", "--input", "--ring", "--brand-secondary", "--brand-accent", "--chart-1", "--chart-2", "--chart-3"];
+    if (!branding.primaryColor) return void props.forEach((p) => root.style.removeProperty(p));
+    const p = branding.primaryColor;
+    const s = branding.secondaryColor || p;
+    const a = branding.accentColor || s;
+    const dark = "oklch(0.278 0.033 256.848)";
+    const set = (k: string, v: string) => root.style.setProperty(k, v);
+    set("--background", `color-mix(in srgb, ${p} 3%, white)`);
+    set("--card", "white");
+    set("--card-foreground", dark);
+    set("--foreground", dark);
+    set("--primary", p);
+    set("--primary-foreground", `oklch(from ${p} calc(l > 0.68 ? 0.2 : 0.99) 0 0)`);
+    set("--secondary", `color-mix(in srgb, ${s} 22%, white)`);
+    set("--secondary-foreground", dark);
+    set("--muted", `color-mix(in srgb, ${p} 5%, white)`);
+    set("--accent", `color-mix(in srgb, ${a} 18%, white)`);
+    set("--accent-foreground", dark);
+    set("--border", `color-mix(in srgb, ${p} 14%, oklch(0.93 0 0))`);
+    set("--input", `color-mix(in srgb, ${p} 14%, oklch(0.93 0 0))`);
+    set("--ring", p);
+    set("--brand-secondary", s);
+    set("--brand-accent", a);
+    set("--chart-1", p);
+    set("--chart-2", s);
+    set("--chart-3", a);
+  }, [branding.primaryColor, branding.secondaryColor, branding.accentColor]);
 
   const value = React.useMemo(() => ({ ...branding, loading, refresh }), [branding, loading, refresh]);
   return <SchoolContext.Provider value={value}>{children}</SchoolContext.Provider>;

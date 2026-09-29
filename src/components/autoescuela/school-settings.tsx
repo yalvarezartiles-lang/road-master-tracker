@@ -72,7 +72,14 @@ function readAsDataUrl(file: File) {
 }
 
 interface Props {
-  school: { id: string; nombre_comercial: string; logo_url?: string | null; primary_color?: string | null };
+  school: {
+    id: string;
+    nombre_comercial: string;
+    logo_url?: string | null;
+    primary_color?: string | null;
+    secondary_color?: string | null;
+    accent_color?: string | null;
+  };
   onSaved?: () => void;
 }
 
@@ -81,11 +88,13 @@ export function SchoolSettings({ school, onSaved }: Props) {
   const saveBranding = useServerFn(updateAutoescuelaBranding);
   const brand = useSchool();
   const [preview, setPreview] = React.useState("");
-  const [color, setColor] = React.useState(school.primary_color ?? "");
+  const initial = [school.primary_color, school.secondary_color, school.accent_color].filter(Boolean) as string[];
+  const [palette, setPalette] = React.useState<string[]>(initial);
+  const color = palette[0] ?? "";
   const [busy, setBusy] = React.useState(false);
 
   React.useEffect(() => {
-    setColor(school.primary_color ?? "");
+    setPalette([school.primary_color, school.secondary_color, school.accent_color].filter(Boolean) as string[]);
     if (!school.logo_url) return void setPreview("");
     let alive = true;
     void loadLogoDataUrl(school.logo_url).then((url) => {
@@ -94,7 +103,7 @@ export function SchoolSettings({ school, onSaved }: Props) {
     return () => {
       alive = false;
     };
-  }, [school.logo_url, school.primary_color]);
+  }, [school.logo_url, school.primary_color, school.secondary_color, school.accent_color]);
 
   const onLogo = async (file?: File) => {
     if (!file) return;
@@ -103,15 +112,17 @@ export function SchoolSettings({ school, onSaved }: Props) {
     setBusy(true);
     try {
       const dataUrl = await readAsDataUrl(file);
-      const primaryColor = await extractDominantColor(dataUrl);
+      const colors = await extractPalette(dataUrl);
       const ext = (file.name.split(".").pop() || "png").toLowerCase();
       const path = `${school.id}/logo-${Date.now()}.${ext}`;
       const { error } = await supabase.storage.from(LOGO_BUCKET).upload(path, file, { upsert: true, contentType: file.type });
       if (error) throw new Error(error.message);
-      await saveBranding({ data: { id: school.id, logoUrl: path, primaryColor } });
+      await saveBranding({
+        data: { id: school.id, logoUrl: path, primaryColor: colors[0] ?? null, secondaryColor: colors[1] ?? null, accentColor: colors[2] ?? null },
+      });
       setPreview(dataUrl);
-      setColor(primaryColor);
-      toast.success("Logo y colores actualizados");
+      setPalette(colors);
+      toast.success("Logo y paleta actualizados");
       onSaved?.();
       if (brand.schoolId === school.id) await brand.refresh();
     } catch (err) {
@@ -124,9 +135,9 @@ export function SchoolSettings({ school, onSaved }: Props) {
   const onRemove = async () => {
     setBusy(true);
     try {
-      await saveBranding({ data: { id: school.id, logoUrl: null, primaryColor: null } });
+      await saveBranding({ data: { id: school.id, logoUrl: null, primaryColor: null, secondaryColor: null, accentColor: null } });
       setPreview("");
-      setColor("");
+      setPalette([]);
       toast.success("Marca restablecida");
       onSaved?.();
       if (brand.schoolId === school.id) await brand.refresh();
@@ -147,9 +158,13 @@ export function SchoolSettings({ school, onSaved }: Props) {
         Subir logo
         <input type="file" accept="image/*" className="sr-only" disabled={busy} onChange={(e) => void onLogo(e.target.files?.[0])} />
       </label>
-      {color && (
+      {palette.length > 0 && (
         <span className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span className="size-7 rounded-full border" style={{ backgroundColor: color }} />
+          <span className="flex -space-x-2">
+            {palette.map((c) => (
+              <span key={c} className="size-7 rounded-full border-2 border-card" style={{ backgroundColor: c }} />
+            ))}
+          </span>
           Paleta automática
         </span>
       )}
