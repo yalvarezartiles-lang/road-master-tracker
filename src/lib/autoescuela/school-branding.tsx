@@ -116,8 +116,10 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
     set("--color-background", bg);
     // Fondo general: el tercer color tal cual lo elige el administrador.
     set("--background", bg);
-    set("--foreground", `oklch(from ${bg} calc(l > 0.6 ? 0.22 : 0.98) 0 0)`);
-    set("--muted-foreground", `oklch(from ${bg} calc(l > 0.6 ? 0.45 : 0.82) 0.01 h)`);
+    // Contraste calculado en JS: las expresiones oklch(from ...) con ternarios no
+    // funcionan en Safari iOS y dejaban la app sin colores legibles.
+    set("--foreground", readableForeground(bg));
+    set("--muted-foreground", readableMuted(bg));
     // Tarjetas y bloques de datos siempre blancos para máxima legibilidad.
     set("--card", "white");
     set("--card-foreground", dark);
