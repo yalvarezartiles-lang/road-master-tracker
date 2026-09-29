@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { ImageUp, Loader2, Trash2, Upload } from "lucide-react";
+import { GripVertical, ImageUp, Loader2, Plus, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -95,6 +95,22 @@ export function SchoolSettings({ school, onSaved }: Props) {
   const [busy, setBusy] = React.useState(false);
   const [draggedIndex, setDraggedIndex] = React.useState<number | null>(null);
 
+  const saveTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /** Guarda la paleta en la base de datos y refresca la marca global. */
+  const persist = async (next: string[], prev: string[]) => {
+    try {
+      await saveBranding({
+        data: { id: school.id, logoUrl: school.logo_url ?? null, primaryColor: next[0] ?? null, secondaryColor: next[1] ?? null, accentColor: next[2] ?? null },
+      });
+      onSaved?.();
+      if (brand.schoolId === school.id) await brand.refresh();
+    } catch (err) {
+      setPalette(prev);
+      toast.error(err instanceof Error ? err.message : "No se pudo guardar la paleta");
+    }
+  };
+
   /** Extrae el color de `draggedIndex` y lo inserta en `targetIndex` (splice), desplazando el resto. */
   const handleDrop = async (targetIndex: number) => {
     if (draggedIndex === null) return;
@@ -105,16 +121,28 @@ export function SchoolSettings({ school, onSaved }: Props) {
     const [moved] = next.splice(from, 1);
     next.splice(targetIndex, 0, moved!);
     setPalette(next);
-    try {
-      await saveBranding({
-        data: { id: school.id, logoUrl: school.logo_url ?? null, primaryColor: next[0] ?? null, secondaryColor: next[1] ?? null, accentColor: next[2] ?? null },
-      });
-      onSaved?.();
-      if (brand.schoolId === school.id) await brand.refresh();
-    } catch (err) {
-      setPalette(palette);
-      toast.error(err instanceof Error ? err.message : "No se pudo guardar el orden");
+    await persist(next, palette);
+  };
+
+  /** Cambio manual desde la ruleta: vista previa instantánea y guardado diferido. */
+  const handleColorChange = (index: number, value: string) => {
+    const prev = palette;
+    const next = [...palette];
+    next[index] = value;
+    setPalette(next);
+    if (brand.schoolId === school.id && index === 0) {
+      document.documentElement.style.setProperty("--primary", value);
+      document.documentElement.style.setProperty("--ring", value);
     }
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => void persist(next, prev), 600);
+  };
+
+  const addColor = () => {
+    if (palette.length >= 3) return;
+    const next = [...palette, palette[0] ?? "#71717a"];
+    setPalette(next);
+    void persist(next, palette);
   };
 
   React.useEffect(() => {
@@ -182,32 +210,54 @@ export function SchoolSettings({ school, onSaved }: Props) {
         Subir logo
         <input type="file" accept="image/*" className="sr-only" disabled={busy} onChange={(e) => void onLogo(e.target.files?.[0])} />
       </label>
-      {palette.length > 0 && (
-        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-          {palette.map((c, i) => (
-            <button
-              key={`${c}-${i}`}
-              type="button"
-              draggable={!busy}
-              disabled={busy}
-              onDragStart={(e) => { setDraggedIndex(i); e.dataTransfer.effectAllowed = "move"; }}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => { e.preventDefault(); void handleDrop(i); }}
-              onDragEnd={() => setDraggedIndex(null)}
-              onClick={() => {
-                // Móvil: toca un círculo y luego otro para reordenarlos.
-                if (draggedIndex === null) setDraggedIndex(i);
-                else void handleDrop(i);
-              }}
-              className={`flex cursor-grab flex-col items-center gap-1 active:cursor-grabbing ${draggedIndex === i ? "opacity-50" : ""}`}
-              aria-label={`${ROLE_LABELS[i]}: ${c}. Arrastra o toca para reordenar`}
-            >
-              <span className={`size-10 rounded-full border-2 ${draggedIndex === i ? "border-foreground" : "border-card"} shadow`} style={{ backgroundColor: c }} />
-              <span className="text-[10px] font-medium">{ROLE_LABELS[i]}</span>
+      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+        {palette.map((c, i) => (
+          <div
+            key={i}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => { e.preventDefault(); void handleDrop(i); }}
+            className={`flex flex-col items-center gap-1 ${draggedIndex === i ? "opacity-50" : ""}`}
+          >
+            <div className="flex items-center">
+              <button
+                type="button"
+                draggable={!busy}
+                disabled={busy}
+                onDragStart={(e) => { setDraggedIndex(i); e.dataTransfer.effectAllowed = "move"; }}
+                onDragEnd={() => setDraggedIndex(null)}
+                onClick={() => {
+                  // Móvil: toca el asa de uno y luego la de otro para reordenar.
+                  if (draggedIndex === null) setDraggedIndex(i);
+                  else void handleDrop(i);
+                }}
+                className={`flex h-10 w-6 cursor-grab items-center justify-center rounded-md active:cursor-grabbing ${draggedIndex === i ? "bg-muted text-foreground" : ""}`}
+                aria-label={`Mover ${ROLE_LABELS[i]}`}
+              >
+                <GripVertical className="size-4" />
+              </button>
+              <label className={`relative size-10 cursor-pointer rounded-full border-2 ${draggedIndex === i ? "border-foreground" : "border-card"} shadow`} style={{ backgroundColor: c }}>
+                <input
+                  type="color"
+                  value={c}
+                  disabled={busy}
+                  onChange={(e) => handleColorChange(i, e.target.value)}
+                  className="absolute inset-0 size-full cursor-pointer opacity-0"
+                  aria-label={`Elegir color ${ROLE_LABELS[i]}`}
+                />
+              </label>
+            </div>
+            <span className="text-[10px] font-medium">{ROLE_LABELS[i]}</span>
+          </div>
+        ))}
+        {palette.length < 3 && (
+          <div className="flex flex-col items-center gap-1">
+            <button type="button" onClick={addColor} disabled={busy} className="flex size-10 items-center justify-center rounded-full border-2 border-dashed border-border hover:bg-muted" aria-label="Añadir color">
+              <Plus className="size-4" />
             </button>
-          ))}
-        </div>
-      )}
+            <span className="text-[10px] font-medium">{ROLE_LABELS[palette.length]}</span>
+          </div>
+        )}
+      </div>
       {(preview || color) && (
         <Button variant="ghost" size="icon" aria-label="Quitar marca" disabled={busy} onClick={() => void onRemove()}>
           <Trash2 className="size-5" />
