@@ -89,10 +89,15 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
 
   React.useEffect(() => {
     void refresh();
+    // Seguridad: la marca nunca bloquea la app más de 8 s.
+    const safety = setTimeout(() => setLoading(false), 8000);
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") void refresh();
     });
-    return () => sub.subscription.unsubscribe();
+    return () => {
+      clearTimeout(safety);
+      sub.subscription.unsubscribe();
+    };
   }, [refresh]);
 
   // Roles por posición: 0 = principal, 1 = secundario, 2 = fondo real de la app (lo controla el admin).
