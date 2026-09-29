@@ -190,18 +190,19 @@ export function SchoolSettings({ school, onSaved }: Props) {
               type="button"
               draggable={!busy}
               disabled={busy}
-              onDragStart={(e) => { setDragIndex(i); e.dataTransfer.effectAllowed = "move"; }}
+              onDragStart={(e) => { setDraggedIndex(i); e.dataTransfer.effectAllowed = "move"; }}
               onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => { e.preventDefault(); if (dragIndex !== null) void reorder(dragIndex, i); setDragIndex(null); }}
+              onDrop={(e) => { e.preventDefault(); void handleDrop(i); }}
+              onDragEnd={() => setDraggedIndex(null)}
               onClick={() => {
-                // Móvil: toca un círculo y luego otro para intercambiarlos.
-                if (dragIndex === null) setDragIndex(i);
-                else { void reorder(dragIndex, i); setDragIndex(null); }
+                // Móvil: toca un círculo y luego otro para reordenarlos.
+                if (draggedIndex === null) setDraggedIndex(i);
+                else void handleDrop(i);
               }}
-              className={`flex cursor-grab flex-col items-center gap-1 active:cursor-grabbing ${dragIndex === i ? "opacity-60" : ""}`}
+              className={`flex cursor-grab flex-col items-center gap-1 active:cursor-grabbing ${draggedIndex === i ? "opacity-50" : ""}`}
               aria-label={`${ROLE_LABELS[i]}: ${c}. Arrastra o toca para reordenar`}
             >
-              <span className={`size-10 rounded-full border-2 ${dragIndex === i ? "border-foreground" : "border-card"} shadow`} style={{ backgroundColor: c }} />
+              <span className={`size-10 rounded-full border-2 ${draggedIndex === i ? "border-foreground" : "border-card"} shadow`} style={{ backgroundColor: c }} />
               <span className="text-[10px] font-medium">{ROLE_LABELS[i]}</span>
             </button>
           ))}
