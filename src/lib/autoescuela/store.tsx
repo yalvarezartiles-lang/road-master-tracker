@@ -63,6 +63,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = React.useState(true);
 
   const refresh = React.useCallback(async () => {
+    try {
     const { data: session } = await supabase.auth.getSession();
     if (!session.session) {
       setLoading(false);

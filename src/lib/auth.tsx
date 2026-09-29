@@ -47,6 +47,7 @@ export function useCurrentUser() {
     });
     return () => {
       active = false;
+      clearTimeout(safety);
       sub.subscription.unsubscribe();
     };
   }, []);
