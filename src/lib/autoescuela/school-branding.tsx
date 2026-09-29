@@ -6,6 +6,12 @@ export interface SchoolBranding {
   primaryColor: string; // HEX
 }
 
+export function SchoolLogo({ className = "h-10 max-w-24" }: { className?: string }) {
+  const { schoolLogo, schoolName } = useSchool();
+  if (!schoolLogo) return null;
+  return <img src={schoolLogo} alt={schoolName ? `Logo de ${schoolName}` : "Logo de la autoescuela"} className={`shrink-0 object-contain ${className}`} />;
+}
+
 interface BrandingValue extends SchoolBranding {
   setBranding: (patch: Partial<SchoolBranding>) => void;
   reset: () => void;
@@ -28,17 +34,27 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
     } catch {}
   }, []);
 
-  // Color principal aplicado a toda la app mediante variables CSS.
+  // El color extraído del logo genera una interfaz pastel con contraste oscuro.
   React.useEffect(() => {
     const root = document.documentElement;
     if (branding.primaryColor) {
-      root.style.setProperty("--primary", branding.primaryColor);
-      root.style.setProperty("--ring", branding.primaryColor);
-      root.style.setProperty("--primary-foreground", "oklch(0.99 0 0)");
+      const color = branding.primaryColor;
+      root.style.setProperty("--background", `color-mix(in srgb, ${color} 10%, white)`);
+      root.style.setProperty("--card", `color-mix(in srgb, ${color} 5%, white)`);
+      root.style.setProperty("--card-foreground", "oklch(0.278 0.033 256.848)");
+      root.style.setProperty("--foreground", "oklch(0.278 0.033 256.848)");
+      root.style.setProperty("--primary", `color-mix(in srgb, ${color} 68%, white)`);
+      root.style.setProperty("--primary-foreground", "oklch(0.21 0.034 264.665)");
+      root.style.setProperty("--secondary", `color-mix(in srgb, ${color} 20%, white)`);
+      root.style.setProperty("--secondary-foreground", "oklch(0.278 0.033 256.848)");
+      root.style.setProperty("--muted", `color-mix(in srgb, ${color} 13%, white)`);
+      root.style.setProperty("--accent", `color-mix(in srgb, ${color} 24%, white)`);
+      root.style.setProperty("--accent-foreground", "oklch(0.278 0.033 256.848)");
+      root.style.setProperty("--border", `color-mix(in srgb, ${color} 30%, white)`);
+      root.style.setProperty("--input", `color-mix(in srgb, ${color} 28%, white)`);
+      root.style.setProperty("--ring", `color-mix(in srgb, ${color} 72%, white)`);
     } else {
-      root.style.removeProperty("--primary");
-      root.style.removeProperty("--ring");
-      root.style.removeProperty("--primary-foreground");
+      ["--background", "--card", "--card-foreground", "--foreground", "--primary", "--primary-foreground", "--secondary", "--secondary-foreground", "--muted", "--accent", "--accent-foreground", "--border", "--input", "--ring"].forEach((property) => root.style.removeProperty(property));
     }
   }, [branding.primaryColor]);
 

@@ -18,6 +18,7 @@ import {
 import { useStore } from "@/lib/autoescuela/store";
 import type { NamedItem } from "@/lib/autoescuela/types";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { SchoolLogo } from "@/lib/autoescuela/school-branding";
 
 export const Route = createFileRoute("/_authenticated/gestion")({
   head: () => ({
@@ -184,13 +185,16 @@ function GestionPage() {
     <div className="min-h-screen bg-background pb-16">
       <header className="sticky top-0 z-50 border-b border-border/60 bg-card/80 backdrop-blur-md px-4 py-3">
         <div className="mx-auto flex max-w-2xl items-center justify-between">
-          <Link
-            to="/panel"
-            className="flex size-12 items-center justify-center rounded-2xl border"
-            aria-label="Volver"
-          >
-            <ArrowLeft className="size-6" />
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              to="/panel"
+              className="flex size-12 items-center justify-center rounded-2xl border"
+              aria-label="Volver"
+            >
+              <ArrowLeft className="size-6" />
+            </Link>
+            <SchoolLogo />
+          </div>
           <h1 className="text-lg font-extrabold">Ajustes</h1>
           <ThemeToggle />
         </div>
