@@ -63,7 +63,7 @@ function AdminPage() {
   const { isAdmin, isOffice, loading: loadingUser } = useCurrentUser();
   const fetchSchools = useServerFn(listAutoescuelas);
   const addSchool = useServerFn(createAutoescuela);
-  const [schools, setSchools] = React.useState<{ id: string; nombre_comercial: string }[]>([]);
+  const [schools, setSchools] = React.useState<{ id: string; nombre_comercial: string; logo_url: string | null; primary_color: string | null }[]>([]);
   const [schoolId, setSchoolId] = React.useState("");
   const [newSchool, setNewSchool] = React.useState("");
   const fetchTeam = useServerFn(listTeam);
@@ -252,6 +252,8 @@ function AdminPage() {
                       </Button>
                     </>
                   )}
+                  </div>
+                  <SchoolSettings school={a} onSaved={() => void load()} />
                 </li>
               ))}
             </ul>
