@@ -220,7 +220,7 @@ export function SchoolSettings({ school, onSaved }: Props) {
         Subir logo
         <input type="file" accept="image/*" className="sr-only" disabled={busy} onChange={(e) => void onLogo(e.target.files?.[0])} />
       </label>
-      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+      <div className="flex flex-wrap items-start gap-3 text-xs text-muted-foreground">
         {palette.map((c, i) => (
           <div
             key={i}
@@ -245,7 +245,14 @@ export function SchoolSettings({ school, onSaved }: Props) {
               >
                 <GripVertical className="size-4" />
               </button>
-              <label className={`relative size-10 cursor-pointer rounded-full border-2 ${draggedIndex === i ? "border-foreground" : "border-card"} shadow`} style={{ backgroundColor: c }}>
+              <label
+                className={`relative flex size-11 cursor-pointer items-center justify-center rounded-full border-2 shadow ${draggedIndex === i ? "border-foreground" : "border-card"}`}
+                style={{ backgroundColor: c }}
+                title={`Cambiar color ${ROLE_LABELS[i]}`}
+              >
+                <span className="pointer-events-none flex size-5 items-center justify-center rounded-full bg-card/90 shadow-sm">
+                  <Pipette className="size-3 text-foreground" />
+                </span>
                 <input
                   type="color"
                   value={c}
@@ -256,17 +263,10 @@ export function SchoolSettings({ school, onSaved }: Props) {
                 />
               </label>
             </div>
-            <span className="text-[10px] font-medium">{ROLE_LABELS[i]}</span>
+            <span className="text-[10px] font-semibold">{ROLE_LABELS[i]}</span>
+            <span className="font-mono text-[10px] uppercase">{c}</span>
           </div>
         ))}
-        {palette.length < 3 && (
-          <div className="flex flex-col items-center gap-1">
-            <button type="button" onClick={addColor} disabled={busy} className="flex size-10 items-center justify-center rounded-full border-2 border-dashed border-border hover:bg-muted" aria-label="Añadir color">
-              <Plus className="size-4" />
-            </button>
-            <span className="text-[10px] font-medium">{ROLE_LABELS[palette.length]}</span>
-          </div>
-        )}
       </div>
       {(preview || color) && (
         <Button variant="ghost" size="icon" aria-label="Quitar marca" disabled={busy} onClick={() => void onRemove()}>
