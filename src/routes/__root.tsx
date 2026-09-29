@@ -15,6 +15,7 @@ import { StoreProvider } from "@/lib/autoescuela/store";
 import { SchoolProvider } from "@/lib/autoescuela/school-branding";
 import { Toaster } from "@/components/ui/sonner";
 import { CookieConsent } from "@/components/cookie-consent";
+import { ErrorBoundary } from "@/components/error-boundary";
 
 function NotFoundComponent() {
   return (

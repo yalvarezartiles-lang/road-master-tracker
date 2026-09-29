@@ -14,9 +14,12 @@ export const Route = createFileRoute("/_authenticated")({
 
 function AuthenticatedLayout() {
   return (
-    <>
+    <ErrorBoundary>
       <Outlet />
-      <GlobalCopilot />
-    </>
+      {/* El copiloto usa APIs de voz que no existen en todos los móviles: si falla, no tumba la app. */}
+      <ErrorBoundary silent>
+        <GlobalCopilot />
+      </ErrorBoundary>
+    </ErrorBoundary>
   );
 }
