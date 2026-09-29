@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { StoreProvider } from "@/lib/autoescuela/store";
+import { SchoolProvider } from "@/lib/autoescuela/school-branding";
 import { Toaster } from "@/components/ui/sonner";
 import { CookieConsent } from "@/components/cookie-consent";
 
@@ -134,12 +135,14 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <SchoolProvider>
       <StoreProvider>
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <Outlet />
         <Toaster position="top-center" />
         <CookieConsent />
       </StoreProvider>
+      </SchoolProvider>
     </QueryClientProvider>
   );
 }
