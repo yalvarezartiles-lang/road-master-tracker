@@ -203,14 +203,15 @@ function AdminPage() {
           </div>
         </div>
 
-        {isAdmin && <SchoolSettings />}
 
         {isAdmin && (
           <section className="rounded-3xl border bg-card shadow-sm hover:shadow-md transition-shadow p-5">
             <h2 className="text-lg font-bold">Autoescuelas ({schools.length})</h2>
+            <p className="text-sm text-muted-foreground">Sube el logo de cada autoescuela: el color se extrae solo y tiñe la app de su equipo.</p>
             <ul className="mt-3 divide-y text-base">
               {schools.map((a) => (
-                <li key={a.id} className="flex items-center gap-2 py-2">
+                <li key={a.id} className="py-3">
+                  <div className="flex items-center gap-2">
                   {editingSchool?.id === a.id ? (
                     <>
                       <Input
