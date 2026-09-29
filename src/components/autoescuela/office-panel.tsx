@@ -91,6 +91,16 @@ export function OfficePanel({ userId }: { userId: string }) {
 
   const current = teachers.find((t) => t.id === selected);
   const students = data.students;
+  const [searchTerm, setSearchTerm] = React.useState("");
+  const [archivedTerm, setArchivedTerm] = React.useState("");
+  const fullName = (s: { name: string; apellidos: string }) =>
+    [s.name, s.apellidos].filter(Boolean).join(" ");
+  const filteredStudents = students.filter((s) =>
+    normalize(fullName(s)).includes(normalize(searchTerm)),
+  );
+  const filteredArchived = archived.filter((a) =>
+    normalize(fullName(a)).includes(normalize(archivedTerm)),
+  );
   const studentsVersion = students.map((s) => `${s.id}${s.name}${s.apellidos}`).join("|").length + students.length;
 
   return (
