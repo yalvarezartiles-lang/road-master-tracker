@@ -183,7 +183,7 @@ export function SchoolSettings({ school, onSaved }: Props) {
         data: { id: school.id, logoUrl: path, primaryColor: colors[0] ?? null, secondaryColor: colors[1] ?? null, accentColor: colors[2] ?? null },
       });
       setPreview(dataUrl);
-      setPalette(colors);
+      setPalette(toTriplet(colors));
       toast.success("Logo y paleta actualizados");
       onSaved?.();
       if (brand.schoolId === school.id) await brand.refresh();
@@ -199,7 +199,7 @@ export function SchoolSettings({ school, onSaved }: Props) {
     try {
       await saveBranding({ data: { id: school.id, logoUrl: null, primaryColor: null, secondaryColor: null, accentColor: null } });
       setPreview("");
-      setPalette([]);
+      setPalette(toTriplet([]));
       toast.success("Marca restablecida");
       onSaved?.();
       if (brand.schoolId === school.id) await brand.refresh();
