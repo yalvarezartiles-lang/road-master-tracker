@@ -213,9 +213,30 @@ export function OfficePanel({ userId }: { userId: string }) {
 
         <section className="rounded-3xl border bg-card shadow-sm hover:shadow-md transition-shadow p-4">
           <h2 className="text-lg font-bold">Alumnos archivados ({archived.length})</h2>
+          <div className="relative mt-3">
+            <Search className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              value={archivedTerm}
+              onChange={(e) => setArchivedTerm(e.target.value)}
+              placeholder="Buscar alumno archivado…"
+              className="h-14 w-full rounded-2xl border bg-background px-4 pl-12 text-base outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
           <ul className="mt-3 divide-y">
-            {archived.length === 0 && <li className="py-4 text-center text-muted-foreground">No hay alumnos archivados.</li>}
-            {archived.map((a) => (
+            {filteredArchived.length === 0 && (
+              <li className="py-4 text-center text-muted-foreground">
+                {archived.length === 0 ? (
+                  "No hay alumnos archivados."
+                ) : (
+                  <>
+                    <SearchX className="mx-auto mb-2 size-8 opacity-40" />
+                    <p>No se encontraron alumnos con ese nombre</p>
+                  </>
+                )}
+              </li>
+            )}
+            {filteredArchived.map((a) => (
               <li key={a.id} className="flex items-center gap-2 py-3">
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-semibold">{[a.name, a.apellidos].filter(Boolean).join(" ")}</p>
