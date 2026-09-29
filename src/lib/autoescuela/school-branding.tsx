@@ -95,17 +95,17 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
     return () => sub.subscription.unsubscribe();
   }, [refresh]);
 
-  // Fondo casi neutro (3%); principal para acciones; secundario y acento para estados y detalles.
+  // Roles por posición: 0 = principal, 1 = secundario, 2 = fondo (siempre ultra-pastel, 4% sobre blanco).
   React.useEffect(() => {
     const root = document.documentElement;
     const props = ["--background", "--card", "--card-foreground", "--foreground", "--primary", "--primary-foreground", "--secondary", "--secondary-foreground", "--muted", "--accent", "--accent-foreground", "--border", "--input", "--ring", "--brand-secondary", "--brand-accent", "--chart-1", "--chart-2", "--chart-3"];
     if (!branding.primaryColor) return void props.forEach((p) => root.style.removeProperty(p));
     const p = branding.primaryColor;
     const s = branding.secondaryColor || p;
-    const a = branding.accentColor || s;
+    const a = branding.accentColor || p;
     const dark = "oklch(0.278 0.033 256.848)";
     const set = (k: string, v: string) => root.style.setProperty(k, v);
-    set("--background", `color-mix(in srgb, ${p} 3%, white)`);
+    set("--background", `color-mix(in srgb, ${a} 4%, white)`);
     set("--card", "white");
     set("--card-foreground", dark);
     set("--foreground", dark);
@@ -113,8 +113,8 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
     set("--primary-foreground", `oklch(from ${p} calc(l > 0.68 ? 0.2 : 0.99) 0 0)`);
     set("--secondary", `color-mix(in srgb, ${s} 22%, white)`);
     set("--secondary-foreground", dark);
-    set("--muted", `color-mix(in srgb, ${p} 5%, white)`);
-    set("--accent", `color-mix(in srgb, ${a} 18%, white)`);
+    set("--muted", `color-mix(in srgb, ${a} 6%, white)`);
+    set("--accent", `color-mix(in srgb, ${s} 16%, white)`);
     set("--accent-foreground", dark);
     set("--border", `color-mix(in srgb, ${p} 14%, oklch(0.93 0 0))`);
     set("--input", `color-mix(in srgb, ${p} 14%, oklch(0.93 0 0))`);
