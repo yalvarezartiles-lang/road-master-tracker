@@ -9,8 +9,12 @@ import { updateAutoescuelaBranding } from "@/lib/admin.functions";
 
 const MAX_LOGO = 2 * 1024 * 1024;
 
-export function extractDominantColor(dataUrl: string) {
-  return new Promise<string>((resolve, reject) => {
+const toHex = (r: number, g: number, b: number) =>
+  `#${[r, g, b].map((v) => Math.round(v).toString(16).padStart(2, "0")).join("")}`;
+
+/** Extrae hasta 3 colores predominantes y bien diferenciados (principal, secundario, acento). */
+export function extractPalette(dataUrl: string) {
+  return new Promise<string[]>((resolve, reject) => {
     const image = new Image();
     image.onload = () => {
       const canvas = document.createElement("canvas");
@@ -21,14 +25,16 @@ export function extractDominantColor(dataUrl: string) {
       context.drawImage(image, 0, 0, 64, 64);
       const pixels = context.getImageData(0, 0, 64, 64).data;
       const buckets = new Map<string, { count: number; r: number; g: number; b: number }>();
-      for (let index = 0; index < pixels.length; index += 16) {
+      for (let index = 0; index < pixels.length; index += 4) {
         const alpha = pixels[index + 3] ?? 0;
         const r = pixels[index] ?? 0;
         const g = pixels[index + 1] ?? 0;
         const b = pixels[index + 2] ?? 0;
-        const brightness = (r + g + b) / 3;
-        if (alpha < 180 || brightness > 245 || brightness < 12) continue;
-        const key = `${Math.round(r / 24)}-${Math.round(g / 24)}-${Math.round(b / 24)}`;
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        // Ignora transparencias, blancos, negros y grises (fondos del logo).
+        if (alpha < 180 || max > 245 && min > 230 || max < 25 || max - min < 28) continue;
+        const key = `${Math.round(r / 32)}-${Math.round(g / 32)}-${Math.round(b / 32)}`;
         const bucket = buckets.get(key) ?? { count: 0, r: 0, g: 0, b: 0 };
         bucket.count += 1;
         bucket.r += r;
@@ -36,16 +42,24 @@ export function extractDominantColor(dataUrl: string) {
         bucket.b += b;
         buckets.set(key, bucket);
       }
-      const dominant = [...buckets.values()].sort((a, b) => b.count - a.count)[0];
-      if (!dominant) return resolve("#71717a");
-      const hex = [dominant.r, dominant.g, dominant.b]
-        .map((sum) => Math.round(sum / dominant.count).toString(16).padStart(2, "0"))
-        .join("");
-      resolve(`#${hex}`);
+      const ranked = [...buckets.values()]
+        .sort((a, b) => b.count - a.count)
+        .map((c) => [c.r / c.count, c.g / c.count, c.b / c.count] as const);
+      const picked: (readonly [number, number, number])[] = [];
+      for (const c of ranked) {
+        if (picked.every((p) => Math.hypot(p[0] - c[0], p[1] - c[1], p[2] - c[2]) > 70)) picked.push(c);
+        if (picked.length === 3) break;
+      }
+      if (!picked.length) return resolve(["#71717a"]);
+      resolve(picked.map((c) => toHex(c[0], c[1], c[2])));
     };
     image.onerror = () => reject(new Error("No se pudo leer la imagen"));
     image.src = dataUrl;
   });
+}
+
+export async function extractDominantColor(dataUrl: string) {
+  return (await extractPalette(dataUrl))[0] ?? "#71717a";
 }
 
 function readAsDataUrl(file: File) {
