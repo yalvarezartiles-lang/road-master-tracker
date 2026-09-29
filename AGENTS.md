@@ -15,3 +15,4 @@
 - El reglamento PDF del Copiloto vive en el bucket privado `documentos-legales` como `reglamento.pdf`; solo el rol `admin` puede subirlo (RLS en `storage.objects`) y el servidor lo descarga con service role.
 - Las integraciones MCP se exponen en `/mcp`, usan OAuth de Lovable Cloud y consultan datos con el token del usuario para conservar RLS.
 - El Ticket de Progreso usa una plantilla bitmap fija con capas HTML absolutas y datos efímeros — conserva la composición visual exacta sin almacenar imágenes generadas.
+- La marca visual se configura solo desde Administración, se guarda localmente y su paleta pastel se deriva del logo con Canvas — evita selección manual y procesamiento externo.

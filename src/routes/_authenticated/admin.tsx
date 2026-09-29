@@ -17,6 +17,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { SchoolSettings } from "@/components/autoescuela/school-settings";
+import { SchoolLogo } from "@/lib/autoescuela/school-branding";
 import { useCurrentUser } from "@/lib/auth";
 import { createAutoescuela, createTeamMember, deleteAutoescuela, deleteTeamMember, listArchivedStudents, listAutoescuelas, listTeam, purgeStudent, restoreStudentAdmin, setTeacherAutonomo, updateAutoescuela } from "@/lib/admin.functions";
 
@@ -175,7 +177,7 @@ function AdminPage() {
   return (
     <div className="min-h-screen bg-background pb-16">
       <header className="sticky top-0 z-50 border-b border-border/60 bg-card/80 backdrop-blur-md px-4 py-3">
-        <div className="mx-auto flex max-w-2xl items-center justify-between">
+        <div className="mx-auto flex max-w-2xl items-center justify-between gap-3">
           <Link
             to="/panel"
             className="flex size-12 items-center justify-center rounded-2xl border"
@@ -183,7 +185,10 @@ function AdminPage() {
           >
             <ArrowLeft className="size-6" />
           </Link>
-          <ThemeToggle />
+          <div className="flex min-w-0 items-center gap-3">
+            <SchoolLogo />
+            <ThemeToggle />
+          </div>
         </div>
       </header>
 
@@ -197,6 +202,8 @@ function AdminPage() {
             <p className="text-sm text-muted-foreground">Cuentas del equipo</p>
           </div>
         </div>
+
+        {isAdmin && <SchoolSettings />}
 
         {isAdmin && (
           <section className="rounded-3xl border bg-card shadow-sm hover:shadow-md transition-shadow p-5">

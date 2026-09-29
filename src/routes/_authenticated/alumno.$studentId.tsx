@@ -12,6 +12,7 @@ import { StudentDialog } from "@/components/autoescuela/student-dialog";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { NetworkIndicator } from "@/components/autoescuela/network-indicator";
 import { cn } from "@/lib/utils";
+import { SchoolLogo } from "@/lib/autoescuela/school-branding";
 
 export const Route = createFileRoute("/_authenticated/alumno/$studentId")({
   head: () => ({
@@ -74,13 +75,16 @@ function StudentPage() {
     <div className="min-h-screen bg-background pb-32">
       <header className="sticky top-0 z-50 border-b border-border/60 bg-card/80 backdrop-blur-md px-4 py-3">
         <div className="mx-auto flex max-w-2xl items-center justify-between">
-          <Link
-            to="/panel"
-            className="flex size-12 items-center justify-center rounded-2xl border"
-            aria-label="Volver"
-          >
-            <ArrowLeft className="size-6" />
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              to="/panel"
+              className="flex size-12 items-center justify-center rounded-2xl border"
+              aria-label="Volver"
+            >
+              <ArrowLeft className="size-6" />
+            </Link>
+            <SchoolLogo />
+          </div>
           <div className="flex items-center gap-2">
             <NetworkIndicator />
             <ThemeToggle />

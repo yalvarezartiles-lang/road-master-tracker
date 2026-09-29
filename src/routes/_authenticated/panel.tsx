@@ -36,8 +36,7 @@ import { LessonDialog } from "@/components/autoescuela/lesson-dialog";
 import { StudentDialog } from "@/components/autoescuela/student-dialog";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { NetworkIndicator } from "@/components/autoescuela/network-indicator";
-import { SchoolSettings } from "@/components/autoescuela/school-settings";
-import { useSchool } from "@/lib/autoescuela/school-branding";
+import { SchoolLogo, useSchool } from "@/lib/autoescuela/school-branding";
 import { levelClasses } from "@/components/autoescuela/skill-traffic-light";
 import { useCurrentUser, useSignOut } from "@/lib/auth";
 import { normalize } from "@/lib/autoescuela/normalize";
@@ -169,9 +168,7 @@ function TeacherDashboard() {
         <div className="mx-auto flex w-full max-w-2xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
           <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 md:contents">
           <div className="flex min-w-0 items-center gap-3">
-            {brand.schoolLogo && (
-              <img src={brand.schoolLogo} alt="" className={`shrink-0 object-contain transition-all md:h-12 ${headerCompact ? "h-8" : "h-10"} max-w-24`} />
-            )}
+            <SchoolLogo className={`max-w-24 transition-all md:h-12 ${headerCompact ? "h-8" : "h-10"}`} />
             <div className="min-w-0">
             <h1 className={`truncate font-bold leading-tight tracking-tight transition-[font-size] duration-200 md:text-2xl ${headerCompact ? "text-base" : "text-lg"}`}>
               {teacherName ? `Hola, ${teacherName}` : "Panel"}
@@ -242,7 +239,6 @@ function TeacherDashboard() {
               </SheetContent>
             </Sheet>
             <NetworkIndicator />
-            <SchoolSettings />
             <span className="[&_button]:size-9 [&_button]:rounded-xl [&_svg]:size-5 md:[&_button]:size-12 md:[&_button]:rounded-2xl md:[&_svg]:size-6"><ThemeToggle /></span>
             <Button
               variant="ghost"
