@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { GripVertical, ImageUp, Loader2, Plus, Trash2, Upload } from "lucide-react";
+import { GripVertical, ImageUp, Loader2, Pipette, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +9,11 @@ import { updateAutoescuelaBranding } from "@/lib/admin.functions";
 
 const MAX_LOGO = 2 * 1024 * 1024;
 const ROLE_LABELS = ["Principal", "Secundario", "Fondo"];
+const FALLBACK = ["#71717a", "#a1a1aa", "#fafafa"];
+
+/** Siempre 3 posiciones editables: principal, secundario y fondo. */
+const toTriplet = (colors: (string | null | undefined)[]) =>
+  [0, 1, 2].map((i) => colors[i] || FALLBACK[i]!) as string[];
 
 const toHex = (r: number, g: number, b: number) =>
   `#${[r, g, b].map((v) => Math.round(v).toString(16).padStart(2, "0")).join("")}`;
@@ -89,8 +94,7 @@ export function SchoolSettings({ school, onSaved }: Props) {
   const saveBranding = useServerFn(updateAutoescuelaBranding);
   const brand = useSchool();
   const [preview, setPreview] = React.useState("");
-  const initial = [school.primary_color, school.secondary_color, school.accent_color].filter(Boolean) as string[];
-  const [palette, setPalette] = React.useState<string[]>(initial);
+  const [palette, setPalette] = React.useState<string[]>(toTriplet([school.primary_color, school.secondary_color, school.accent_color]));
   const color = palette[0] ?? "";
   const [busy, setBusy] = React.useState(false);
   const [draggedIndex, setDraggedIndex] = React.useState<number | null>(null);
@@ -130,23 +134,29 @@ export function SchoolSettings({ school, onSaved }: Props) {
     const next = [...palette];
     next[index] = value;
     setPalette(next);
-    if (brand.schoolId === school.id && index === 0) {
-      document.documentElement.style.setProperty("--primary", value);
-      document.documentElement.style.setProperty("--ring", value);
+    if (brand.schoolId === school.id) {
+      const root = document.documentElement;
+      if (index === 0) {
+        root.style.setProperty("--color-primary", value);
+        root.style.setProperty("--primary", value);
+        root.style.setProperty("--ring", value);
+      }
+      if (index === 1) {
+        root.style.setProperty("--color-secondary", value);
+        root.style.setProperty("--brand-secondary", value);
+      }
+      if (index === 2) {
+        root.style.setProperty("--color-background", value);
+        root.style.setProperty("--background", value);
+        root.style.setProperty("--foreground", `oklch(from ${value} calc(l > 0.6 ? 0.22 : 0.98) 0 0)`);
+      }
     }
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => void persist(next, prev), 600);
   };
 
-  const addColor = () => {
-    if (palette.length >= 3) return;
-    const next = [...palette, palette[0] ?? "#71717a"];
-    setPalette(next);
-    void persist(next, palette);
-  };
-
   React.useEffect(() => {
-    setPalette([school.primary_color, school.secondary_color, school.accent_color].filter(Boolean) as string[]);
+    setPalette(toTriplet([school.primary_color, school.secondary_color, school.accent_color]));
     if (!school.logo_url) return void setPreview("");
     let alive = true;
     void loadLogoDataUrl(school.logo_url).then((url) => {
@@ -173,7 +183,7 @@ export function SchoolSettings({ school, onSaved }: Props) {
         data: { id: school.id, logoUrl: path, primaryColor: colors[0] ?? null, secondaryColor: colors[1] ?? null, accentColor: colors[2] ?? null },
       });
       setPreview(dataUrl);
-      setPalette(colors);
+      setPalette(toTriplet(colors));
       toast.success("Logo y paleta actualizados");
       onSaved?.();
       if (brand.schoolId === school.id) await brand.refresh();
@@ -189,7 +199,7 @@ export function SchoolSettings({ school, onSaved }: Props) {
     try {
       await saveBranding({ data: { id: school.id, logoUrl: null, primaryColor: null, secondaryColor: null, accentColor: null } });
       setPreview("");
-      setPalette([]);
+      setPalette(toTriplet([]));
       toast.success("Marca restablecida");
       onSaved?.();
       if (brand.schoolId === school.id) await brand.refresh();
@@ -210,7 +220,7 @@ export function SchoolSettings({ school, onSaved }: Props) {
         Subir logo
         <input type="file" accept="image/*" className="sr-only" disabled={busy} onChange={(e) => void onLogo(e.target.files?.[0])} />
       </label>
-      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+      <div className="flex flex-wrap items-start gap-3 text-xs text-muted-foreground">
         {palette.map((c, i) => (
           <div
             key={i}
@@ -235,7 +245,14 @@ export function SchoolSettings({ school, onSaved }: Props) {
               >
                 <GripVertical className="size-4" />
               </button>
-              <label className={`relative size-10 cursor-pointer rounded-full border-2 ${draggedIndex === i ? "border-foreground" : "border-card"} shadow`} style={{ backgroundColor: c }}>
+              <label
+                className={`relative flex size-11 cursor-pointer items-center justify-center rounded-full border-2 shadow ${draggedIndex === i ? "border-foreground" : "border-card"}`}
+                style={{ backgroundColor: c }}
+                title={`Cambiar color ${ROLE_LABELS[i]}`}
+              >
+                <span className="pointer-events-none flex size-5 items-center justify-center rounded-full bg-card/90 shadow-sm">
+                  <Pipette className="size-3 text-foreground" />
+                </span>
                 <input
                   type="color"
                   value={c}
@@ -246,17 +263,10 @@ export function SchoolSettings({ school, onSaved }: Props) {
                 />
               </label>
             </div>
-            <span className="text-[10px] font-medium">{ROLE_LABELS[i]}</span>
+            <span className="text-[10px] font-semibold">{ROLE_LABELS[i]}</span>
+            <span className="font-mono text-[10px] uppercase">{c}</span>
           </div>
         ))}
-        {palette.length < 3 && (
-          <div className="flex flex-col items-center gap-1">
-            <button type="button" onClick={addColor} disabled={busy} className="flex size-10 items-center justify-center rounded-full border-2 border-dashed border-border hover:bg-muted" aria-label="Añadir color">
-              <Plus className="size-4" />
-            </button>
-            <span className="text-[10px] font-medium">{ROLE_LABELS[palette.length]}</span>
-          </div>
-        )}
       </div>
       {(preview || color) && (
         <Button variant="ghost" size="icon" aria-label="Quitar marca" disabled={busy} onClick={() => void onRemove()}>

@@ -95,20 +95,27 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
     return () => sub.subscription.unsubscribe();
   }, [refresh]);
 
-  // Roles por posición: 0 = principal, 1 = secundario, 2 = fondo (siempre ultra-pastel, 4% sobre blanco).
+  // Roles por posición: 0 = principal, 1 = secundario, 2 = fondo real de la app (lo controla el admin).
   React.useEffect(() => {
     const root = document.documentElement;
-    const props = ["--background", "--card", "--card-foreground", "--foreground", "--primary", "--primary-foreground", "--secondary", "--secondary-foreground", "--muted", "--accent", "--accent-foreground", "--border", "--input", "--ring", "--brand-secondary", "--brand-accent", "--chart-1", "--chart-2", "--chart-3"];
+    const props = ["--color-primary", "--color-secondary", "--color-background", "--background", "--card", "--card-foreground", "--foreground", "--primary", "--primary-foreground", "--secondary", "--secondary-foreground", "--muted", "--muted-foreground", "--accent", "--accent-foreground", "--border", "--input", "--ring", "--brand-secondary", "--brand-accent", "--chart-1", "--chart-2", "--chart-3"];
     if (!branding.primaryColor) return void props.forEach((p) => root.style.removeProperty(p));
     const p = branding.primaryColor;
     const s = branding.secondaryColor || p;
-    const a = branding.accentColor || p;
+    const bg = branding.accentColor || "#fafafa";
     const dark = "oklch(0.278 0.033 256.848)";
     const set = (k: string, v: string) => root.style.setProperty(k, v);
-    set("--background", "oklch(0.985 0 0)");
+    // Variables semánticas de marca (posición 0, 1 y 2).
+    set("--color-primary", p);
+    set("--color-secondary", s);
+    set("--color-background", bg);
+    // Fondo general: el tercer color tal cual lo elige el administrador.
+    set("--background", bg);
+    set("--foreground", `oklch(from ${bg} calc(l > 0.6 ? 0.22 : 0.98) 0 0)`);
+    set("--muted-foreground", `oklch(from ${bg} calc(l > 0.6 ? 0.45 : 0.82) 0.01 h)`);
+    // Tarjetas y bloques de datos siempre blancos para máxima legibilidad.
     set("--card", "white");
     set("--card-foreground", dark);
-    set("--foreground", dark);
     set("--primary", p);
     set("--primary-foreground", `oklch(from ${p} calc(l > 0.68 ? 0.2 : 0.99) 0 0)`);
     set("--secondary", "white");
@@ -120,10 +127,10 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
     set("--input", "oklch(0.92 0.004 286.32)");
     set("--ring", p);
     set("--brand-secondary", s);
-    set("--brand-accent", a);
+    set("--brand-accent", bg);
     set("--chart-1", p);
     set("--chart-2", s);
-    set("--chart-3", a);
+    set("--chart-3", bg);
   }, [branding.primaryColor, branding.secondaryColor, branding.accentColor]);
 
   const value = React.useMemo(() => ({ ...branding, loading, refresh }), [branding, loading, refresh]);

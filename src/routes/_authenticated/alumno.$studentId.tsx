@@ -108,7 +108,7 @@ function StudentPage() {
               variant="outline"
               size="icon"
               onClick={() => setEditOpen(true)}
-              className="size-12 shrink-0 rounded-2xl"
+              className="size-12 shrink-0 rounded-2xl border-[var(--brand-secondary,var(--border))] bg-card text-[var(--brand-secondary,var(--foreground))]"
               aria-label="Editar alumno"
             >
               <Pencil className="size-5" />
@@ -116,10 +116,10 @@ function StudentPage() {
           </div>
           <div className="mt-3 grid gap-2 text-base text-muted-foreground">
             <p className="flex items-center gap-2">
-              <Phone className="size-5" /> {student.phone || "Sin teléfono"}
+              <Phone className="size-5 text-[var(--brand-secondary,var(--muted-foreground))]" /> {student.phone || "Sin teléfono"}
             </p>
             <p className="flex items-center gap-2">
-              <CalendarDays className="size-5" /> Inicio:{" "}
+              <CalendarDays className="size-5 text-[var(--brand-secondary,var(--muted-foreground))]" /> Inicio:{" "}
               {new Date(student.startDate).toLocaleDateString("es-ES")}
             </p>
           </div>
@@ -166,7 +166,7 @@ function StudentPage() {
             <Button
               variant="outline"
               disabled={exporting}
-              className="h-12 rounded-2xl"
+              className="h-12 rounded-2xl border-[var(--brand-secondary,var(--border))] bg-card text-[var(--brand-secondary,var(--foreground))]"
               onClick={() => setExporting(true)}
             >
               <FileDown className="size-5" /> Exportar Fichas (PDF)
@@ -187,12 +187,13 @@ function StudentPage() {
                   {l.topics.map((t) => (
                     <span
                       key={t}
-                      className="rounded-full bg-muted px-3 py-1 text-sm font-medium"
+                      className="rounded-full bg-[color-mix(in_srgb,var(--brand-secondary,var(--muted))_12%,white)] px-3 py-1 text-sm font-medium text-[var(--brand-secondary,var(--foreground))]"
                     >
                       {t}
                     </span>
                   ))}
                 </div>
+
                 {(l.matricula || l.horaInicio) && (
                   <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
                     <Car className="size-4" /> {l.matricula || "—"}
