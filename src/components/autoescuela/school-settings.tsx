@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { ImageUp, Loader2, Trash2, Upload } from "lucide-react";
+import { GripVertical, ImageUp, Loader2, Plus, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
