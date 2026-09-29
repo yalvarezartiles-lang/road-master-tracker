@@ -166,7 +166,7 @@ function StudentPage() {
             <Button
               variant="outline"
               disabled={exporting}
-              className="h-12 rounded-2xl"
+              className="h-12 rounded-2xl border-[var(--brand-secondary,var(--border))] bg-card text-[var(--brand-secondary,var(--foreground))]"
               onClick={() => setExporting(true)}
             >
               <FileDown className="size-5" /> Exportar Fichas (PDF)
@@ -187,12 +187,13 @@ function StudentPage() {
                   {l.topics.map((t) => (
                     <span
                       key={t}
-                      className="rounded-full bg-muted px-3 py-1 text-sm font-medium"
+                      className="rounded-full bg-[color-mix(in_srgb,var(--brand-secondary,var(--muted))_12%,white)] px-3 py-1 text-sm font-medium text-[var(--brand-secondary,var(--foreground))]"
                     >
                       {t}
                     </span>
                   ))}
                 </div>
+
                 {(l.matricula || l.horaInicio) && (
                   <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
                     <Car className="size-4" /> {l.matricula || "—"}
