@@ -43,6 +43,7 @@ import { normalize } from "@/lib/autoescuela/normalize";
 import { supabase } from "@/integrations/supabase/client";
 import { OfficePanel } from "@/components/autoescuela/office-panel";
 import { AgendaDiaria } from "@/components/autoescuela/agenda-diaria";
+import { CuadranteBuilder } from "@/components/autoescuela/cuadrante-builder";
 import { PasswordCard } from "@/components/autoescuela/password-card";
 import { ReglamentoUpload } from "@/components/autoescuela/reglamento-upload";
 import { ScanRosterButton } from "@/components/autoescuela/scan-roster-button";
@@ -197,6 +198,15 @@ function TeacherDashboard() {
                   <Shield className="size-5 md:size-6" />
                 </Link>
               </Button>
+            )}
+            {user && (
+              <CuadranteBuilder
+                profesorId={user.id}
+                onSaved={(d) => {
+                  setAgendaDay(d);
+                  setAgendaVersion((v) => v + 1);
+                }}
+              />
             )}
             <Sheet>
               <SheetTrigger asChild>
