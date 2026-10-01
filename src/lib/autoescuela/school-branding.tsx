@@ -101,6 +101,17 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
     };
   }, [refresh]);
 
+  // Modo oscuro: se observa la clase .dark de <html> para no pisar los colores oscuros.
+  const [isDark, setIsDark] = React.useState(false);
+  React.useEffect(() => {
+    const root = document.documentElement;
+    const sync = () => setIsDark(root.classList.contains("dark"));
+    sync();
+    const obs = new MutationObserver(sync);
+    obs.observe(root, { attributes: true, attributeFilter: ["class"] });
+    return () => obs.disconnect();
+  }, []);
+
   // Roles por posición: 0 = principal, 1 = secundario, 2 = fondo real de la app (lo controla el admin).
   React.useEffect(() => {
     const root = document.documentElement;
@@ -111,6 +122,19 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
     const bg = branding.accentColor || "#fafafa";
     const dark = "oklch(0.278 0.033 256.848)";
     const set = (k: string, v: string) => root.style.setProperty(k, v);
+    if (isDark) {
+      // En oscuro solo se aplica el color de marca; fondos y textos vienen de .dark.
+      props.forEach((k) => root.style.removeProperty(k));
+      set("--color-primary", p);
+      set("--color-secondary", s);
+      set("--primary", p);
+      set("--primary-foreground", readableForeground(p));
+      set("--ring", p);
+      set("--brand-secondary", s);
+      set("--chart-1", p);
+      set("--chart-2", s);
+      return;
+    }
     // Variables semánticas de marca (posición 0, 1 y 2).
     set("--color-primary", p);
     set("--color-secondary", s);
@@ -139,7 +163,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
     set("--chart-1", p);
     set("--chart-2", s);
     set("--chart-3", bg);
-  }, [branding.primaryColor, branding.secondaryColor, branding.accentColor]);
+  }, [branding.primaryColor, branding.secondaryColor, branding.accentColor, isDark]);
 
   const value = React.useMemo(() => ({ ...branding, loading, refresh }), [branding, loading, refresh]);
   return <SchoolContext.Provider value={value}>{children}</SchoolContext.Provider>;
