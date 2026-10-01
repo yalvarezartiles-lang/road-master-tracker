@@ -157,7 +157,7 @@ export function CuadranteBuilder({
 
         <div className="flex-1 space-y-3 overflow-y-auto bg-muted/40 p-4">
           {franjas.map((f, i) => (
-            <div key={f.key} className="space-y-3 rounded-2xl border border-zinc-100 bg-white p-4 text-zinc-900 shadow-sm">
+            <div key={f.key} className="space-y-3 rounded-2xl border border-zinc-100 bg-white p-4 text-zinc-900 dark:border-border dark:bg-card dark:text-card-foreground shadow-sm">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-semibold text-zinc-500">Clase {i + 1}</span>
                 <button
@@ -186,7 +186,7 @@ export function CuadranteBuilder({
                       "h-12 flex-1 rounded-full border px-3 text-base font-bold transition-colors",
                       f.duration === d
                         ? "border-primary bg-primary text-primary-foreground"
-                        : "border-zinc-200 bg-white text-zinc-700 active:bg-zinc-100",
+                        : "border-zinc-200 bg-white text-zinc-700 active:bg-zinc-100 dark:border-border dark:bg-card dark:text-card-foreground",
                     )}
                   >
                     +{d} min
