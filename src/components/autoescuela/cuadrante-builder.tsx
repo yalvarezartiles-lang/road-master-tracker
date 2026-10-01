@@ -118,10 +118,10 @@ export function CuadranteBuilder({
   const update = (key: string, patch: Partial<Franja>) =>
     setFranjas((f) => f.map((x) => (x.key === key ? { ...x, ...patch } : x)));
 
-  const save = async () => {
-    if (!franjas.length) return toast.error("Añade al menos una franja");
+  const save = async (): Promise<void> => {
+    if (!franjas.length) { toast.error("Añade al menos una franja"); return; }
     if (franjas.some((f) => !f.studentId || !f.start || !f.duration))
-      return toast.error("Completa alumno, hora y duración en cada franja");
+      { toast.error("Completa alumno, hora y duración en cada franja"); return; }
     setSaving(true);
     const { error } = await supabase.from("agenda_diaria").insert(
       franjas.map((f) => ({
@@ -133,7 +133,7 @@ export function CuadranteBuilder({
       })),
     );
     setSaving(false);
-    if (error) return toast.error("No se pudo guardar el cuadrante");
+    if (error) { toast.error("No se pudo guardar el cuadrante"); return; }
     toast.success(`Cuadrante guardado (${franjas.length} clase${franjas.length > 1 ? "s" : ""})`);
     const [y, m, d] = fecha.split("-").map(Number);
     onSaved?.(new Date(y!, m! - 1, d!));
