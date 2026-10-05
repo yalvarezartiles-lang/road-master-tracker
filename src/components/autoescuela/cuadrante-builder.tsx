@@ -30,7 +30,7 @@ function addMinutes(time: string, mins: number) {
 
 const newKey = () => Math.random().toString(36).slice(2);
 
-function StudentPicker({
+export function StudentPicker({
   students,
   value,
   onChange,
@@ -89,9 +89,11 @@ function StudentPicker({
 export function CuadranteBuilder({
   profesorId,
   onSaved,
+  trigger,
 }: {
   profesorId: string;
   onSaved?: (day: Date) => void;
+  trigger?: React.ReactNode;
 }) {
   const [open, setOpen] = React.useState(false);
   const [fecha, setFecha] = React.useState(() => toISODate(new Date()));
@@ -144,9 +146,11 @@ export function CuadranteBuilder({
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
+        {trigger ?? (
         <Button variant="ghost" size="icon" className="size-9 rounded-xl md:size-12 md:rounded-2xl" aria-label="Constructor de Cuadrantes">
           <CalendarPlus className="size-5 md:size-6" />
         </Button>
+        )}
       </SheetTrigger>
       <SheetContent side="right" className="flex w-full max-w-md flex-col gap-0 p-0">
         <SheetHeader className="border-b p-5 text-left">
