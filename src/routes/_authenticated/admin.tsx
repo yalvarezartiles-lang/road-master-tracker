@@ -20,7 +20,8 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { SchoolSettings } from "@/components/autoescuela/school-settings";
 import { SchoolLogo } from "@/lib/autoescuela/school-branding";
 import { useCurrentUser } from "@/lib/auth";
-import { createAutoescuela, createTeamMember, deleteAutoescuela, deleteTeamMember, listArchivedStudents, listAutoescuelas, listTeam, purgeStudent, restoreStudentAdmin, setTeacherAutonomo, updateAutoescuela } from "@/lib/admin.functions";
+import { createAutoescuela, createTeamMember, deleteAutoescuela, deleteTeamMember, listArchivedStudents, listAutoescuelas, listTeam, purgeStudent, restoreStudentAdmin, setTeacherAutonomo,
+  setTeacherSubscription, updateAutoescuela } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -49,6 +50,8 @@ interface Member {
   role: "admin" | "admin_oficina" | "profesor";
   autoescuela_id?: string | null;
   es_autonomo?: boolean;
+  fecha_vencimiento?: string | null;
+  estado_pago?: boolean;
 }
 
 const ROLE_LABEL = { admin: "Administrador", admin_oficina: "Oficina", profesor: "Profesor" } as const;
@@ -70,6 +73,16 @@ function AdminPage() {
   const createMember = useServerFn(createTeamMember);
   const removeMember = useServerFn(deleteTeamMember);
   const toggleAutonomo = useServerFn(setTeacherAutonomo);
+  const saveSubscription = useServerFn(setTeacherSubscription);
+  const onSubscription = async (m: Member, months: number | null, pagado: boolean) => {
+    try {
+      const patch = await saveSubscription({ data: { userId: m.id, months, pagado } });
+      setTeam((prev) => prev.map((t) => (t.id === m.id ? { ...t, ...patch } : t)));
+      toast.success("Suscripción actualizada");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "No se pudo actualizar");
+    }
+  };
   const [autonomoBusy, setAutonomoBusy] = React.useState<string | null>(null);
 
   const [team, setTeam] = React.useState<Member[]>([]);
@@ -431,6 +444,32 @@ function AdminPage() {
                     ))}
                   </div>
                 )}
+                {m.role === "profesor" && isAdmin && (() => {
+                  const venc = m.fecha_vencimiento ? new Date(`${m.fecha_vencimiento}T23:59:59`) : null;
+                  const activa = !!m.estado_pago && !!venc && venc.getTime() >= Date.now();
+                  return (
+                    <div className="mt-3 space-y-2 rounded-2xl border bg-muted/30 p-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase ${activa ? "bg-success text-success-foreground" : "bg-danger text-danger-foreground"}`}>
+                          {activa ? "Pagada / Activa" : "No pagada / Caducada"}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {venc ? `Vence el ${venc.toLocaleDateString("es-ES")}` : "Sin fecha de vencimiento"}
+                        </span>
+                      </div>
+                      <p className="text-xs font-semibold text-muted-foreground">Renovar suscripción (marca como pagada):</p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {[[1, "1 mes"], [3, "3 meses"], [12, "1 año"]].map(([n, l]) => (
+                          <Button key={n} variant="outline" className="h-11 rounded-xl" onClick={() => void onSubscription(m, n as number, true)}>{l}</Button>
+                        ))}
+                      </div>
+                      <label className="flex items-center gap-2 text-sm font-medium">
+                        <input type="checkbox" className="size-5" checked={!!m.estado_pago} onChange={(e) => void onSubscription(m, null, e.target.checked)} />
+                        Marcada como pagada
+                      </label>
+                    </div>
+                  );
+                })()}
               </li>
             ))}
             {team.length === 0 && (

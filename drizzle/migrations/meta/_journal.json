@@ -169,6 +169,13 @@
       "when": 1790699494717,
       "tag": "0023_school_palette_colors",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1791228836269,
+      "tag": "0024_teacher_subscription",
+      "breakpoints": true
     }
   ]
 }
