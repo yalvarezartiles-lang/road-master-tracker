@@ -289,16 +289,11 @@ function WalletMock() {
 // ---------- Mockup 3: Bento Box (Panel Táctico) ----------
 
 const BENTO_ACTIONS = [
-  { icon: ScanIcon, label: "Escanear\nCuadrante", primary: true },
+  { icon: ScanLine, label: "Escanear\nCuadrante", primary: true },
   { icon: Plus, label: "Añadir\nManual" },
   { icon: Search, label: "Buscar\nAlumno" },
   { icon: CalendarDays, label: "Ver\nAgenda" },
 ];
-
-function ScanIcon({ className }: { className?: string }) {
-  // Escáner simple con iconos disponibles
-  return <Search className={className} />;
-}
 
 function BentoMock() {
   return (
