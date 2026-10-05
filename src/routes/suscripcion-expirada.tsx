@@ -23,8 +23,8 @@ function Expired() {
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center gap-5 bg-background px-6 text-center">
       <Lock className="size-16 text-muted-foreground/40" strokeWidth={1.5} />
-      <h1 className="text-2xl font-bold tracking-tight">Suscripción Expirada</h1>
-      <p className="max-w-sm text-base text-muted-foreground">Por favor, contacta con la administración para renovar tu acceso.</p>
+      <h1 className="text-2xl font-bold tracking-tight">Acceso Bloqueado</h1>
+      <p className="max-w-sm text-base text-muted-foreground">Tu suscripción ha caducado. Contacta con la administración.</p>
       <Button variant="outline" className="h-12 rounded-2xl px-6" onClick={async () => { await supabase.auth.signOut(); void navigate({ to: "/auth", search: { next: undefined } }); }}>
         Cerrar sesión
       </Button>
