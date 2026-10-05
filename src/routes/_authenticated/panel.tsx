@@ -11,6 +11,7 @@ import {
   Archive,
   UserPlus, Building2, Users, Loader2, Camera, CalendarDays, Car, PlayCircle } from "lucide-react";
 import { StudentSearch } from "@/components/autoescuela/student-search";
+import { DashboardCardContent, dashboardCardClass } from "@/components/autoescuela/dashboard-card";
 import { ClaseSuelta } from "@/components/autoescuela/clase-suelta";
 import {
   Sheet,
@@ -216,31 +217,27 @@ function TeacherDashboard() {
       </header>
 
       <main className="mx-auto w-full max-w-2xl px-4 py-6">
-        <Button asChild className="h-20 w-full rounded-2xl text-lg font-bold tracking-tight shadow-md">
-          <Link to="/conduccion"><PlayCircle className="size-6" /> Iniciar Evaluaciones</Link>
+        <Button asChild className="h-16 w-full rounded-2xl text-base font-semibold tracking-wide shadow-md">
+          <Link to="/conduccion"><PlayCircle className="!size-5" strokeWidth={2} /> Iniciar Evaluaciones</Link>
         </Button>
 
         {user && (
           <div className="mt-4 grid grid-cols-2 gap-4">
-            <ScanRosterButton profesorId={user.id} className={tile}>
-              <Camera className="size-10 text-primary" /> Escanear Cuadrante
+            <ScanRosterButton profesorId={user.id} className={dashboardCardClass}>
+              <DashboardCardContent icon={Camera} title="Escanear Cuadrante" />
             </ScanRosterButton>
             <CuadranteBuilder
               profesorId={user.id}
-              trigger={<button type="button" className={tile}><CalendarDays className="size-10 text-primary" /> Modificar Agenda<span className={sub}>{todayClasses.total} clase{todayClasses.total === 1 ? "" : "s"} hoy</span></button>}
               onSaved={() => setAgendaVersion((v) => v + 1)}
+              trigger={<button type="button" className={dashboardCardClass}><DashboardCardContent icon={CalendarDays} title="Modificar Agenda" subtitle={`${todayClasses.total} clase${todayClasses.total === 1 ? "" : "s"} hoy`} /></button>}
             />
             <ClaseSuelta
               profesorId={user.id}
-              trigger={<button type="button" className={tile}><Car className="size-10 text-primary" /> Clase Suelta</button>}
               onSaved={() => setAgendaVersion((v) => v + 1)}
+              trigger={<button type="button" className={dashboardCardClass}><DashboardCardContent icon={Car} title="Clase Suelta" /></button>}
             />
-            <Link to="/ajustes" className={tile}>
-              <Settings className="size-10 text-primary" /> Ajustes
-            </Link>
-            <Link to="/alumnos" className={`${tile} col-span-2 aspect-[2/1]`}>
-              <Users className="size-10 text-primary" /> Gestión de Alumnos
-              <span className={sub}>{data.students.length} alumno{data.students.length === 1 ? "" : "s"} activo{data.students.length === 1 ? "" : "s"}</span>
+            <Link to="/ajustes" className={dashboardCardClass}>
+              <DashboardCardContent icon={Settings} title="Ajustes" />
             </Link>
           </div>
         )}
