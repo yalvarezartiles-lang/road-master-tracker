@@ -72,7 +72,7 @@
   --color-warning-foreground: var(--warning-foreground);
   --color-danger: var(--danger);
   --color-danger-foreground: var(--danger-foreground);
-  --font-sans: "Archivo", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", -apple-system, "SF Pro Display", ui-sans-serif, system-ui, sans-serif;
 }
 
 :root {
