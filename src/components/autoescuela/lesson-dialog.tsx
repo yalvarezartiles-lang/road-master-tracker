@@ -29,7 +29,8 @@ import { Whiteboard } from "./whiteboard";
 import { Input } from "@/components/ui/input";
 import { SignatureDialog } from "./signature-dialog";
 import { TodayClassesSheet } from "./today-classes-sheet";
-import { enqueuePending } from "@/lib/autoescuela/offline-queue";
+import { enqueuePending, safeAgendaWrite } from "@/lib/autoescuela/offline-queue";
+import { StudentPicker, addMinutes } from "./cuadrante-builder";
 
 function Chip({
   active,
@@ -61,11 +62,17 @@ export function LessonDialog({
   open,
   onOpenChange,
   studentId,
+  suelta,
+  onSaved,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   studentId?: string;
+  /** Clase suelta: pide alumno + hora/duración y crea también la clase en la agenda. */
+  suelta?: { profesorId: string };
+  onSaved?: (() => void) | undefined;
 }) {
+  const [duration, setDuration] = React.useState<number | null>(null);
   const { data, addLesson, addZone, lastMatricula } = useStore();
   const [matricula, setMatricula] = React.useState("");
   const [signLessonId, setSignLessonId] = React.useState<string | null>(null);
@@ -92,6 +99,7 @@ export function LessonDialog({
       setBoard(null);
       setBoardKey((k) => k + 1);
       setStartTime(new Date().toTimeString().slice(0, 5));
+      setDuration(null);
       void lastMatricula().then(setMatricula);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -132,6 +140,20 @@ export function LessonDialog({
       toast.error("Selecciona un alumno");
       return;
     }
+    if (suelta && (!startTime || !duration)) {
+      toast.error("Indica la hora y la duración");
+      return;
+    }
+    if (suelta) {
+      const d = new Date();
+      const fecha = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      const r = await safeAgendaWrite({
+        op: "insert",
+        values: { profesor_id: suelta.profesorId, fecha, hora_inicio: startTime, hora_fin: addMinutes(startTime, duration!), student_id: selected, estado: "completada" },
+      });
+      if (r === "error") { toast.error("No se pudo crear la clase en la agenda"); return; }
+      onSaved?.();
+    }
     const input = { date: new Date().toISOString(), zone, topics, notes, notasProfesor: notasProfesor.trim(), matricula: matricula.trim().toUpperCase() };
     if (!navigator.onLine) {
       enqueuePending({ studentId: selected, input });
@@ -166,7 +188,22 @@ export function LessonDialog({
         </DialogHeader>
 
         <div className="space-y-6">
-          {!studentId && (
+          {suelta && (
+            <section className="space-y-3 rounded-2xl border bg-muted/30 p-4">
+              <Label className="flex items-center gap-2 text-base"><User className="size-5" /> Alumno</Label>
+              <StudentPicker students={data.students} value={selected ?? ""} onChange={setSelected} />
+              <div className="flex items-center gap-2">
+                <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="h-12 w-28 shrink-0 text-base" />
+                {[45, 90].map((m) => (
+                  <Button key={m} type="button" variant={duration === m ? "default" : "outline"} onClick={() => setDuration(m)} className="h-12 flex-1 rounded-full text-base font-bold">
+                    +{m} min
+                  </Button>
+                ))}
+              </div>
+              {duration && <p className="text-center text-lg font-bold tabular-nums">{startTime} - {addMinutes(startTime, duration)}</p>}
+            </section>
+          )}
+          {!studentId && !suelta && (
             <section>
               <Label className="mb-2 flex items-center gap-2 text-base">
                 <User className="size-5" /> Alumno
