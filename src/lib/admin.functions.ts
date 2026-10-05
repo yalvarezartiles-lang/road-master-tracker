@@ -74,7 +74,7 @@ export const listTeam = createServerFn({ method: "GET" })
     await getCaller(context);
     const { data: profiles, error } = await context.supabase
       .from("profiles")
-      .select("id, full_name, apellidos, dni, email, created_at, autoescuela_id, es_autonomo")
+      .select("id, full_name, apellidos, dni, email, created_at, autoescuela_id, es_autonomo, fecha_vencimiento, estado_pago")
       .order("created_at", { ascending: true });
     if (error) throw new Error(error.message);
     const { data: roles, error: rolesError } = await context.supabase
@@ -123,6 +123,28 @@ export const setTeacherAutonomo = createServerFn({ method: "POST" })
       .eq("id", data.userId);
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+/** Super admin: renueva o marca la suscripción de un profesor. */
+export const setTeacherSubscription = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { userId: string; months: number | null; pagado: boolean }) => ({
+    userId: String(input.userId),
+    months: input.months === null ? null : Math.max(0, Math.min(36, Number(input.months) || 0)),
+    pagado: Boolean(input.pagado),
+  }))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const patch: { estado_pago: boolean; fecha_vencimiento?: string } = { estado_pago: data.pagado };
+    if (data.months) {
+      const d = new Date();
+      d.setMonth(d.getMonth() + data.months);
+      patch.fecha_vencimiento = d.toISOString().slice(0, 10);
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("profiles").update(patch).eq("id", data.userId);
+    if (error) throw new Error(error.message);
+    return patch;
   });
 
 export const deleteTeamMember = createServerFn({ method: "POST" })
