@@ -9,7 +9,8 @@ import {
   Settings,
   Shield,
   Archive,
-  UserPlus, Building2, Users, Loader2, Camera, CalendarDays, Car } from "lucide-react";
+  UserPlus, Building2, Users, Loader2, Camera, CalendarDays, Car, PlayCircle } from "lucide-react";
+import { StudentSearch } from "@/components/autoescuela/student-search";
 import { ClaseSuelta } from "@/components/autoescuela/clase-suelta";
 import {
   Sheet,
@@ -121,6 +122,14 @@ function TeacherDashboard() {
       });
   }, [user]);
   const signOut = useSignOut();
+  const [todayClasses, setTodayClasses] = React.useState({ total: 0, done: 0 });
+  React.useEffect(() => {
+    if (!user) return;
+    const d = new Date();
+    const f = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    void supabase.from("agenda_diaria").select("estado").eq("profesor_id", user.id).eq("fecha", f).neq("estado", "cancelada")
+      .then(({ data: r }) => setTodayClasses({ total: r?.length ?? 0, done: (r ?? []).filter((x) => x.estado !== "programada").length }));
+  }, [user, agendaVersion]);
   const [query, setQuery] = React.useState("");
   const [lessonOpen, setLessonOpen] = React.useState(false);
   const [studentOpen, setStudentOpen] = React.useState(false);
@@ -170,7 +179,14 @@ function TeacherDashboard() {
     }
   };
 
-  const tile = "flex aspect-square h-auto w-full min-w-0 flex-col items-center justify-center gap-3 whitespace-normal rounded-3xl border border-border bg-card p-6 hover:bg-card text-center text-base font-bold text-foreground shadow-sm transition active:scale-[0.97] hover:shadow-md";
+  const tile = "flex aspect-square h-auto w-full min-w-0 flex-col items-center justify-center gap-2 whitespace-normal rounded-3xl border border-border bg-card p-6 hover:bg-card text-center text-base font-bold tracking-tight text-foreground shadow-sm transition-all duration-200 active:scale-95 hover:shadow-md";
+  const sub = "text-xs font-medium text-muted-foreground";
+  const hour = new Date().getHours();
+  const saludo = hour < 13 ? "Buenos días" : hour < 21 ? "Buenas tardes" : "Buenas noches";
+  const pendientes = todayClasses.total - todayClasses.done;
+  const resumen = todayClasses.total === 0 ? "No tienes prácticas hoy"
+    : pendientes <= 0 ? "Turno completado. ¡Descansa!"
+    : `Tienes ${pendientes} práctica${pendientes > 1 ? "s" : ""} programada${pendientes > 1 ? "s" : ""} hoy`;
   return (
     <div className="min-h-screen w-full overflow-x-hidden bg-background pb-10">
       <header className="sticky top-0 z-50 border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
@@ -178,17 +194,14 @@ function TeacherDashboard() {
           <div className="flex min-w-0 items-center gap-3">
             {brand.schoolLogo && <SchoolLogo className="h-12 max-w-44 md:h-16 md:max-w-64" />}
             <div className="min-w-0">
-              <h1 className="truncate text-lg font-bold leading-tight text-foreground md:text-2xl">
-                {teacherName ? `Hola, ${teacherName}` : "Panel"}
+              <h1 className="truncate text-lg font-bold leading-tight tracking-tight text-foreground md:text-2xl">
+                {saludo}{teacherName ? `, ${teacherName}` : ""}
               </h1>
-              {!brand.schoolLogo && (brand.schoolName || schoolName) && (
-                <p className="flex items-center gap-1.5 truncate text-sm font-medium text-muted-foreground">
-                  <Building2 className="size-4 shrink-0" /> {brand.schoolName || schoolName}
-                </p>
-              )}
+              <p className="truncate text-sm font-medium text-muted-foreground">{resumen}</p>
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-1 text-foreground">
+            <StudentSearch />
             {isAdmin && (
               <Button asChild variant="ghost" size="icon" className="size-11 rounded-2xl">
                 <Link to="/admin" aria-label="Administración"><Shield className="size-5" /></Link>
@@ -203,8 +216,8 @@ function TeacherDashboard() {
       </header>
 
       <main className="mx-auto w-full max-w-2xl px-4 py-6">
-        <Button asChild className="h-24 w-full rounded-3xl text-xl font-extrabold shadow-lg">
-          <Link to="/conduccion">🚀 Iniciar Día / Evaluaciones</Link>
+        <Button asChild className="h-20 w-full rounded-2xl text-lg font-bold tracking-tight shadow-md">
+          <Link to="/conduccion"><PlayCircle className="size-6" /> Iniciar Evaluaciones</Link>
         </Button>
 
         {user && (
@@ -214,14 +227,20 @@ function TeacherDashboard() {
             </ScanRosterButton>
             <CuadranteBuilder
               profesorId={user.id}
-              trigger={<button type="button" className={tile}><CalendarDays className="size-10 text-primary" /> Modificar Agenda</button>}
+              trigger={<button type="button" className={tile}><CalendarDays className="size-10 text-primary" /> Modificar Agenda<span className={sub}>{todayClasses.total} clase{todayClasses.total === 1 ? "" : "s"} hoy</span></button>}
+              onSaved={() => setAgendaVersion((v) => v + 1)}
             />
             <ClaseSuelta
               profesorId={user.id}
               trigger={<button type="button" className={tile}><Car className="size-10 text-primary" /> Clase Suelta</button>}
+              onSaved={() => setAgendaVersion((v) => v + 1)}
             />
             <Link to="/ajustes" className={tile}>
               <Settings className="size-10 text-primary" /> Ajustes
+            </Link>
+            <Link to="/alumnos" className={`${tile} col-span-2 aspect-[2/1]`}>
+              <Users className="size-10 text-primary" /> Gestión de Alumnos
+              <span className={sub}>{data.students.length} alumno{data.students.length === 1 ? "" : "s"} activo{data.students.length === 1 ? "" : "s"}</span>
             </Link>
           </div>
         )}

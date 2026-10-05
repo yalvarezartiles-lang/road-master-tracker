@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { StudentPicker, addMinutes } from "@/components/autoescuela/cuadrante-builder";
+import { useStore } from "@/lib/autoescuela/store";
+import { nextLevel, type SkillLevel } from "@/lib/autoescuela/types";
+import { LevelIcon, levelClasses } from "@/components/autoescuela/skill-traffic-light";
 import { safeAgendaWrite } from "@/lib/autoescuela/offline-queue";
 
 const nowHM = () => {
@@ -22,6 +25,10 @@ export function ClaseSuelta({ profesorId, trigger, onSaved }: { profesorId: stri
   const [studentId, setStudentId] = React.useState("");
   const [start, setStart] = React.useState("09:00");
   const [duration, setDuration] = React.useState<number | null>(null);
+  const { data, setSkill } = useStore();
+  const [levels, setLevels] = React.useState<Record<string, SkillLevel>>({});
+  const student = data.students.find((s) => s.id === studentId);
+  React.useEffect(() => { setLevels({ ...(student?.skills ?? {}) }); }, [studentId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   React.useEffect(() => {
     if (!open) return;
@@ -37,14 +44,17 @@ export function ClaseSuelta({ profesorId, trigger, onSaved }: { profesorId: stri
       op: "insert",
       values: { profesor_id: profesorId, fecha: todayISO(), hora_inicio: start, hora_fin: addMinutes(start, duration), student_id: studentId, estado: "completada" },
     });
-    if (r === "ok") { toast.success("Clase registrada"); onSaved?.(); }
+    if (r !== "error" && student) {
+      for (const [k, v] of Object.entries(levels)) if (student.skills[k] !== v) void setSkill(studentId, k, v).catch(() => {});
+    }
+    if (r === "ok") { toast.success("Clase y evaluación registradas"); onSaved?.(); }
     else if (r === "error") toast.error("No se pudo registrar la clase");
   };
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>{trigger}</SheetTrigger>
-      <SheetContent side="bottom" className="rounded-t-3xl p-5">
+      <SheetContent side="bottom" className="max-h-[92dvh] overflow-y-auto rounded-t-3xl p-5">
         <div className="mx-auto w-full max-w-md space-y-4">
           <SheetHeader className="p-0 text-left">
             <SheetTitle className="text-xl font-bold">Clase suelta</SheetTitle>
@@ -59,6 +69,22 @@ export function ClaseSuelta({ profesorId, trigger, onSaved }: { profesorId: stri
               </Button>
             ))}
           </div>
+          {student && data.skills.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-muted-foreground">Evaluación (toca para cambiar)</p>
+              <div className="grid max-h-56 grid-cols-2 gap-2 overflow-y-auto">
+                {data.skills.map((sk) => {
+                  const lv = levels[sk.id] ?? "rojo";
+                  return (
+                    <button key={sk.id} type="button" onClick={() => setLevels((l) => ({ ...l, [sk.id]: nextLevel(lv) }))}
+                      className={`flex min-h-12 items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-semibold transition-all duration-200 active:scale-95 ${levelClasses[lv]}`}>
+                      <LevelIcon level={lv} className="size-4 shrink-0" /> <span className="min-w-0 flex-1">{sk.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           {duration && <p className="text-center text-lg font-semibold">{start} - {addMinutes(start, duration)}</p>}
           <Button onClick={save} className="h-16 w-full rounded-2xl text-lg font-bold">Registrar Clase</Button>
         </div>

@@ -1,6 +1,7 @@
 import * as React from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Check, Loader2, MapPin, NotebookPen, UserX, X } from "lucide-react";
+import { EmptyState } from "@/components/autoescuela/empty-state";
+import { CalendarX, Check, Loader2, MapPin, NotebookPen, UserX, X } from "lucide-react";
 import { toast } from "sonner";
 import { safeAgendaWrite } from "@/lib/autoescuela/offline-queue";
 import { supabase } from "@/integrations/supabase/client";
@@ -167,7 +168,10 @@ function DrivingMode() {
         {loading ? (
           <Loader2 className="mx-auto size-8 animate-spin text-muted-foreground" />
         ) : slots.length === 0 ? (
-          <p className="mx-auto px-8 text-center text-lg text-muted-foreground">No tienes clases hoy.</p>
+          <div className="mx-auto w-full max-w-sm px-6">
+            <EmptyState icon={CalendarX} text="No hay clases hoy"
+              action={<Button asChild className="h-12 rounded-2xl"><Link to="/panel">+ Añadir Clase</Link></Button>} />
+          </div>
         ) : (
           <Carousel setApi={setApi} opts={{ align: "center" }} className="w-full">
             <CarouselContent className="-ml-3 py-8">
