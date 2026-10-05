@@ -2,7 +2,7 @@ import * as React from "react";
 import { WifiOff } from "lucide-react";
 import { useNetworkStatus } from "@/hooks/use-network-status";
 import { useStore } from "@/lib/autoescuela/store";
-import { readPending, writePending } from "@/lib/autoescuela/offline-queue";
+import { flushAgendaWrites, readPending, writePending } from "@/lib/autoescuela/offline-queue";
 
 let syncing = false;
 
@@ -13,6 +13,7 @@ export function NetworkIndicator() {
 
   React.useEffect(() => {
     if (!isOnline || syncing) return;
+    void flushAgendaWrites();
     const pending = readPending();
     if (!pending.length) return;
     syncing = true;

@@ -2,6 +2,7 @@ import * as React from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Check, Loader2, MapPin, NotebookPen, UserX, X } from "lucide-react";
 import { toast } from "sonner";
+import { safeAgendaWrite } from "@/lib/autoescuela/offline-queue";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/lib/auth";
 import { useStore } from "@/lib/autoescuela/store";
@@ -115,8 +116,9 @@ function DrivingMode() {
     const before = { estado: slot.estado, notas: slot.notas };
     setSlots((l) => l.map((x) => (x.id === slot.id ? { ...x, estado, notas: notasRaw } : x)));
     api?.scrollTo(Math.min(at + 1, slots.length - 1));
-    const { error } = await supabase.from("agenda_diaria").update({ estado, notas: notasRaw }).eq("id", slot.id);
-    if (error) {
+    const result = await safeAgendaWrite({ op: "update", id: slot.id, values: { estado, notas: notasRaw } });
+    if (result === "queued") return;
+    if (result === "error") {
       setSlots((l) => l.map((x) => (x.id === slot.id ? { ...x, ...before } : x)));
       toast.error("No se pudo guardar");
       return;
@@ -128,7 +130,7 @@ function DrivingMode() {
         onClick: async () => {
           setSlots((l) => l.map((x) => (x.id === slot.id ? { ...x, ...before } : x)));
           api?.scrollTo(at);
-          await supabase.from("agenda_diaria").update(before).eq("id", slot.id);
+          await safeAgendaWrite({ op: "update", id: slot.id, values: before });
         },
       },
     });

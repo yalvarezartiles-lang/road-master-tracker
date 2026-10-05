@@ -22,7 +22,7 @@ type Franja = { key: string; studentId: string; start: string; duration: 45 | 90
 const toISODate = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
-function addMinutes(time: string, mins: number) {
+export function addMinutes(time: string, mins: number) {
   const [h, m] = time.split(":").map(Number);
   const total = Math.min((h ?? 0) * 60 + (m ?? 0) + mins, 23 * 60 + 59);
   return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
