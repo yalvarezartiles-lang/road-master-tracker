@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as PoliticaCookiesRouteImport } from './routes/politica-cookies'
 import { Route as PrivacidadRouteImport } from './routes/privacidad'
+import { Route as SuscripcionExpiradaRouteImport } from './routes/suscripcion-expirada'
 import { Route as TerminosRouteImport } from './routes/terminos'
 import { Route as UiConceptsRouteImport } from './routes/ui-concepts'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
@@ -54,6 +55,11 @@ const PoliticaCookiesRoute = PoliticaCookiesRouteImport.update({
 const PrivacidadRoute = PrivacidadRouteImport.update({
   id: '/privacidad',
   path: '/privacidad',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SuscripcionExpiradaRoute = SuscripcionExpiradaRouteImport.update({
+  id: '/suscripcion-expirada',
+  path: '/suscripcion-expirada',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TerminosRoute = TerminosRouteImport.update({
@@ -120,6 +126,7 @@ export interface FileRoutesByFullPath {
   '/mcp': typeof McpRoute
   '/politica-cookies': typeof PoliticaCookiesRoute
   '/privacidad': typeof PrivacidadRoute
+  '/suscripcion-expirada': typeof SuscripcionExpiradaRoute
   '/terminos': typeof TerminosRoute
   '/ui-concepts': typeof UiConceptsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -138,6 +145,7 @@ export interface FileRoutesByTo {
   '/mcp': typeof McpRoute
   '/politica-cookies': typeof PoliticaCookiesRoute
   '/privacidad': typeof PrivacidadRoute
+  '/suscripcion-expirada': typeof SuscripcionExpiradaRoute
   '/terminos': typeof TerminosRoute
   '/ui-concepts': typeof UiConceptsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -158,6 +166,7 @@ export interface FileRoutesById {
   '/mcp': typeof McpRoute
   '/politica-cookies': typeof PoliticaCookiesRoute
   '/privacidad': typeof PrivacidadRoute
+  '/suscripcion-expirada': typeof SuscripcionExpiradaRoute
   '/terminos': typeof TerminosRoute
   '/ui-concepts': typeof UiConceptsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -178,6 +187,7 @@ export interface FileRouteTypes {
     | '/mcp'
     | '/politica-cookies'
     | '/privacidad'
+    | '/suscripcion-expirada'
     | '/terminos'
     | '/ui-concepts'
     | '/.well-known/oauth-protected-resource'
@@ -196,6 +206,7 @@ export interface FileRouteTypes {
     | '/mcp'
     | '/politica-cookies'
     | '/privacidad'
+    | '/suscripcion-expirada'
     | '/terminos'
     | '/ui-concepts'
     | '/.well-known/oauth-protected-resource'
@@ -215,6 +226,7 @@ export interface FileRouteTypes {
     | '/mcp'
     | '/politica-cookies'
     | '/privacidad'
+    | '/suscripcion-expirada'
     | '/terminos'
     | '/ui-concepts'
     | '/.well-known/oauth-protected-resource'
@@ -235,6 +247,7 @@ export interface RootRouteChildren {
   McpRoute: typeof McpRoute
   PoliticaCookiesRoute: typeof PoliticaCookiesRoute
   PrivacidadRoute: typeof PrivacidadRoute
+  SuscripcionExpiradaRoute: typeof SuscripcionExpiradaRoute
   TerminosRoute: typeof TerminosRoute
   UiConceptsRoute: typeof UiConceptsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -283,6 +296,13 @@ declare module '@tanstack/react-router' {
       path: '/privacidad'
       fullPath: '/privacidad'
       preLoaderRoute: typeof PrivacidadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/suscripcion-expirada': {
+      id: '/suscripcion-expirada'
+      path: '/suscripcion-expirada'
+      fullPath: '/suscripcion-expirada'
+      preLoaderRoute: typeof SuscripcionExpiradaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/terminos': {
@@ -395,6 +415,7 @@ const rootRouteChildren: RootRouteChildren = {
   McpRoute: McpRoute,
   PoliticaCookiesRoute: PoliticaCookiesRoute,
   PrivacidadRoute: PrivacidadRoute,
+  SuscripcionExpiradaRoute: SuscripcionExpiradaRoute,
   TerminosRoute: TerminosRoute,
   UiConceptsRoute: UiConceptsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
