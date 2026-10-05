@@ -207,18 +207,18 @@ export function ScanRosterButton({ profesorId, onDone }: { profesorId: string; f
       </Button>
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <AlertDialogContent className="w-[calc(100%-2rem)] max-w-sm rounded-3xl p-5 sm:p-6">
+        <AlertDialogContent className="w-[calc(100%-2rem)] max-w-md rounded-3xl p-5 sm:p-6">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-center text-balance text-xl leading-snug">
               Subir hoja de prácticas
             </AlertDialogTitle>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-col gap-3 sm:flex-row sm:justify-stretch">
-            <AlertDialogCancel className="h-14 w-full rounded-2xl text-base font-semibold sm:w-auto sm:flex-1">
+            <AlertDialogCancel className="h-14 w-full rounded-2xl text-base font-semibold sm:w-auto sm:shrink-0 sm:px-6">
               Cancelar
             </AlertDialogCancel>
             <AlertDialogAction
-              className="h-14 w-full rounded-2xl text-base font-bold whitespace-normal sm:w-auto sm:flex-1"
+              className="h-14 w-full rounded-2xl text-base font-bold whitespace-normal sm:min-w-0 sm:flex-1"
               onClick={(ev) => {
                 ev.preventDefault();
                 setConfirmOpen(false);
