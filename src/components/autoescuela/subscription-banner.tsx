@@ -28,7 +28,7 @@ function LockScreen() {
       <Lock className="size-16 text-muted-foreground/50" strokeWidth={1.5} />
       <h1 className="text-2xl font-bold tracking-tight">Acceso Bloqueado</h1>
       <p className="max-w-sm text-base text-muted-foreground">
-        Tu suscripción ha expirado y el periodo de cortesía ha terminado. Contacta con la administración para restaurar tu acceso.
+        Tu suscripción ha caducado. Contacta con la administración.
       </p>
       <Button variant="outline" className="h-12 rounded-2xl px-6" onClick={async () => {
         await supabase.auth.signOut();
@@ -56,23 +56,15 @@ export function SubscriptionGuard({ children }: { children: React.ReactNode }) {
   }, [pathname]);
 
   if (!checked) return null;
-  // ESTADO 3: bloqueo total — no se renderiza la app.
-  if (days !== null && days < -2) return <LockScreen />;
+  // Bloqueado: la fecha de vencimiento ya pasó — no se renderiza nada de la app.
+  if (days !== null && days < 0) return <LockScreen />;
 
-  let banner: React.ReactNode = null;
-  if (days !== null && days <= 0) {
-    const x = 2 + days;
-    banner = (
-      <div role="alert" className="sticky top-0 z-[60] w-full bg-red-50 px-4 py-1.5 text-center text-sm font-medium text-red-800">
-        Suscripción caducada. Te quedan {x} días de cortesía para usar la cuenta antes del bloqueo total.
-      </div>
-    );
-  } else if (days !== null && days <= 5) {
-    banner = (
-      <div role="status" className="w-full bg-orange-50 px-4 py-1.5 text-center text-sm font-medium text-orange-800">
-        Tu suscripción finaliza en {days} día{days === 1 ? "" : "s"}. Contacta con administración para renovarla.
-      </div>
-    );
-  }
+  const banner = days !== null && days <= 5 ? (
+    <div role="status" className="w-full bg-orange-50 px-4 py-1.5 text-center text-sm font-medium text-orange-800">
+      {days === 0
+        ? "Tu suscripción finaliza hoy. Contacta con administración para renovarla."
+        : `Tu suscripción finaliza en ${days} día${days === 1 ? "" : "s"}. Contacta con administración para renovarla.`}
+    </div>
+  ) : null;
   return <>{banner}{children}</>;
 }

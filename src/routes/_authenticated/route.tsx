@@ -9,7 +9,7 @@ export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async () => {
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) throw redirect({ to: "/auth", search: { next: undefined } });
-    // Suscripción: tras el vencimiento hay 48 h de cortesía; después se bloquea (sin borrar la cuenta).
+    // Suscripción: bloqueo inmediato al día siguiente del vencimiento (sin borrar la cuenta).
     try {
       const [{ data: p }, { data: roles }] = await Promise.all([
         supabase.from("profiles").select("fecha_vencimiento").eq("id", data.user.id).maybeSingle(),
@@ -17,7 +17,7 @@ export const Route = createFileRoute("/_authenticated")({
       ]);
       const isStaff = (roles ?? []).some((r) => r.role === "admin" || r.role === "admin_oficina");
       if (!isStaff && p?.fecha_vencimiento) {
-        const limite = new Date(`${p.fecha_vencimiento}T23:59:59`).getTime() + 48 * 3600 * 1000;
+        const limite = new Date(`${p.fecha_vencimiento}T23:59:59`).getTime();
         if (Date.now() > limite) throw redirect({ to: "/suscripcion-expirada" });
       }
     } catch (e) {

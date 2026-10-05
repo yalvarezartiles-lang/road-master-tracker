@@ -617,13 +617,14 @@ function SubscriptionDialog({ member, onClose, onSave }: {
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Fecha de vencimiento</Label>
-            <Input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className="h-12 rounded-xl" />
+            <Label htmlFor="sub-fecha">Fecha de vencimiento (último día con acceso)</Label>
+            <Input id="sub-fecha" type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className="h-12 rounded-xl" />
             <div className="grid grid-cols-3 gap-2">
               {[[1, "+1 mes"], [3, "+3 meses"], [12, "+1 año"]].map(([n, l]) => (
                 <Button key={n} type="button" variant="outline" className="h-11 rounded-xl" onClick={() => plus(n as number)}>{l}</Button>
               ))}
             </div>
+            <p className="text-xs text-muted-foreground">Los atajos solo rellenan la fecha; puedes elegir cualquier día exacto (p. ej. 7 días de prueba).</p>
           </div>
           <Button disabled={saving || !member} className="h-12 w-full rounded-2xl font-bold" onClick={async () => {
             if (!member) return;
