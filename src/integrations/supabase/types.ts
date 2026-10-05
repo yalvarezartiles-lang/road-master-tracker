@@ -209,6 +209,8 @@ export type Database = {
           dni: string
           email: string
           es_autonomo: boolean
+          estado_pago: boolean
+          fecha_vencimiento: string | null
           full_name: string
           id: string
           matricula_vehiculo: string
@@ -221,6 +223,8 @@ export type Database = {
           dni?: string
           email?: string
           es_autonomo?: boolean
+          estado_pago?: boolean
+          fecha_vencimiento?: string | null
           full_name?: string
           id: string
           matricula_vehiculo?: string
@@ -233,6 +237,8 @@ export type Database = {
           dni?: string
           email?: string
           es_autonomo?: boolean
+          estado_pago?: boolean
+          fecha_vencimiento?: string | null
           full_name?: string
           id?: string
           matricula_vehiculo?: string
