@@ -78,19 +78,27 @@ function DrivingMode() {
       setSlots(list);
       const ids = [...new Set(list.map((s) => s.student_id))];
       if (ids.length) {
-        const { data: past } = await supabase
-          .from("agenda_diaria")
-          .select("student_id, notas, fecha, hora_inicio")
-          .in("student_id", ids)
-          .eq("estado", "completada")
-          .lt("fecha", toISO(new Date()))
-          .order("fecha", { ascending: false })
-          .order("hora_inicio", { ascending: false });
-        const h: Record<string, Prev> = {};
+        const today = toISO(new Date());
+        const startToday = new Date(`${today}T00:00:00`).toISOString();
+        const [{ data: les }, { data: past }] = await Promise.all([
+          supabase.from("lessons").select("student_id, zone, notes, notas_profesor, date")
+            .in("student_id", ids).lt("date", startToday).order("date", { ascending: false }),
+          supabase.from("agenda_diaria").select("student_id, notas, fecha")
+            .in("student_id", ids).eq("estado", "completada").lt("fecha", today)
+            .order("fecha", { ascending: false }).order("hora_inicio", { ascending: false }),
+        ]);
+        const h: Record<string, Prev & { at: string }> = {};
+        for (const l of les ?? []) {
+          if (h[l.student_id]) continue;
+          h[l.student_id] = { zona: l.zone ?? "", notas: (l.notas_profesor || l.notes || "").trim(), at: l.date.slice(0, 10) };
+        }
         for (const p of past ?? []) {
-          if (!p.student_id || h[p.student_id]) continue;
+          if (!p.student_id) continue;
           const v = parseNotas(p.notas);
-          if (v) h[p.student_id] = v;
+          if (!v || (!v.zona && !v.notas)) continue;
+          const cur = h[p.student_id];
+          if (!cur || p.fecha > cur.at) h[p.student_id] = { ...v, at: p.fecha };
+          else if (cur && (!cur.zona || !cur.notas)) h[p.student_id] = { zona: cur.zona || v.zona, notas: cur.notas || v.notas, at: cur.at };
         }
         setHistory(h);
       }
@@ -106,12 +114,7 @@ function DrivingMode() {
     return () => { api.off("select", on); };
   }, [api]);
 
-  const prevFor = (studentId: string): Prev | null => {
-    if (history[studentId]) return history[studentId];
-    const st = data.students.find((s) => s.id === studentId);
-    const last = st?.lessons[st.lessons.length - 1];
-    return last ? { zona: last.zone, notas: last.notes } : null;
-  };
+  const prevFor = (studentId: string): Prev | null => history[studentId] ?? null;
 
   const apply = async (slot: Slot, estado: string, notasRaw: string, at: number) => {
     const before = { estado: slot.estado, notas: slot.notas };
