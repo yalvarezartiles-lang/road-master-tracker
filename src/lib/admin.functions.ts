@@ -128,15 +128,17 @@ export const setTeacherAutonomo = createServerFn({ method: "POST" })
 /** Super admin: renueva o marca la suscripción de un profesor. */
 export const setTeacherSubscription = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { userId: string; months: number | null; pagado: boolean }) => ({
+  .inputValidator((input: { userId: string; months: number | null; pagado: boolean; fecha?: string | null }) => ({
     userId: String(input.userId),
+    fecha: input.fecha && /^\d{4}-\d{2}-\d{2}$/.test(input.fecha) ? input.fecha : null,
     months: input.months === null ? null : Math.max(0, Math.min(36, Number(input.months) || 0)),
     pagado: Boolean(input.pagado),
   }))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const patch: { estado_pago: boolean; fecha_vencimiento?: string } = { estado_pago: data.pagado };
-    if (data.months) {
+    if (data.fecha) patch.fecha_vencimiento = data.fecha;
+    else if (data.months) {
       const d = new Date();
       d.setMonth(d.getMonth() + data.months);
       patch.fecha_vencimiento = d.toISOString().slice(0, 10);
