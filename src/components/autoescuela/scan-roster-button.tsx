@@ -207,30 +207,36 @@ export function ScanRosterButton({ profesorId, onDone }: { profesorId: string; f
       </Button>
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <AlertDialogContent className="rounded-3xl">
+        <AlertDialogContent className="w-[calc(100%-2rem)] max-w-sm rounded-3xl p-5 sm:p-6">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-xl">¿Quieres escanear el cuadrante desde tu cámara o galería?</AlertDialogTitle>
+            <AlertDialogTitle className="text-center text-balance text-xl leading-snug">
+              Subir hoja de prácticas
+            </AlertDialogTitle>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex-col gap-3 sm:flex-row">
-            <AlertDialogCancel className="h-14 rounded-2xl text-base font-semibold">Cancelar</AlertDialogCancel>
+          <AlertDialogFooter className="flex-col gap-3 sm:flex-row sm:justify-stretch">
+            <AlertDialogCancel className="h-14 w-full rounded-2xl text-base font-semibold sm:w-auto sm:flex-1">
+              Cancelar
+            </AlertDialogCancel>
             <AlertDialogAction
-              className="h-14 rounded-2xl text-base font-bold"
+              className="h-14 w-full rounded-2xl text-base font-bold whitespace-normal sm:w-auto sm:flex-1"
               onClick={(ev) => {
                 ev.preventDefault();
                 setConfirmOpen(false);
                 inputRef.current?.click();
               }}
             >
-              Sacar foto, seleccionar de galería o escoger archivo (PDF)
+              Seleccionar imagen o PDF
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
       <Dialog open={busy}>
-        <DialogContent className="rounded-3xl [&>button]:hidden">
+        <DialogContent className="w-[calc(100%-2rem)] max-w-sm rounded-3xl p-5 [&>button]:hidden sm:p-6">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><Loader2 className="size-6 animate-spin text-primary" /> Analizando cuadrante con IA...</DialogTitle>
+            <DialogTitle className="flex flex-wrap items-center justify-center gap-2 text-center text-balance">
+              <Loader2 className="size-6 animate-spin text-primary" /> Analizando cuadrante con IA...
+            </DialogTitle>
           </DialogHeader>
         </DialogContent>
       </Dialog>
