@@ -16,6 +16,7 @@ import { Route as McpRouteImport } from './routes/mcp'
 import { Route as PoliticaCookiesRouteImport } from './routes/politica-cookies'
 import { Route as PrivacidadRouteImport } from './routes/privacidad'
 import { Route as TerminosRouteImport } from './routes/terminos'
+import { Route as UiConceptsRouteImport } from './routes/ui-concepts'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedGestionRouteImport } from './routes/_authenticated/gestion'
@@ -55,6 +56,11 @@ const PrivacidadRoute = PrivacidadRouteImport.update({
 const TerminosRoute = TerminosRouteImport.update({
   id: '/terminos',
   path: '/terminos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UiConceptsRoute = UiConceptsRouteImport.update({
+  id: '/ui-concepts',
+  path: '/ui-concepts',
   getParentRoute: () => rootRouteImport,
 } as any)
 const Char91DotwellKnownChar93OauthProtectedResourceRoute =
@@ -97,6 +103,7 @@ export interface FileRoutesByFullPath {
   '/politica-cookies': typeof PoliticaCookiesRoute
   '/privacidad': typeof PrivacidadRoute
   '/terminos': typeof TerminosRoute
+  '/ui-concepts': typeof UiConceptsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/gestion': typeof AuthenticatedGestionRoute
@@ -111,6 +118,7 @@ export interface FileRoutesByTo {
   '/politica-cookies': typeof PoliticaCookiesRoute
   '/privacidad': typeof PrivacidadRoute
   '/terminos': typeof TerminosRoute
+  '/ui-concepts': typeof UiConceptsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/gestion': typeof AuthenticatedGestionRoute
@@ -127,6 +135,7 @@ export interface FileRoutesById {
   '/politica-cookies': typeof PoliticaCookiesRoute
   '/privacidad': typeof PrivacidadRoute
   '/terminos': typeof TerminosRoute
+  '/ui-concepts': typeof UiConceptsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/gestion': typeof AuthenticatedGestionRoute
@@ -143,6 +152,7 @@ export interface FileRouteTypes {
     | '/politica-cookies'
     | '/privacidad'
     | '/terminos'
+    | '/ui-concepts'
     | '/.well-known/oauth-protected-resource'
     | '/admin'
     | '/gestion'
@@ -157,6 +167,7 @@ export interface FileRouteTypes {
     | '/politica-cookies'
     | '/privacidad'
     | '/terminos'
+    | '/ui-concepts'
     | '/.well-known/oauth-protected-resource'
     | '/admin'
     | '/gestion'
@@ -172,6 +183,7 @@ export interface FileRouteTypes {
     | '/politica-cookies'
     | '/privacidad'
     | '/terminos'
+    | '/ui-concepts'
     | '/.well-known/oauth-protected-resource'
     | '/_authenticated/admin'
     | '/_authenticated/gestion'
@@ -188,6 +200,7 @@ export interface RootRouteChildren {
   PoliticaCookiesRoute: typeof PoliticaCookiesRoute
   PrivacidadRoute: typeof PrivacidadRoute
   TerminosRoute: typeof TerminosRoute
+  UiConceptsRoute: typeof UiConceptsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
 }
@@ -241,6 +254,13 @@ declare module '@tanstack/react-router' {
       path: '/terminos'
       fullPath: '/terminos'
       preLoaderRoute: typeof TerminosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ui-concepts': {
+      id: '/ui-concepts'
+      path: '/ui-concepts'
+      fullPath: '/ui-concepts'
+      preLoaderRoute: typeof UiConceptsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/.well-known/oauth-protected-resource': {
@@ -313,6 +333,7 @@ const rootRouteChildren: RootRouteChildren = {
   PoliticaCookiesRoute: PoliticaCookiesRoute,
   PrivacidadRoute: PrivacidadRoute,
   TerminosRoute: TerminosRoute,
+  UiConceptsRoute: UiConceptsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
