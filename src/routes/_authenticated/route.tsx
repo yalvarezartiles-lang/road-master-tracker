@@ -1,6 +1,7 @@
 import { createFileRoute, isRedirect, Outlet, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { GlobalCopilot } from "@/components/autoescuela/global-copilot";
+import { SubscriptionBanner } from "@/components/autoescuela/subscription-banner";
 import { ErrorBoundary } from "@/components/error-boundary";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -30,6 +31,7 @@ export const Route = createFileRoute("/_authenticated")({
 function AuthenticatedLayout() {
   return (
     <ErrorBoundary>
+      <ErrorBoundary silent><SubscriptionBanner /></ErrorBoundary>
       <Outlet />
       {/* El copiloto usa APIs de voz que no existen en todos los móviles: si falla, no tumba la app. */}
       <ErrorBoundary silent>

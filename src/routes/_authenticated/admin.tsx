@@ -1,6 +1,9 @@
 import * as React from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 import { ArrowLeft, Check, Loader2, Pencil, Shield, Trash2, Undo2, UserPlus, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -74,9 +77,10 @@ function AdminPage() {
   const removeMember = useServerFn(deleteTeamMember);
   const toggleAutonomo = useServerFn(setTeacherAutonomo);
   const saveSubscription = useServerFn(setTeacherSubscription);
-  const onSubscription = async (m: Member, months: number | null, pagado: boolean) => {
+  const [subEdit, setSubEdit] = React.useState<Member | null>(null);
+  const onSubscription = async (m: Member, months: number | null, pagado: boolean, fecha: string | null = null) => {
     try {
-      const patch = await saveSubscription({ data: { userId: m.id, months, pagado } });
+      const patch = await saveSubscription({ data: { userId: m.id, months, pagado, fecha } });
       setTeam((prev) => prev.map((t) => (t.id === m.id ? { ...t, ...patch } : t)));
       toast.success("Suscripción actualizada");
     } catch (err) {
@@ -444,32 +448,15 @@ function AdminPage() {
                     ))}
                   </div>
                 )}
-                {m.role === "profesor" && isAdmin && (() => {
-                  const venc = m.fecha_vencimiento ? new Date(`${m.fecha_vencimiento}T23:59:59`) : null;
-                  const activa = !!m.estado_pago && !!venc && venc.getTime() >= Date.now();
-                  return (
-                    <div className="mt-3 space-y-2 rounded-2xl border bg-muted/30 p-3">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase ${activa ? "bg-success text-success-foreground" : "bg-danger text-danger-foreground"}`}>
-                          {activa ? "Pagada / Activa" : "No pagada / Caducada"}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {venc ? `Vence el ${venc.toLocaleDateString("es-ES")}` : "Sin fecha de vencimiento"}
-                        </span>
-                      </div>
-                      <p className="text-xs font-semibold text-muted-foreground">Renovar suscripción (marca como pagada):</p>
-                      <div className="grid grid-cols-3 gap-2">
-                        {[[1, "1 mes"], [3, "3 meses"], [12, "1 año"]].map(([n, l]) => (
-                          <Button key={n} variant="outline" className="h-11 rounded-xl" onClick={() => void onSubscription(m, n as number, true)}>{l}</Button>
-                        ))}
-                      </div>
-                      <label className="flex items-center gap-2 text-sm font-medium">
-                        <input type="checkbox" className="size-5" checked={!!m.estado_pago} onChange={(e) => void onSubscription(m, null, e.target.checked)} />
-                        Marcada como pagada
-                      </label>
-                    </div>
-                  );
-                })()}
+                {m.role === "profesor" && isAdmin && (
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <SubscriptionBadge m={m} />
+                    <span className="text-xs text-muted-foreground">
+                      {m.fecha_vencimiento ? `Vence el ${new Date(`${m.fecha_vencimiento}T12:00:00`).toLocaleDateString("es-ES")}` : "Sin fecha"}
+                    </span>
+                    <Button variant="outline" className="ml-auto h-11 rounded-xl" onClick={() => setSubEdit(m)}>Editar Suscripción</Button>
+                  </div>
+                )}
               </li>
             ))}
             {team.length === 0 && (
@@ -480,6 +467,9 @@ function AdminPage() {
           </ul>
         </section>
       </main>
+
+      <SubscriptionDialog member={subEdit} onClose={() => setSubEdit(null)}
+        onSave={async (m, pagado, fecha) => { await onSubscription(m, null, pagado, fecha); setSubEdit(null); }} />
 
       <AlertDialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
         <AlertDialogContent className="rounded-3xl">
@@ -572,5 +562,76 @@ function AdminPage() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  );
+}
+
+function isActive(m: Member) {
+  if (!m.estado_pago || !m.fecha_vencimiento) return false;
+  return new Date(`${m.fecha_vencimiento}T23:59:59`).getTime() >= Date.now();
+}
+
+function SubscriptionBadge({ m }: { m: Member }) {
+  const ok = isActive(m);
+  return (
+    <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase ${ok ? "bg-success text-success-foreground" : "bg-danger text-danger-foreground"}`}>
+      {ok ? "Pagada / Activa" : "No pagada / Caducada"}
+    </span>
+  );
+}
+
+function SubscriptionDialog({ member, onClose, onSave }: {
+  member: Member | null;
+  onClose: () => void;
+  onSave: (m: Member, pagado: boolean, fecha: string | null) => Promise<void>;
+}) {
+  const [pagado, setPagado] = React.useState("no");
+  const [fecha, setFecha] = React.useState("");
+  const [saving, setSaving] = React.useState(false);
+  React.useEffect(() => {
+    if (!member) return;
+    setPagado(member.estado_pago ? "si" : "no");
+    setFecha(member.fecha_vencimiento ?? "");
+  }, [member]);
+  const plus = (months: number) => {
+    const base = fecha && new Date(`${fecha}T12:00:00`) > new Date() ? new Date(`${fecha}T12:00:00`) : new Date();
+    base.setMonth(base.getMonth() + months);
+    setFecha(base.toISOString().slice(0, 10));
+    setPagado("si");
+  };
+  return (
+    <Dialog open={!!member} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="w-[calc(100%-2rem)] max-w-md rounded-3xl">
+        <DialogHeader>
+          <DialogTitle>Editar suscripción</DialogTitle>
+          <DialogDescription>{member ? [member.full_name, member.apellidos].filter(Boolean).join(" ") || member.email : ""}</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>Estado de pago</Label>
+            <Select value={pagado} onValueChange={setPagado}>
+              <SelectTrigger className="h-12 rounded-xl"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="si">Pagado</SelectItem>
+                <SelectItem value="no">No pagado</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Fecha de vencimiento</Label>
+            <Input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className="h-12 rounded-xl" />
+            <div className="grid grid-cols-3 gap-2">
+              {[[1, "+1 mes"], [3, "+3 meses"], [12, "+1 año"]].map(([n, l]) => (
+                <Button key={n} type="button" variant="outline" className="h-11 rounded-xl" onClick={() => plus(n as number)}>{l}</Button>
+              ))}
+            </div>
+          </div>
+          <Button disabled={saving || !member} className="h-12 w-full rounded-2xl font-bold" onClick={async () => {
+            if (!member) return;
+            setSaving(true);
+            try { await onSave(member, pagado === "si", fecha || null); } finally { setSaving(false); }
+          }}>Guardar</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
