@@ -170,7 +170,7 @@ function TeacherDashboard() {
     }
   };
 
-  const tile = "flex aspect-square w-full flex-col items-center justify-center gap-3 rounded-3xl border bg-card p-4 text-center text-base font-bold text-foreground shadow-sm transition active:scale-[0.97] hover:shadow-md";
+  const tile = "flex aspect-square h-auto w-full min-w-0 flex-col items-center justify-center gap-3 whitespace-normal rounded-3xl border border-border bg-card p-6 hover:bg-card text-center text-base font-bold text-foreground shadow-sm transition active:scale-[0.97] hover:shadow-md";
   return (
     <div className="min-h-screen w-full overflow-x-hidden bg-background pb-10">
       <header className="sticky top-0 z-50 border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
