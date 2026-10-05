@@ -4,14 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { Dialog as Sheet, DialogContent as SheetContent, DialogDescription as SheetDescription, DialogHeader as SheetHeader, DialogTitle as SheetTitle, DialogTrigger as SheetTrigger } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { normalize } from "@/lib/autoescuela/normalize";
 import { cn } from "@/lib/utils";
@@ -28,6 +21,7 @@ export function addMinutes(time: string, mins: number) {
   return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
 }
 
+const fromISO = (f: string) => { const [y, m, d] = f.split("-").map(Number); return new Date(y!, m! - 1, d!); };
 const newKey = () => Math.random().toString(36).slice(2);
 
 export function StudentPicker({
@@ -100,6 +94,36 @@ export function CuadranteBuilder({
   const [students, setStudents] = React.useState<StudentOpt[]>([]);
   const [franjas, setFranjas] = React.useState<Franja[]>([]);
   const [saving, setSaving] = React.useState(false);
+  const [existing, setExisting] = React.useState<{ id: string; hora_inicio: string; hora_fin: string; student_id: string | null; estado: string }[]>([]);
+
+  const loadExisting = React.useCallback(async () => {
+    const { data } = await supabase
+      .from("agenda_diaria")
+      .select("id, hora_inicio, hora_fin, student_id, estado")
+      .eq("profesor_id", profesorId)
+      .eq("fecha", fecha)
+      .order("hora_inicio");
+    setExisting(data ?? []);
+  }, [profesorId, fecha]);
+  React.useEffect(() => { if (open) void loadExisting(); }, [open, loadExisting]);
+
+  const removeOne = async (id: string) => {
+    setExisting((l) => l.filter((x) => x.id !== id));
+    const { error } = await supabase.from("agenda_diaria").delete().eq("id", id);
+    if (error) { toast.error("No se pudo eliminar"); void loadExisting(); } else onSaved?.(fromISO(fecha));
+  };
+  const clearDay = async () => {
+    if (!existing.length) return;
+    const ids = existing.map((x) => x.id);
+    setExisting([]);
+    const { error } = await supabase.from("agenda_diaria").delete().in("id", ids);
+    if (error) { toast.error("No se pudo vaciar el día"); void loadExisting(); }
+    else { toast.success("Día vaciado"); onSaved?.(fromISO(fecha)); }
+  };
+  const nameOf = (id: string | null) => {
+    const s = students.find((x) => x.id === id);
+    return s ? `${s.name} ${s.apellidos}`.trim() : "Hueco libre";
+  };
 
   React.useEffect(() => {
     if (!open) return;
@@ -140,7 +164,7 @@ export function CuadranteBuilder({
     const [y, m, d] = fecha.split("-").map(Number);
     onSaved?.(new Date(y!, m! - 1, d!));
     setFranjas([]);
-    setOpen(false);
+    void loadExisting();
   };
 
   return (
@@ -152,14 +176,32 @@ export function CuadranteBuilder({
         </Button>
         )}
       </SheetTrigger>
-      <SheetContent side="right" className="flex w-full max-w-md flex-col gap-0 p-0">
+      <SheetContent className="flex max-h-[92dvh] w-[calc(100%-1.5rem)] max-w-3xl flex-col gap-0 overflow-hidden rounded-3xl p-0 sm:max-w-3xl">
         <SheetHeader className="border-b p-5 text-left">
           <SheetTitle className="text-xl font-bold">Constructor de Cuadrantes</SheetTitle>
           <SheetDescription>Planifica tus clases del día en segundos</SheetDescription>
-          <Input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className="mt-3 h-12 text-base" />
+          <div className="mt-3 flex gap-2">
+            <Input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className="h-12 flex-1 text-base" />
+            <Button variant="destructive" onClick={() => void clearDay()} disabled={!existing.length} className="h-12 shrink-0 rounded-xl px-4 font-bold">
+              🗑️ Vaciar Día
+            </Button>
+          </div>
         </SheetHeader>
 
         <div className="flex-1 space-y-3 overflow-y-auto bg-muted/40 p-4">
+          <p className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">Clases del día ({existing.length})</p>
+          {existing.length === 0 && <p className="rounded-2xl border border-dashed p-4 text-center text-sm text-muted-foreground">No hay clases este día</p>}
+          {existing.map((x) => (
+            <div key={x.id} className="flex items-center gap-3 rounded-2xl border bg-card p-3 shadow-sm">
+              <span className="w-28 shrink-0 text-base font-bold tabular-nums">{x.hora_inicio.slice(0, 5)} - {x.hora_fin.slice(0, 5)}</span>
+              <span className="min-w-0 flex-1 truncate text-base">{nameOf(x.student_id)}</span>
+              <button type="button" onClick={() => void removeOne(x.id)} aria-label="Eliminar clase"
+                className="grid size-11 shrink-0 place-items-center rounded-xl text-destructive hover:bg-destructive/10">
+                <Trash2 className="size-5" />
+              </button>
+            </div>
+          ))}
+          {franjas.length > 0 && <p className="pt-2 text-sm font-semibold tracking-wide text-muted-foreground uppercase">Nuevas franjas</p>}
           {franjas.map((f, i) => (
             <div key={f.key} className="space-y-3 rounded-2xl border border-zinc-100 bg-white p-4 text-zinc-900 dark:border-border dark:bg-card dark:text-card-foreground shadow-sm">
               <div className="flex items-center justify-between">

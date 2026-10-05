@@ -163,22 +163,22 @@ function DrivingMode() {
         </Button>
       </div>
 
-      <div className="flex min-h-0 flex-1 items-center">
+      <div className="flex min-h-0 flex-1 items-center overflow-y-auto py-8">
         {loading ? (
           <Loader2 className="mx-auto size-8 animate-spin text-muted-foreground" />
         ) : slots.length === 0 ? (
           <p className="mx-auto px-8 text-center text-lg text-muted-foreground">No tienes clases hoy.</p>
         ) : (
           <Carousel setApi={setApi} opts={{ align: "center" }} className="w-full">
-            <CarouselContent className="-ml-3">
+            <CarouselContent className="-ml-3 py-8">
               {slots.map((s, i) => {
                 const st = data.students.find((x) => x.id === s.student_id);
                 const name = st ? [st.name, st.apellidos].filter(Boolean).join(" ") : "Alumno";
                 const prev = prevFor(s.student_id);
                 const done = s.estado === "completada" || s.estado === "falta";
                 return (
-                  <CarouselItem key={s.id} className="basis-[86%] pl-3">
-                    <article className={`rounded-[2rem] border bg-card p-6 shadow-lg transition-opacity ${done ? "opacity-60" : ""}`}>
+                  <CarouselItem key={s.id} className="basis-[88%] pl-3 sm:basis-[420px]">
+                    <article className={`mx-auto max-w-md rounded-[2rem] border border-border bg-gradient-to-br from-card to-muted/40 p-6 shadow-[0_24px_48px_-16px_rgb(0_0_0/0.25)] ring-1 ring-foreground/5 transition-opacity ${done ? "opacity-60" : ""}`}>
                       <div className="flex items-center justify-between text-xs font-bold tracking-widest text-muted-foreground uppercase">
                         <span>Clase {i + 1} de {slots.length}</span>
                         <span>{hm(s.hora_inicio)} – {hm(s.hora_fin)}</span>
@@ -187,7 +187,7 @@ function DrivingMode() {
                         <span className="flex size-20 items-center justify-center rounded-full bg-primary/12 text-2xl font-bold text-primary">
                           {name.split(" ").slice(0, 2).map((n) => n[0]).join("").toUpperCase()}
                         </span>
-                        <h2 className="mt-3 text-2xl font-bold leading-tight text-balance">{name}</h2>
+                        <h2 className="mt-4 text-3xl font-extrabold leading-tight tracking-tight text-balance">{name}</h2>
                         {s.estado === "completada" && <p className="mt-1 text-sm font-semibold text-success">Completada</p>}
                         {s.estado === "falta" && <p className="mt-1 text-sm font-semibold text-danger">Falta</p>}
                         {st && data.skills.length > 0 && (
@@ -198,22 +198,27 @@ function DrivingMode() {
                           </div>
                         )}
                       </div>
-                      <div className="mt-6 space-y-4 border-t pt-5">
+                      <hr className="my-5 border-border/60" />
+                      <div className="space-y-4">
                         <div className="flex gap-3">
-                          <MapPin className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
+                          <MapPin className="mt-0.5 size-4 shrink-0 text-muted-foreground/70" />
                           <div className="min-w-0">
                             <p className="text-xs font-semibold text-muted-foreground uppercase">Última zona</p>
                             <p className={prev?.zona ? "font-medium" : "text-muted-foreground/60"}>{prev?.zona || "Sin datos previos"}</p>
                           </div>
                         </div>
                         <div className="flex gap-3">
-                          <NotebookPen className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
+                          <NotebookPen className="mt-0.5 size-4 shrink-0 text-muted-foreground/70" />
                           <div className="min-w-0">
                             <p className="text-xs font-semibold text-muted-foreground uppercase">Notas anteriores</p>
                             <p className={`line-clamp-3 ${prev?.notas ? "" : "text-muted-foreground/60"}`}>{prev?.notas || "Sin datos previos"}</p>
                           </div>
                         </div>
                       </div>
+                      <hr className="my-5 border-border/60" />
+                      <Button asChild variant="outline" className="h-14 w-full rounded-2xl text-base font-bold">
+                        <Link to="/alumno/$studentId" params={{ studentId: s.student_id }}>📝 Evaluar Alumno</Link>
+                      </Button>
                     </article>
                   </CarouselItem>
                 );
