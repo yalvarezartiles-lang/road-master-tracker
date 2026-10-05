@@ -19,6 +19,7 @@ import { Route as TerminosRouteImport } from './routes/terminos'
 import { Route as UiConceptsRouteImport } from './routes/ui-concepts'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedAjustesRouteImport } from './routes/_authenticated/ajustes'
 import { Route as AuthenticatedConduccionRouteImport } from './routes/_authenticated/conduccion'
 import { Route as AuthenticatedGestionRouteImport } from './routes/_authenticated/gestion'
 import { Route as AuthenticatedPanelRouteImport } from './routes/_authenticated/panel'
@@ -75,6 +76,11 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAjustesRoute = AuthenticatedAjustesRouteImport.update({
+  id: '/ajustes',
+  path: '/ajustes',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedConduccionRoute = AuthenticatedConduccionRouteImport.update({
   id: '/conduccion',
   path: '/conduccion',
@@ -112,6 +118,7 @@ export interface FileRoutesByFullPath {
   '/ui-concepts': typeof UiConceptsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/ajustes': typeof AuthenticatedAjustesRoute
   '/conduccion': typeof AuthenticatedConduccionRoute
   '/gestion': typeof AuthenticatedGestionRoute
   '/panel': typeof AuthenticatedPanelRoute
@@ -128,6 +135,7 @@ export interface FileRoutesByTo {
   '/ui-concepts': typeof UiConceptsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/ajustes': typeof AuthenticatedAjustesRoute
   '/conduccion': typeof AuthenticatedConduccionRoute
   '/gestion': typeof AuthenticatedGestionRoute
   '/panel': typeof AuthenticatedPanelRoute
@@ -146,6 +154,7 @@ export interface FileRoutesById {
   '/ui-concepts': typeof UiConceptsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/_authenticated/ajustes': typeof AuthenticatedAjustesRoute
   '/_authenticated/conduccion': typeof AuthenticatedConduccionRoute
   '/_authenticated/gestion': typeof AuthenticatedGestionRoute
   '/_authenticated/panel': typeof AuthenticatedPanelRoute
@@ -164,6 +173,7 @@ export interface FileRouteTypes {
     | '/ui-concepts'
     | '/.well-known/oauth-protected-resource'
     | '/admin'
+    | '/ajustes'
     | '/conduccion'
     | '/gestion'
     | '/panel'
@@ -180,6 +190,7 @@ export interface FileRouteTypes {
     | '/ui-concepts'
     | '/.well-known/oauth-protected-resource'
     | '/admin'
+    | '/ajustes'
     | '/conduccion'
     | '/gestion'
     | '/panel'
@@ -197,6 +208,7 @@ export interface FileRouteTypes {
     | '/ui-concepts'
     | '/.well-known/oauth-protected-resource'
     | '/_authenticated/admin'
+    | '/_authenticated/ajustes'
     | '/_authenticated/conduccion'
     | '/_authenticated/gestion'
     | '/_authenticated/panel'
@@ -289,6 +301,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ajustes': {
+      id: '/_authenticated/ajustes'
+      path: '/ajustes'
+      fullPath: '/ajustes'
+      preLoaderRoute: typeof AuthenticatedAjustesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/conduccion': {
       id: '/_authenticated/conduccion'
       path: '/conduccion'
@@ -329,6 +348,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedAjustesRoute: typeof AuthenticatedAjustesRoute
   AuthenticatedConduccionRoute: typeof AuthenticatedConduccionRoute
   AuthenticatedGestionRoute: typeof AuthenticatedGestionRoute
   AuthenticatedPanelRoute: typeof AuthenticatedPanelRoute
@@ -337,6 +357,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedAjustesRoute: AuthenticatedAjustesRoute,
   AuthenticatedConduccionRoute: AuthenticatedConduccionRoute,
   AuthenticatedGestionRoute: AuthenticatedGestionRoute,
   AuthenticatedPanelRoute: AuthenticatedPanelRoute,
