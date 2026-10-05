@@ -70,7 +70,7 @@ export function LessonDialog({
   studentId?: string;
   /** Clase suelta: pide alumno + hora/duración y crea también la clase en la agenda. */
   suelta?: { profesorId: string };
-  onSaved?: () => void;
+  onSaved?: (() => void) | undefined;
 }) {
   const [duration, setDuration] = React.useState<number | null>(null);
   const { data, addLesson, addZone, lastMatricula } = useStore();
