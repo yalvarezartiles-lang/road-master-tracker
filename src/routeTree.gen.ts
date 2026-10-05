@@ -19,6 +19,7 @@ import { Route as TerminosRouteImport } from './routes/terminos'
 import { Route as UiConceptsRouteImport } from './routes/ui-concepts'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedConduccionRouteImport } from './routes/_authenticated/conduccion'
 import { Route as AuthenticatedGestionRouteImport } from './routes/_authenticated/gestion'
 import { Route as AuthenticatedPanelRouteImport } from './routes/_authenticated/panel'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
@@ -74,6 +75,11 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedConduccionRoute = AuthenticatedConduccionRouteImport.update({
+  id: '/conduccion',
+  path: '/conduccion',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedGestionRoute = AuthenticatedGestionRouteImport.update({
   id: '/gestion',
   path: '/gestion',
@@ -106,6 +112,7 @@ export interface FileRoutesByFullPath {
   '/ui-concepts': typeof UiConceptsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/conduccion': typeof AuthenticatedConduccionRoute
   '/gestion': typeof AuthenticatedGestionRoute
   '/panel': typeof AuthenticatedPanelRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
@@ -121,6 +128,7 @@ export interface FileRoutesByTo {
   '/ui-concepts': typeof UiConceptsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/conduccion': typeof AuthenticatedConduccionRoute
   '/gestion': typeof AuthenticatedGestionRoute
   '/panel': typeof AuthenticatedPanelRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
@@ -138,6 +146,7 @@ export interface FileRoutesById {
   '/ui-concepts': typeof UiConceptsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/_authenticated/conduccion': typeof AuthenticatedConduccionRoute
   '/_authenticated/gestion': typeof AuthenticatedGestionRoute
   '/_authenticated/panel': typeof AuthenticatedPanelRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
@@ -155,6 +164,7 @@ export interface FileRouteTypes {
     | '/ui-concepts'
     | '/.well-known/oauth-protected-resource'
     | '/admin'
+    | '/conduccion'
     | '/gestion'
     | '/panel'
     | '/.lovable/oauth/consent'
@@ -170,6 +180,7 @@ export interface FileRouteTypes {
     | '/ui-concepts'
     | '/.well-known/oauth-protected-resource'
     | '/admin'
+    | '/conduccion'
     | '/gestion'
     | '/panel'
     | '/.lovable/oauth/consent'
@@ -186,6 +197,7 @@ export interface FileRouteTypes {
     | '/ui-concepts'
     | '/.well-known/oauth-protected-resource'
     | '/_authenticated/admin'
+    | '/_authenticated/conduccion'
     | '/_authenticated/gestion'
     | '/_authenticated/panel'
     | '/.lovable/oauth/consent'
@@ -277,6 +289,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/conduccion': {
+      id: '/_authenticated/conduccion'
+      path: '/conduccion'
+      fullPath: '/conduccion'
+      preLoaderRoute: typeof AuthenticatedConduccionRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/gestion': {
       id: '/_authenticated/gestion'
       path: '/gestion'
@@ -310,6 +329,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedConduccionRoute: typeof AuthenticatedConduccionRoute
   AuthenticatedGestionRoute: typeof AuthenticatedGestionRoute
   AuthenticatedPanelRoute: typeof AuthenticatedPanelRoute
   AuthenticatedAlumnoStudentIdRoute: typeof AuthenticatedAlumnoStudentIdRoute
@@ -317,6 +337,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedConduccionRoute: AuthenticatedConduccionRoute,
   AuthenticatedGestionRoute: AuthenticatedGestionRoute,
   AuthenticatedPanelRoute: AuthenticatedPanelRoute,
   AuthenticatedAlumnoStudentIdRoute: AuthenticatedAlumnoStudentIdRoute,

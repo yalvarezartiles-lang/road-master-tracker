@@ -296,6 +296,10 @@ function TeacherDashboard() {
           />
         </div>
 
+        <Button asChild className="mt-3 h-16 w-full rounded-2xl text-lg font-extrabold shadow-md">
+          <Link to="/conduccion">🚀 Iniciar Día</Link>
+        </Button>
+
         <Button
           variant="secondary"
           onClick={() => setStudentOpen(true)}
