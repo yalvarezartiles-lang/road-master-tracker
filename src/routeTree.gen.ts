@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as BloqueadoRouteImport } from './routes/bloqueado'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as PoliticaCookiesRouteImport } from './routes/politica-cookies'
 import { Route as PrivacidadRouteImport } from './routes/privacidad'
@@ -40,6 +41,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BloqueadoRoute = BloqueadoRouteImport.update({
+  id: '/bloqueado',
+  path: '/bloqueado',
   getParentRoute: () => rootRouteImport,
 } as any)
 const McpRoute = McpRouteImport.update({
@@ -123,6 +129,7 @@ const AuthenticatedAlumnoStudentIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/bloqueado': typeof BloqueadoRoute
   '/mcp': typeof McpRoute
   '/politica-cookies': typeof PoliticaCookiesRoute
   '/privacidad': typeof PrivacidadRoute
@@ -142,6 +149,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/bloqueado': typeof BloqueadoRoute
   '/mcp': typeof McpRoute
   '/politica-cookies': typeof PoliticaCookiesRoute
   '/privacidad': typeof PrivacidadRoute
@@ -163,6 +171,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/bloqueado': typeof BloqueadoRoute
   '/mcp': typeof McpRoute
   '/politica-cookies': typeof PoliticaCookiesRoute
   '/privacidad': typeof PrivacidadRoute
@@ -184,6 +193,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/bloqueado'
     | '/mcp'
     | '/politica-cookies'
     | '/privacidad'
@@ -203,6 +213,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/bloqueado'
     | '/mcp'
     | '/politica-cookies'
     | '/privacidad'
@@ -223,6 +234,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/bloqueado'
     | '/mcp'
     | '/politica-cookies'
     | '/privacidad'
@@ -244,6 +256,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  BloqueadoRoute: typeof BloqueadoRoute
   McpRoute: typeof McpRoute
   PoliticaCookiesRoute: typeof PoliticaCookiesRoute
   PrivacidadRoute: typeof PrivacidadRoute
@@ -275,6 +288,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bloqueado': {
+      id: '/bloqueado'
+      path: '/bloqueado'
+      fullPath: '/bloqueado'
+      preLoaderRoute: typeof BloqueadoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mcp': {
@@ -412,6 +432,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  BloqueadoRoute: BloqueadoRoute,
   McpRoute: McpRoute,
   PoliticaCookiesRoute: PoliticaCookiesRoute,
   PrivacidadRoute: PrivacidadRoute,
